@@ -1,0 +1,45 @@
+```
+# Dependencies
+vendor/
+node_modules/
+
+# Build and cache directories
+bootstrap/cache/
+storage/framework/cache/
+storage/framework/sessions/
+storage/framework/views/
+composer.lock
+
+# Environment specific files
+.env
+.env.local
+.env.*
+!.env.example
+
+# Logs
+*.log
+storage/logs/*
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Compiled PHP (if any)
+*.php~
+*.php.bak
+
+# Coverage and testing
+.coverage
+coverage/
+htmlcov/
+
+# System files
+*.tmp
+*~
+```
