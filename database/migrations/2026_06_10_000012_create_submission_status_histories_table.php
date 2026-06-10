@@ -14,12 +14,12 @@ return new class extends Migration
             $table->foreignUlid('submission_request_id')->constrained('submission_requests')->cascadeOnDelete();
             $table->foreignId('from_status_id')->nullable()->constrained('submission_statuses')->nullOnDelete();
             $table->foreignId('to_status_id')->constrained('submission_statuses')->restrictOnDelete();
-            $table->foreignId('changed_by')->constrained('users')->restrictOnDelete();
+            $table->foreignId('changed_by')->nullable()->constrained('users')->nullOnDelete();
             $table->text('comment')->nullable();
             $table->timestamp('created_at')->useCurrent();
 
-            $table->index(['submission_request_id', 'created_at']);
-            $table->index('organization_id');
+            $table->index(['submission_request_id', 'created_at'], 'ssh_request_created_idx');
+            $table->index('organization_id', 'ssh_org_idx');
         });
     }
 
