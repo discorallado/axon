@@ -2,17 +2,24 @@
 
 namespace App\Filament\Resources\FormTemplateResource\RelationManagers;
 
-use App\Filament\Resources\FormSectionResource;
+use App\Enums\FormQuestionType;
+use App\Models\FormSection;
 use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
+use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
+use Filament\Notifications\Notification;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Support\Str;
 
 class SectionsRelationManager extends RelationManager
 {
@@ -75,9 +82,133 @@ class SectionsRelationManager extends RelationManager
             ])
             ->actions([
                 Action::make('manage_questions')
-                    ->label('Gestionar preguntas')
+                    ->label('Preguntas')
                     ->icon('heroicon-o-list-bullet')
-                    ->url(fn ($record) => FormSectionResource::getUrl('edit', ['record' => $record])),
+                    ->color('info')
+                    ->modalHeading(fn (FormSection $record) => "Preguntas · {$record->title}")
+                    ->modalWidth('4xl')
+                    ->fillForm(fn (FormSection $record): array => [
+                        'questions' => $record->questions()
+                            ->orderBy('sort_order')
+                            ->get()
+                            ->map(fn ($q) => [
+                                'id'          => $q->id,
+                                'label'       => $q->label,
+                                'key'         => $q->key,
+                                'type'        => $q->type->value,
+                                'placeholder' => $q->placeholder,
+                                'help_text'   => $q->help_text,
+                                'is_required' => $q->is_required,
+                                'options'     => $q->options ?? [],
+                            ])
+                            ->all(),
+                    ])
+                    ->form([
+                        Repeater::make('questions')
+                            ->label(false)
+                            ->schema([
+                                Hidden::make('id'),
+
+                                TextInput::make('label')
+                                    ->label('Etiqueta')
+                                    ->required()
+                                    ->maxLength(255)
+                                    ->live(onBlur: true)
+                                    ->afterStateUpdated(function ($state, callable $set, callable $get) {
+                                        if (blank($get('key'))) {
+                                            $set('key', Str::snake(Str::ascii($state)));
+                                        }
+                                    })
+                                    ->columnSpan(2),
+
+                                TextInput::make('key')
+                                    ->label('Key interno')
+                                    ->required()
+                                    ->maxLength(80)
+                                    ->helperText('Solo letras, números y guión bajo.'),
+
+                                Select::make('type')
+                                    ->label('Tipo')
+                                    ->options(FormQuestionType::selectOptions())
+                                    ->required()
+                                    ->default(FormQuestionType::Text->value)
+                                    ->live(),
+
+                                Toggle::make('is_required')
+                                    ->label('Obligatoria')
+                                    ->columnSpan(2),
+
+                                TextInput::make('placeholder')
+                                    ->label('Placeholder')
+                                    ->maxLength(255),
+
+                                TextInput::make('help_text')
+                                    ->label('Texto de ayuda')
+                                    ->maxLength(500),
+
+                                Repeater::make('options')
+                                    ->label('Opciones de selección')
+                                    ->schema([
+                                        TextInput::make('value')
+                                            ->label('Valor')
+                                            ->required()
+                                            ->maxLength(100),
+                                        TextInput::make('label')
+                                            ->label('Etiqueta')
+                                            ->required()
+                                            ->maxLength(200),
+                                    ])
+                                    ->columns(2)
+                                    ->addActionLabel('Agregar opción')
+                                    ->visible(fn (callable $get) => in_array($get('type'), [
+                                        FormQuestionType::Select->value,
+                                        FormQuestionType::Multiselect->value,
+                                    ]))
+                                    ->columnSpan(2),
+                            ])
+                            ->columns(2)
+                            ->itemLabel(fn (array $state): ?string => $state['label'] ?? 'Nueva pregunta')
+                            ->collapsible()
+                            ->collapsed()
+                            ->addActionLabel('Agregar pregunta')
+                            ->reorderable()
+                            ->columnSpanFull(),
+                    ])
+                    ->action(function (FormSection $record, array $data): void {
+                        $keptIds = [];
+
+                        foreach ($data['questions'] as $index => $item) {
+                            $payload = [
+                                'organization_id'  => $record->organization_id,
+                                'form_template_id' => $record->form_template_id,
+                                'template_version' => $record->template_version,
+                                'form_section_id'  => $record->id,
+                                'label'            => $item['label'],
+                                'key'              => $item['key'],
+                                'type'             => $item['type'],
+                                'placeholder'      => $item['placeholder'] ?? null,
+                                'help_text'        => $item['help_text'] ?? null,
+                                'is_required'      => $item['is_required'] ?? false,
+                                'sort_order'       => $index,
+                                'options'          => $item['options'] ?? null,
+                            ];
+
+                            if (! empty($item['id'])) {
+                                $record->questions()->where('id', $item['id'])->update($payload);
+                                $keptIds[] = $item['id'];
+                            } else {
+                                $q = $record->questions()->create($payload);
+                                $keptIds[] = $q->id;
+                            }
+                        }
+
+                        $record->questions()->whereNotIn('id', $keptIds)->delete();
+
+                        Notification::make()
+                            ->title('Preguntas guardadas.')
+                            ->success()
+                            ->send();
+                    }),
 
                 EditAction::make(),
 
