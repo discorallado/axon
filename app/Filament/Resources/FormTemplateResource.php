@@ -65,7 +65,7 @@ class FormTemplateResource extends Resource
 
             Select::make('view_type')
                 ->label(__('forms.template.fields.view_type'))
-                ->options(__('forms.template.view_types'))
+                ->options(fn () => (array) __('forms.template.view_types'))
                 ->default('default')
                 ->required(),
 
