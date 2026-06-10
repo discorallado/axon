@@ -38,6 +38,7 @@
         action="{{ route('public.form.submit', $template->slug) }}"
         enctype="multipart/form-data"
         novalidate
+        @submit="submitting = true"
     >
         @csrf
 
@@ -298,7 +299,6 @@
             <button
                 type="submit"
                 :disabled="submitting"
-                @click="submitting = true"
                 class="inline-flex items-center gap-2 rounded-md bg-indigo-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 disabled:opacity-60 disabled:cursor-not-allowed transition"
             >
                 <span x-show="!submitting">{{ __('forms.public.submit') }}</span>
