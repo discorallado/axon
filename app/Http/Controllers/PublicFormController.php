@@ -15,6 +15,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 
@@ -76,6 +77,34 @@ class PublicFormController extends Controller
         // Determinar qué preguntas son visibles según reglas condicionales
         $visibleQuestionIds = $this->resolveVisibleQuestions($template, $request->input('answers', []));
 
+        // Validar preguntas required que están visibles
+        $dynamicRules = [];
+        $dynamicMessages = [];
+        $dynamicAttributes = [];
+
+        foreach ($questions->filter(fn ($q) => in_array($q->id, $visibleQuestionIds)) as $question) {
+            if (! $question->is_required) {
+                continue;
+            }
+
+            if ($question->type->isFile()) {
+                $dynamicRules["files.{$question->id}"] = ['required'];
+                $dynamicMessages["files.{$question->id}.required"] = "El campo \"{$question->label}\" es obligatorio.";
+            } else {
+                $dynamicRules["answers.{$question->id}"] = ['required'];
+                $dynamicMessages["answers.{$question->id}.required"] = "El campo \"{$question->label}\" es obligatorio.";
+            }
+
+            $dynamicAttributes["answers.{$question->id}"] = $question->label;
+        }
+
+        if ($dynamicRules) {
+            $validator = Validator::make($request->all(), $dynamicRules, $dynamicMessages, $dynamicAttributes);
+            if ($validator->fails()) {
+                return back()->withInput()->withErrors($validator);
+            }
+        }
+
         $submission = DB::transaction(function () use ($request, $template, $questions, $visibleQuestionIds) {
             $initialStatus = $template->organization->submissionStatuses()
                 ->where('is_initial', true)
@@ -115,22 +144,29 @@ class PublicFormController extends Controller
                     'value_json' => is_array($rawValue) ? $rawValue : null,
                 ]);
 
-                // Procesar archivo adjunto si la pregunta es de tipo file
+                // Procesar archivos adjuntos (múltiples) si la pregunta es de tipo file
                 if ($question->type->isFile() && $request->hasFile("files.{$question->id}")) {
-                    $file = $request->file("files.{$question->id}");
-                    $path = $file->store("submissions/{$submission->id}", 'local');
+                    $files = (array) $request->file("files.{$question->id}");
 
-                    Attachment::create([
-                        'organization_id' => $template->organization_id,
-                        'attachable_type' => SubmissionAnswer::class,
-                        'attachable_id' => $answer->id,
-                        'disk' => 'local',
-                        'path' => $path,
-                        'original_name' => $file->getClientOriginalName(),
-                        'mime_type' => $file->getMimeType(),
-                        'size_bytes' => $file->getSize(),
-                        'uploaded_by' => null,
-                    ]);
+                    foreach ($files as $file) {
+                        if (! $file || ! $file->isValid()) {
+                            continue;
+                        }
+
+                        $path = $file->store("submissions/{$submission->id}", 'local');
+
+                        Attachment::create([
+                            'organization_id' => $template->organization_id,
+                            'attachable_type' => SubmissionAnswer::class,
+                            'attachable_id' => $answer->id,
+                            'disk' => 'local',
+                            'path' => $path,
+                            'original_name' => $file->getClientOriginalName(),
+                            'mime_type' => $file->getMimeType(),
+                            'size_bytes' => $file->getSize(),
+                            'uploaded_by' => null,
+                        ]);
+                    }
                 }
             }
 

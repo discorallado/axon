@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\FormTemplateResource\Pages;
+use App\Filament\Resources\FormTemplateResource\RelationManagers\ConditionalRulesRelationManager;
 use App\Filament\Resources\FormTemplateResource\RelationManagers\SectionsRelationManager;
 use App\Models\FormTemplate;
 use Filament\Actions\Action;
@@ -65,7 +66,7 @@ class FormTemplateResource extends Resource
 
             Select::make('view_type')
                 ->label(__('forms.template.fields.view_type'))
-                ->options(fn () => (array) __('forms.template.view_types'))
+                ->options(fn() => (array) __('forms.template.view_types'))
                 ->default('default')
                 ->required(),
 
@@ -96,7 +97,7 @@ class FormTemplateResource extends Resource
 
                 TextColumn::make('view_type')
                     ->label(__('forms.template.fields.view_type'))
-                    ->formatStateUsing(fn ($state) => __("forms.template.view_types.{$state}"))
+                    ->formatStateUsing(fn($state) => __("forms.template.view_types.{$state}"))
                     ->badge(),
 
                 TextColumn::make('current_version')
@@ -130,15 +131,14 @@ class FormTemplateResource extends Resource
                             ->success()
                             ->send();
                     })
-                    ->extraAttributes(fn (FormTemplate $record) => [
-                        'x-data' => '',
-                        'x-on:click' => "navigator.clipboard.writeText('{$record->publicUrl()}')",
+                    ->extraAttributes(fn(FormTemplate $record) => [
+                        '@click' => "navigator.clipboard.writeText('{$record->publicUrl()}');",
                     ]),
 
                 EditAction::make(),
 
                 DeleteAction::make()
-                    ->visible(fn (FormTemplate $record) => $record->submissions()->doesntExist()),
+                    ->visible(fn(FormTemplate $record) => $record->submissions()->doesntExist()),
             ]);
     }
 
@@ -146,6 +146,7 @@ class FormTemplateResource extends Resource
     {
         return [
             SectionsRelationManager::class,
+            ConditionalRulesRelationManager::class,
         ];
     }
 

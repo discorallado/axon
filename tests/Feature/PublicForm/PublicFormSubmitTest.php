@@ -104,6 +104,24 @@ it('requires submitter name and email', function () {
     ])->assertSessionHasErrors(['submitter_name', 'submitter_email']);
 });
 
+it('rejects submission when a required question is empty', function () {
+    Notification::fake();
+
+    $org = Organization::factory()->create();
+    [$template, $question] = makeTemplateWithQuestion($org);
+
+    $response = $this->post(route('public.form.submit', $template->slug), [
+        'submitter_name' => 'Juan Pérez',
+        'submitter_email' => 'juan@example.com',
+        '_hp' => '',
+        '_ts' => time() - 10,
+        'answers' => [$question->id => ''],  // campo requerido vacío
+    ]);
+
+    $response->assertSessionHasErrors(["answers.{$question->id}"]);
+    $this->assertDatabaseEmpty('submission_requests');
+});
+
 it('rejects submission to inactive template', function () {
     $org = Organization::factory()->create();
     $template = FormTemplate::factory()

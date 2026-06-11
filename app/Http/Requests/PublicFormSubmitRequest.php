@@ -28,8 +28,9 @@ class PublicFormSubmitRequest extends FormRequest
             // Respuestas dinámicas; se validan individualmente en el controller
             'answers' => ['nullable', 'array'],
             'answers.*' => ['nullable'],
-            'files' => ['nullable', 'array'],
-            'files.*' => ['nullable', 'file', 'max:20480'], // 20 MB máx por archivo
+            'files'   => ['nullable', 'array'],
+            'files.*' => ['nullable', 'array'],              // cada pregunta envía un array de archivos
+            'files.*.*' => ['nullable', 'file', 'max:20480'], // 20 MB máx por archivo
         ];
     }
 

@@ -7,3 +7,221 @@
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
 }
+
+/*
+ * Los valores de color primario (--pf-50 … --pf-950) se inyectan en runtime
+ * desde el layout public.blade.php, tomados de config('public-form.primary').
+ * Todas las clases pf-* usan rgb(var(--pf-N)) para respetar ese color dinámico.
+ */
+
+/* ── Componentes públicos (tema oscuro, estilo Filament) ───────────────── */
+
+@layer components {
+
+    /* ── Layout ────────────────────────────────────────────────────────── */
+
+    .pf-body {
+        @apply min-h-screen bg-zinc-950 text-zinc-100 antialiased;
+    }
+
+    .pf-header {
+        @apply sticky top-0 z-10 border-b border-white/10 bg-zinc-900/80 backdrop-blur px-6 py-4;
+    }
+
+    .pf-header-inner {
+        @apply mx-auto max-w-3xl flex items-center gap-3;
+    }
+
+    .pf-header-icon {
+        @apply flex h-7 w-7 items-center justify-center rounded-lg;
+        background-color: rgb(var(--pf-600) / 0.2);
+        color: rgb(var(--pf-400));
+    }
+
+    .pf-header-logo {
+        @apply text-sm font-semibold tracking-tight text-zinc-100;
+    }
+
+    .pf-main {
+        @apply mx-auto max-w-3xl px-4 py-10;
+    }
+
+    .pf-footer {
+        @apply mx-auto max-w-3xl px-4 py-8 text-center text-xs text-zinc-600;
+    }
+
+    /* ── Cards / secciones ─────────────────────────────────────────────── */
+
+    .pf-card {
+        @apply rounded-xl border border-white/10 bg-zinc-900 p-6 shadow-sm;
+    }
+
+    .pf-card-description {
+        @apply text-sm text-zinc-400;
+    }
+
+    /* ── Etiquetas ─────────────────────────────────────────────────────── */
+
+    .pf-label {
+        @apply block text-sm font-medium text-zinc-300 mb-1.5;
+    }
+
+    .pf-label-required {
+        @apply ml-0.5;
+        color: rgb(var(--pf-400));
+    }
+
+    .pf-label-optional {
+        @apply text-xs font-normal text-zinc-500 ml-1;
+    }
+
+    .pf-help {
+        @apply text-xs text-zinc-500 mt-1.5;
+    }
+
+    /* ── Inputs ────────────────────────────────────────────────────────── */
+
+    .pf-input {
+        @apply block w-full rounded-lg border border-white/10 bg-white/5
+               px-3 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-500
+               transition duration-75 outline-none
+               disabled:opacity-50 disabled:cursor-not-allowed;
+    }
+    .pf-input:focus {
+        box-shadow: 0 0 0 2px rgb(var(--pf-500));
+        border-color: rgb(var(--pf-500) / 0.5);
+    }
+
+    .pf-input-error {
+        @apply border-red-500/50 bg-red-500/5;
+    }
+    .pf-input-error:focus {
+        box-shadow: 0 0 0 2px theme(colors.red.500);
+    }
+
+    .pf-textarea {
+        @apply block w-full rounded-lg border border-white/10 bg-white/5
+               px-3 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-500
+               transition duration-75 outline-none resize-y
+               disabled:opacity-50 disabled:cursor-not-allowed;
+    }
+    .pf-textarea:focus {
+        box-shadow: 0 0 0 2px rgb(var(--pf-500));
+        border-color: rgb(var(--pf-500) / 0.5);
+    }
+
+    .pf-select {
+        @apply block w-full rounded-lg border border-white/10 bg-white/5
+               px-3 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-500
+               transition duration-75 outline-none cursor-pointer
+               disabled:opacity-50 disabled:cursor-not-allowed;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2371717a' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+        background-position: right 0.6rem center;
+        background-size: 1.2rem;
+        background-repeat: no-repeat;
+        padding-right: 2.25rem;
+    }
+    .pf-select:focus {
+        box-shadow: 0 0 0 2px rgb(var(--pf-500));
+        border-color: rgb(var(--pf-500) / 0.5);
+    }
+    .pf-select option {
+        @apply bg-zinc-800 text-zinc-100;
+    }
+
+    /* ── Checkbox / radio ──────────────────────────────────────────────── */
+
+    .pf-checkbox {
+        @apply h-4 w-4 rounded border-white/20 bg-white/5;
+        accent-color: rgb(var(--pf-600));
+    }
+
+    .pf-radio {
+        @apply h-4 w-4 border-white/20 bg-white/5;
+        accent-color: rgb(var(--pf-600));
+    }
+
+    .pf-choice-label {
+        @apply flex items-center gap-2.5 text-sm text-zinc-300 cursor-pointer select-none;
+    }
+
+    /* ── File input ────────────────────────────────────────────────────── */
+
+    .pf-file {
+        @apply block w-full rounded-lg border border-white/10 bg-white/5
+               px-3 py-2 text-sm text-zinc-400 cursor-pointer
+               transition duration-75 outline-none;
+    }
+    .pf-file:focus {
+        box-shadow: 0 0 0 2px rgb(var(--pf-500));
+    }
+    .pf-file::file-selector-button {
+        @apply mr-3 rounded-md border-0 px-3 py-1 text-xs font-medium cursor-pointer transition duration-75;
+        background-color: rgb(var(--pf-600) / 0.2);
+        color: rgb(var(--pf-300));
+    }
+    .pf-file:hover::file-selector-button {
+        background-color: rgb(var(--pf-600) / 0.3);
+    }
+
+    /* ── Errores ───────────────────────────────────────────────────────── */
+
+    .pf-error-bag {
+        @apply mb-6 rounded-xl border border-red-500/30 bg-red-500/10 p-4;
+    }
+
+    .pf-field-error {
+        @apply mt-1.5 text-xs text-red-400;
+    }
+
+    /* ── Botón primario ────────────────────────────────────────────────── */
+
+    .pf-btn-primary {
+        @apply inline-flex items-center gap-2 rounded-lg px-5 py-2.5
+               text-sm font-semibold text-white shadow-sm
+               transition duration-75 outline-none
+               disabled:opacity-50 disabled:cursor-not-allowed;
+        background-color: rgb(var(--pf-600));
+    }
+    .pf-btn-primary:hover:not(:disabled) {
+        background-color: rgb(var(--pf-500));
+    }
+    .pf-btn-primary:focus-visible {
+        box-shadow: 0 0 0 2px rgb(var(--pf-500)), 0 0 0 4px theme(colors.zinc.950);
+    }
+
+    /* ── Tipografía del formulario ─────────────────────────────────────── */
+
+    .pf-form-heading {
+        @apply text-2xl font-semibold text-zinc-100;
+    }
+
+    .pf-form-description {
+        @apply mt-2 text-sm text-zinc-400 leading-relaxed;
+    }
+
+    .pf-section-title {
+        @apply text-sm font-semibold text-zinc-200 mb-4 pb-3 border-b border-white/10;
+    }
+
+    /* ── Spinner ───────────────────────────────────────────────────────── */
+
+    .pf-spinner {
+        @apply h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white;
+    }
+
+    /* ── Pantalla de gracias ───────────────────────────────────────────── */
+
+    .pf-reference-badge {
+        @apply inline-flex items-center gap-2 rounded-xl px-6 py-3;
+        border: 1px solid rgb(var(--pf-500) / 0.3);
+        background-color: rgb(var(--pf-500) / 0.1);
+    }
+
+    .pf-reference-code {
+        @apply text-sm font-semibold tracking-wide;
+        color: rgb(var(--pf-300));
+    }
+
+}
