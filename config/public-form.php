@@ -12,6 +12,6 @@ return [
     | Ejemplos: Color::Amber, Color::Violet, Color::Sky, Color::Rose
     */
 
-    'primary' => \Filament\Support\Colors\Color::Amber,
+    'primary' => \Filament\Support\Colors\Color::Blue,
 
 ];

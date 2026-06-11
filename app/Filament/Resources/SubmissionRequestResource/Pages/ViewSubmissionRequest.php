@@ -4,6 +4,7 @@ namespace App\Filament\Resources\SubmissionRequestResource\Pages;
 
 use App\Filament\Resources\SubmissionRequestResource;
 use App\Models\Comment;
+use App\Models\SubmissionRequest;
 use App\Models\SubmissionStatus;
 use App\Services\SubmissionStateMachine;
 use Filament\Actions\Action;
@@ -23,8 +24,11 @@ class ViewSubmissionRequest extends ViewRecord
 
     public function infolist(Schema $schema): Schema
     {
-        return $schema->schema([
+        return $schema
+        ->columns(1)
+        ->schema([
             Section::make('Datos de la solicitud')
+            ->columns()
                 ->schema([
                     Grid::make(3)->schema([
                         TextEntry::make('reference_code')
@@ -118,7 +122,8 @@ class ViewSubmissionRequest extends ViewRecord
             Section::make(__('submissions.fields.comments'))
                 ->schema([
                     RepeatableEntry::make('comments')
-                        ->label('')
+                        ->label('Comentarios')
+                        
                         ->schema([
                             TextEntry::make('author.name')
                                 ->label('Usuario')

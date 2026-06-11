@@ -29,6 +29,7 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login()
+            ->brandLogo(asset('storage/logo_cse.png'))
             ->colors([
                 'primary' => config('public-form.primary'),
             ])
