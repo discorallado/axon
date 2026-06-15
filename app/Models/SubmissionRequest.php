@@ -2,10 +2,10 @@
 
 namespace App\Models;
 
+use App\Enums\SubmissionStatus;
 use App\Models\Concerns\HasAttachments;
 use App\Models\Concerns\HasComments;
 use App\Models\Concerns\HasOrganizationScope;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -18,10 +18,8 @@ class SubmissionRequest extends Model
 
     protected $fillable = [
         'organization_id',
-        'form_template_id',
-        'template_version',
         'reference_code',
-        'status_id',
+        'status',
         'submitter_name',
         'submitter_email',
         'submitter_phone',
@@ -36,19 +34,9 @@ class SubmissionRequest extends Model
     protected function casts(): array
     {
         return [
-            'template_version' => 'integer',
             'submitted_at' => 'datetime',
+            'status' => SubmissionStatus::class,
         ];
-    }
-
-    public function template(): BelongsTo
-    {
-        return $this->belongsTo(FormTemplate::class, 'form_template_id');
-    }
-
-    public function status(): BelongsTo
-    {
-        return $this->belongsTo(SubmissionStatus::class, 'status_id');
     }
 
     public function assignee(): BelongsTo
@@ -64,23 +52,5 @@ class SubmissionRequest extends Model
     public function statusHistories(): HasMany
     {
         return $this->hasMany(SubmissionStatusHistory::class)->latest('created_at');
-    }
-
-    public function questionsForVersion(): Collection
-    {
-        return FormQuestion::withoutGlobalScopes()
-            ->where('form_template_id', $this->form_template_id)
-            ->where('template_version', $this->template_version)
-            ->orderBy('sort_order')
-            ->get();
-    }
-
-    public function sectionsForVersion(): Collection
-    {
-        return FormSection::withoutGlobalScopes()
-            ->where('form_template_id', $this->form_template_id)
-            ->where('template_version', $this->template_version)
-            ->orderBy('sort_order')
-            ->get();
     }
 }

@@ -35,11 +35,6 @@ class Organization extends Model
         return $this->hasMany(FormTemplate::class);
     }
 
-    public function submissionStatuses(): HasMany
-    {
-        return $this->hasMany(SubmissionStatus::class)->orderBy('sort_order');
-    }
-
     public function submissionRequests(): HasMany
     {
         return $this->hasMany(SubmissionRequest::class);

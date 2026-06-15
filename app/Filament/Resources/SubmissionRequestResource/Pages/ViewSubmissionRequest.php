@@ -2,10 +2,10 @@
 
 namespace App\Filament\Resources\SubmissionRequestResource\Pages;
 
+use App\Enums\SubmissionStatus;
 use App\Filament\Resources\SubmissionRequestResource;
 use App\Models\Comment;
 use App\Models\SubmissionRequest;
-use App\Models\SubmissionStatus;
 use App\Services\SubmissionStateMachine;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Select;
@@ -25,120 +25,147 @@ class ViewSubmissionRequest extends ViewRecord
     public function infolist(Schema $schema): Schema
     {
         return $schema
-        ->columns(1)
-        ->schema([
-            Section::make('Datos de la solicitud')
-            ->columns()
-                ->schema([
-                    Grid::make(3)->schema([
-                        TextEntry::make('reference_code')
-                            ->label(__('submissions.fields.reference_code'))
-                            ->weight('bold')
-                            ->copyable(),
+            ->columns(1)
+            ->schema([
+                Section::make('Datos de la solicitud')
+                    ->columns()
+                    ->schema([
+                        Grid::make(3)->schema([
+                            TextEntry::make('reference_code')
+                                ->label(__('submissions.fields.reference_code'))
+                                ->weight('bold')
+                                ->copyable(),
 
-                        TextEntry::make('status.name')
-                            ->label(__('submissions.fields.status'))
-                            ->badge(),
+                            TextEntry::make('status')
+                                ->label(__('submissions.fields.status'))
+                                ->badge(),
 
-                        TextEntry::make('submitted_at')
-                            ->label(__('submissions.fields.submitted_at'))
-                            ->dateTime('d/m/Y H:i'),
+                            TextEntry::make('submitted_at')
+                                ->label(__('submissions.fields.submitted_at'))
+                                ->dateTime('d/m/Y H:i'),
 
-                        TextEntry::make('submitter_name')
-                            ->label(__('submissions.fields.submitter_name')),
+                            TextEntry::make('submitter_name')
+                                ->label(__('submissions.fields.submitter_name')),
 
-                        TextEntry::make('submitter_email')
-                            ->label(__('submissions.fields.submitter_email'))
-                            ->copyable(),
+                            TextEntry::make('submitter_email')
+                                ->label(__('submissions.fields.submitter_email'))
+                                ->copyable(),
 
-                        TextEntry::make('submitter_phone')
-                            ->label(__('submissions.fields.submitter_phone'))
-                            ->placeholder('—'),
+                            TextEntry::make('submitter_phone')
+                                ->label(__('submissions.fields.submitter_phone'))
+                                ->placeholder('—'),
 
-                        TextEntry::make('submitter_company')
-                            ->label(__('submissions.fields.submitter_company'))
-                            ->placeholder('—'),
+                            TextEntry::make('submitter_company')
+                                ->label(__('submissions.fields.submitter_company'))
+                                ->placeholder('—'),
 
-                        TextEntry::make('assignee.name')
-                            ->label(__('submissions.fields.assigned_to'))
-                            ->placeholder('Sin asignar'),
-
-                        TextEntry::make('template.name')
-                            ->label(__('submissions.fields.template')),
+                            TextEntry::make('assignee.name')
+                                ->label(__('submissions.fields.assigned_to'))
+                                ->placeholder('Sin asignar'),
+                        ]),
                     ]),
-                ]),
 
-            Section::make(__('submissions.fields.answers'))
-                ->schema([
-                    RepeatableEntry::make('answers')
-                        ->label('')
-                        ->schema([
-                            TextEntry::make('question_label')
-                                ->label('Pregunta')
-                                ->weight('medium'),
+                Section::make(__('submissions.fields.answers'))
+                    ->schema([
+                        RepeatableEntry::make('answers')
+                            ->label('')
+                            ->schema([
+                                TextEntry::make('question_label')
+                                    ->label('Pregunta')
+                                    ->weight('medium'),
 
-                            TextEntry::make('display_value')
-                                ->label('Respuesta')
-                                ->getStateUsing(fn ($record) => $record->displayValue())
-                                ->placeholder('(sin respuesta)'),
-                        ])
-                        ->columns(2),
-                ]),
+                                TextEntry::make('display_value')
+                                    ->label('Respuesta')
+                                    ->getStateUsing(fn ($record) => $record->displayValue())
+                                    ->placeholder('(sin respuesta)'),
+                            ])
+                            ->columns(2),
+                    ]),
 
-            Section::make(__('submissions.fields.history'))
-                ->schema([
-                    RepeatableEntry::make('statusHistories')
-                        ->label('')
-                        ->schema([
-                            TextEntry::make('created_at')
-                                ->label('Fecha')
-                                ->dateTime('d/m/Y H:i')
-                                ->size('sm'),
+                Section::make('Adjuntos')
+                    ->hidden(fn () => $this->record->attachments->isEmpty())
+                    ->schema([
+                        RepeatableEntry::make('attachments')
+                            ->label('')
+                            ->schema([
+                                TextEntry::make('original_name')
+                                    ->label('Archivo')
+                                    ->icon('heroicon-o-paper-clip')
+                                    ->url(fn ($record) => route('attachments.download', $record))
+                                    ->openUrlInNewTab(),
 
-                            TextEntry::make('changedBy.name')
-                                ->label('Usuario')
-                                ->size('sm'),
+                                TextEntry::make('mime_type')
+                                    ->label('Tipo')
+                                    ->placeholder('—')
+                                    ->size('sm'),
 
-                            TextEntry::make('fromStatus.name')
-                                ->label('Desde')
-                                ->placeholder('—')
-                                ->badge()
-                                ->size('sm'),
+                                TextEntry::make('size_bytes')
+                                    ->label('Tamaño')
+                                    ->getStateUsing(fn ($record) => $record->humanSize())
+                                    ->size('sm'),
 
-                            TextEntry::make('toStatus.name')
-                                ->label('Hacia')
-                                ->badge()
-                                ->size('sm'),
+                                TextEntry::make('created_at')
+                                    ->label('Subido')
+                                    ->dateTime('d/m/Y H:i')
+                                    ->size('sm'),
+                            ])
+                            ->columns(4),
+                    ]),
 
-                            TextEntry::make('comment')
-                                ->label('Comentario')
-                                ->placeholder('—')
-                                ->columnSpanFull()
-                                ->size('sm'),
-                        ])
-                        ->columns(4),
-                ]),
+                Section::make(__('submissions.fields.history'))
+                    ->schema([
+                        RepeatableEntry::make('statusHistories')
+                            ->label('')
+                            ->schema([
+                                TextEntry::make('created_at')
+                                    ->label('Fecha')
+                                    ->dateTime('d/m/Y H:i')
+                                    ->size('sm'),
 
-            Section::make(__('submissions.fields.comments'))
-                ->schema([
-                    RepeatableEntry::make('comments')
-                        ->label('Comentarios')
-                        ->schema([
-                            TextEntry::make('author.name')
-                                ->label('Usuario')
-                                ->weight('medium')
-                                ->size('sm'),
-                            TextEntry::make('created_at')
-                                ->label('Fecha')
-                                ->since()
-                                ->size('sm'),
-                            TextEntry::make('body')
-                                ->label('Comentario')
-                                ->columnSpanFull(),
-                        ])
-                        ->columns(2),
-                ]),
-        ]);
+                                TextEntry::make('changedBy.name')
+                                    ->label('Usuario')
+                                    ->size('sm'),
+
+                                TextEntry::make('from_status')
+                                    ->label('Desde')
+                                    ->placeholder('—')
+                                    ->badge()
+                                    ->size('sm'),
+
+                                TextEntry::make('to_status')
+                                    ->label('Hacia')
+                                    ->badge()
+                                    ->size('sm'),
+
+                                TextEntry::make('comment')
+                                    ->label('Comentario')
+                                    ->placeholder('—')
+                                    ->columnSpanFull()
+                                    ->size('sm'),
+                            ])
+                            ->columns(4),
+                    ]),
+
+                Section::make(__('submissions.fields.comments'))
+                    ->schema([
+                        RepeatableEntry::make('comments')
+                            ->label('Comentarios')
+                            ->schema([
+                                TextEntry::make('author.name')
+                                    ->label('Usuario')
+                                    ->weight('medium')
+                                    ->size('sm'),
+                                TextEntry::make('created_at')
+                                    ->label('Fecha')
+                                    ->since()
+                                    ->size('sm'),
+                                TextEntry::make('body')
+                                    ->label('Comentario')
+                                    ->columnSpanFull(),
+                            ])
+                            ->columns(2),
+                    ]),
+            ]);
     }
 
     protected function getHeaderActions(): array
@@ -149,12 +176,9 @@ class ViewSubmissionRequest extends ViewRecord
                 ->icon('heroicon-o-arrow-path')
                 ->color('warning')
                 ->form([
-                    Select::make('status_id')
+                    Select::make('status')
                         ->label(__('submissions.fields.status'))
-                        ->options(fn () => SubmissionStatus::where('organization_id', $this->record->organization_id)
-                            ->orderBy('sort_order')
-                            ->pluck('name', 'id')
-                        )
+                        ->options(SubmissionStatus::class)
                         ->required(),
 
                     Textarea::make('comment')
@@ -162,12 +186,14 @@ class ViewSubmissionRequest extends ViewRecord
                         ->rows(2),
                 ])
                 ->action(function (array $data): void {
-                    $toStatus = SubmissionStatus::find($data['status_id']);
+                    $toStatus = $data['status'] instanceof SubmissionStatus
+                        ? $data['status']
+                        : SubmissionStatus::from($data['status']);
                     $machine = app(SubmissionStateMachine::class);
 
                     try {
                         $machine->transition(auth()->user(), $this->record, $toStatus, $data['comment'] ?? null);
-                        $this->refreshFormData(['status_id']);
+                        $this->refreshFormData(['status']);
                         Notification::make()->title('Estado actualizado.')->success()->send();
                     } catch (\Exception $e) {
                         Notification::make()->title($e->getMessage())->danger()->send();

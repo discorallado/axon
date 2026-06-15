@@ -2,9 +2,9 @@
 
 namespace App\Filament\Resources;
 
+use App\Enums\SubmissionStatus;
 use App\Filament\Resources\SubmissionRequestResource\Pages;
 use App\Models\SubmissionRequest;
-use App\Models\SubmissionStatus;
 use App\Models\User;
 use App\Services\SubmissionStateMachine;
 use Filament\Actions\Action;
@@ -54,10 +54,9 @@ class SubmissionRequestResource extends Resource
                     ->copyable()
                     ->weight('bold'),
 
-                TextColumn::make('status.name')
+                TextColumn::make('status')
                     ->label(__('submissions.fields.status'))
                     ->badge()
-                    ->color(fn (SubmissionRequest $record): string => ltrim($record->status->color ?? '#6b7280', '#') ? 'gray' : 'gray')
                     ->sortable(),
 
                 TextColumn::make('submitter_name')
@@ -68,10 +67,6 @@ class SubmissionRequestResource extends Resource
                     ->label(__('submissions.fields.submitter_company'))
                     ->searchable()
                     ->placeholder('—'),
-
-                TextColumn::make('template.name')
-                    ->label(__('submissions.fields.template'))
-                    ->toggleable(),
 
                 TextColumn::make('assignee.name')
                     ->label(__('submissions.fields.assigned_to'))
@@ -85,9 +80,9 @@ class SubmissionRequestResource extends Resource
             ])
             ->defaultSort('submitted_at', 'desc')
             ->filters([
-                SelectFilter::make('status_id')
+                SelectFilter::make('status')
                     ->label(__('submissions.fields.status'))
-                    ->relationship('status', 'name'),
+                    ->options(SubmissionStatus::class),
 
                 SelectFilter::make('assigned_to')
                     ->label(__('submissions.fields.assigned_to'))
@@ -101,12 +96,9 @@ class SubmissionRequestResource extends Resource
                     ->icon('heroicon-o-arrow-path')
                     ->color('warning')
                     ->form([
-                        Select::make('status_id')
+                        Select::make('status')
                             ->label(__('submissions.fields.status'))
-                            ->options(fn (SubmissionRequest $record) => SubmissionStatus::where('organization_id', $record->organization_id)
-                                ->orderBy('sort_order')
-                                ->pluck('name', 'id')
-                            )
+                            ->options(SubmissionStatus::class)
                             ->required(),
 
                         Textarea::make('comment')
@@ -114,7 +106,9 @@ class SubmissionRequestResource extends Resource
                             ->rows(2),
                     ])
                     ->action(function (SubmissionRequest $record, array $data): void {
-                        $toStatus = SubmissionStatus::find($data['status_id']);
+                        $toStatus = $data['status'] instanceof SubmissionStatus
+                            ? $data['status']
+                            : SubmissionStatus::from($data['status']);
                         $machine = app(SubmissionStateMachine::class);
 
                         try {
@@ -124,8 +118,7 @@ class SubmissionRequestResource extends Resource
                             Notification::make()->title($e->getMessage())->danger()->send();
                         }
                     })
-                    ->visible(fn (SubmissionRequest $record) => auth()->user()->can('updateStatus', $record)
-                    ),
+                    ->visible(fn (SubmissionRequest $record) => auth()->user()->can('updateStatus', $record)),
 
                 Action::make('assign')
                     ->label(__('submissions.actions.assign'))
@@ -144,8 +137,7 @@ class SubmissionRequestResource extends Resource
                         $record->update(['assigned_to' => $data['assigned_to']]);
                         Notification::make()->title('Responsable actualizado.')->success()->send();
                     })
-                    ->visible(fn (SubmissionRequest $record) => auth()->user()->can('assign', $record)
-                    ),
+                    ->visible(fn (SubmissionRequest $record) => auth()->user()->can('assign', $record)),
             ]);
     }
 

@@ -1,5 +1,7 @@
 <?php
 
+use Filament\Support\Colors\Color;
+
 return [
 
     /*
@@ -12,6 +14,6 @@ return [
     | Ejemplos: Color::Amber, Color::Violet, Color::Sky, Color::Rose
     */
 
-    'primary' => \Filament\Support\Colors\Color::Blue,
+    'primary' => Color::Blue,
 
 ];

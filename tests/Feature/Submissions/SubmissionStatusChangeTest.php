@@ -1,9 +1,8 @@
 <?php
 
-use App\Models\FormTemplate;
+use App\Enums\SubmissionStatus;
 use App\Models\Organization;
 use App\Models\SubmissionRequest;
-use App\Models\SubmissionStatus;
 use App\Models\User;
 use App\Services\SubmissionStateMachine;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -12,24 +11,11 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
 
 uses(RefreshDatabase::class);
 
-function makeSubmissionWithStatuses(Organization $org): array
+function makeSubmission(Organization $org): SubmissionRequest
 {
-    $template = FormTemplate::factory()->for($org, 'organization')->create();
-
-    $inicial = SubmissionStatus::factory()->initial()->for($org, 'organization')->create();
-    $revision = SubmissionStatus::factory()->for($org, 'organization')
-        ->create(['slug' => 'en_revision', 'name' => 'En revisión', 'sort_order' => 2]);
-    $terminal = SubmissionStatus::factory()->terminal()->for($org, 'organization')
-        ->create(['slug' => 'rechazada', 'name' => 'Rechazada', 'sort_order' => 5]);
-
-    $submission = SubmissionRequest::factory()
-        ->for($org, 'organization')
-        ->create([
-            'form_template_id' => $template->id,
-            'status_id' => $inicial->id,
-        ]);
-
-    return [$submission, $inicial, $revision, $terminal];
+    return SubmissionRequest::factory()->for($org, 'organization')->create([
+        'status' => SubmissionStatus::Nueva,
+    ]);
 }
 
 it('allows supervisor to advance submission status', function () {
@@ -38,17 +24,17 @@ it('allows supervisor to advance submission status', function () {
     Role::findOrCreate('supervisor', 'web');
     $user->assignRole('supervisor');
 
-    [$submission, $inicial, $revision] = makeSubmissionWithStatuses($org);
+    $submission = makeSubmission($org);
 
     $machine = app(SubmissionStateMachine::class);
-    $machine->transition($user, $submission, $revision, 'Revisando');
+    $machine->transition($user, $submission, SubmissionStatus::EnRevision, 'Revisando');
 
-    expect($submission->fresh()->status_id)->toBe($revision->id);
+    expect($submission->fresh()->status)->toBe(SubmissionStatus::EnRevision);
 
     $this->assertDatabaseHas('submission_status_histories', [
         'submission_request_id' => $submission->id,
-        'from_status_id' => $inicial->id,
-        'to_status_id' => $revision->id,
+        'from_status' => SubmissionStatus::Nueva->value,
+        'to_status' => SubmissionStatus::EnRevision->value,
         'comment' => 'Revisando',
     ]);
 });
@@ -59,10 +45,10 @@ it('records status history on each transition', function () {
     Role::findOrCreate('ingeniero', 'web');
     $user->assignRole('ingeniero');
 
-    [$submission, $inicial, $revision] = makeSubmissionWithStatuses($org);
+    $submission = makeSubmission($org);
 
     $machine = app(SubmissionStateMachine::class);
-    $machine->transition($user, $submission, $revision);
+    $machine->transition($user, $submission, SubmissionStatus::EnRevision);
 
     expect($submission->statusHistories()->withoutGlobalScopes()->count())->toBe(1);
 });
@@ -73,13 +59,11 @@ it('blocks transition from terminal status for non-admin', function () {
     Role::findOrCreate('ingeniero', 'web');
     $user->assignRole('ingeniero');
 
-    [$submission, $inicial, $revision, $terminal] = makeSubmissionWithStatuses($org);
-
-    // Poner en estado terminal
-    $submission->update(['status_id' => $terminal->id]);
+    $submission = makeSubmission($org);
+    $submission->update(['status' => SubmissionStatus::Rechazada]);
 
     $machine = app(SubmissionStateMachine::class);
 
     $this->expectException(HttpException::class);
-    $machine->transition($user, $submission, $revision);
+    $machine->transition($user, $submission, SubmissionStatus::EnRevision);
 });

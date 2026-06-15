@@ -1,9 +1,9 @@
 <?php
 
+use App\Enums\SubmissionStatus;
 use App\Models\FormTemplate;
 use App\Models\Organization;
 use App\Models\SubmissionRequest;
-use App\Models\SubmissionStatus;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -14,24 +14,10 @@ it('users cannot see submissions from other organizations', function () {
     $orgB = Organization::factory()->create();
 
     $userA = User::factory()->create(['organization_id' => $orgA->id]);
-    $userB = User::factory()->create(['organization_id' => $orgB->id]);
 
-    $templateA = FormTemplate::factory()->for($orgA, 'organization')->create();
-    $templateB = FormTemplate::factory()->for($orgB, 'organization')->create();
+    SubmissionRequest::factory()->for($orgA, 'organization')->create(['status' => SubmissionStatus::Nueva]);
+    SubmissionRequest::factory()->for($orgB, 'organization')->create(['status' => SubmissionStatus::Nueva]);
 
-    $statusA = SubmissionStatus::factory()->initial()->for($orgA, 'organization')->create();
-    $statusB = SubmissionStatus::factory()->initial()->for($orgB, 'organization')->create();
-
-    SubmissionRequest::factory()->for($orgA, 'organization')->create([
-        'form_template_id' => $templateA->id,
-        'status_id' => $statusA->id,
-    ]);
-    SubmissionRequest::factory()->for($orgB, 'organization')->create([
-        'form_template_id' => $templateB->id,
-        'status_id' => $statusB->id,
-    ]);
-
-    // Autenticado como usuario de orgA, solo debe ver sus solicitudes
     $this->actingAs($userA);
 
     $visibleIds = SubmissionRequest::pluck('organization_id')->unique()->all();
@@ -57,12 +43,5 @@ it('form template global scope filters by organization', function () {
 });
 
 it('public form solicitud route is accessible without authentication', function () {
-    $org = Organization::factory()->create();
-    FormTemplate::factory()->for($org, 'organization')->create([
-        'slug' => 'tableros-electricos',
-        'is_active' => true,
-    ]);
-
-    // Sin usuario autenticado — acceso público
     $this->get(route('solicitud.tableros'))->assertOk();
 });

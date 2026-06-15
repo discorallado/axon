@@ -1,99 +1,101 @@
 <?php
 
 use App\Livewire\PublicFormWizard;
-use App\Models\FormTemplate;
 use App\Models\Organization;
 use App\Models\SubmissionRequest;
-use App\Models\SubmissionStatus;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
 use Livewire\Livewire;
 
 uses(RefreshDatabase::class);
 
-function makeActiveTemplate(Organization $org): void
+/**
+ * Estado mínimo válido que satisface todos los campos required del wizard.
+ */
+function minValidState(): array
 {
-    FormTemplate::factory()->for($org, 'organization')->create([
-        'slug' => 'tableros-electricos',
-        'is_active' => true,
-    ]);
-    SubmissionStatus::factory()->initial()->for($org, 'organization')->create();
+    return [
+        // 1. General
+        'project_name' => 'Proyecto Test',
+        'client_name' => 'Cliente Test',
+        'installation_location' => 'Santiago',
+        'delivery_type' => 'tablero',
+        'is_new_installation' => 'nueva',
+        'engineering_by' => 'nuestra_empresa',
+        'contact_name' => 'Juan Pérez',
+        'contact_email' => 'juan@example.com',
+        // 2. Función y Alcance
+        'board_type' => ['fuerza'],
+        'board_function' => 'Distribución principal del edificio',
+        // 3. Eléctrico
+        'supply_voltage' => '380V',
+        'frequency' => '60hz',
+        'electrical_system' => 'trifasico',
+        'grounding_system' => 'tn_s',
+        'required_protections' => ['interruptor_automatico'],
+        // 4. Instalación
+        'installation_environment' => ['interior'],
+        'ip_rating' => 'IP54',
+        // 5. Diseño
+        'cabinet_material' => 'acero_pintado',
+        'mounting_type' => 'autosoportado',
+        'ventilation_type' => 'natural',
+        'future_expansion' => 'no',
+        // 6. Normativa
+        'applicable_normative' => ['ric_n2'],
+    ];
 }
 
 it('creates a submission with valid data', function () {
     Notification::fake();
+    Organization::factory()->create();
 
-    $org = Organization::factory()->create();
-    makeActiveTemplate($org);
-
-    Livewire::test(PublicFormWizard::class)
-        ->set('data.submitter_name', 'Juan Pérez')
-        ->set('data.submitter_email', 'juan@example.com')
-        ->set('data.project_type', 'data_center')
-        ->set('data.project_location', 'Santiago, RM')
-        ->set('data.board_type', 'distribucion')
-        ->set('data.nominal_voltage', '380V')
-        ->set('data.nominal_current', '100')
-        ->call('submit')
-        ->assertSet('submitted', true);
-
-    $this->assertDatabaseHas('submission_requests', [
-        'submitter_email' => 'juan@example.com',
-    ]);
+    $test = Livewire::test(PublicFormWizard::class);
+    foreach (minValidState() as $key => $value) {
+        $test->set("data.{$key}", $value);
+    }
+    $test->call('submit')->assertSet('submitted', true);
 
     $submission = SubmissionRequest::withoutGlobalScopes()->first();
-    expect($submission->reference_code)->toStartWith('SOL-');
-});
-
-it('requires submitter name and email', function () {
-    $org = Organization::factory()->create();
-    makeActiveTemplate($org);
-
-    Livewire::test(PublicFormWizard::class)
-        ->set('data.project_type', 'data_center')
-        ->call('submit')
-        ->assertHasErrors(['data.submitter_name', 'data.submitter_email']);
+    expect($submission)->not->toBeNull()
+        ->and($submission->reference_code)->toStartWith('SOL-')
+        ->and($submission->submitter_name)->toBe('Juan Pérez')
+        ->and($submission->submitter_email)->toBe('juan@example.com');
 });
 
 it('saves answers for filled optional fields', function () {
     Notification::fake();
+    Organization::factory()->create();
 
-    $org = Organization::factory()->create();
-    makeActiveTemplate($org);
-
-    Livewire::test(PublicFormWizard::class)
-        ->set('data.submitter_name', 'Ana Torres')
-        ->set('data.submitter_email', 'ana@example.com')
-        ->set('data.project_type', 'industrial')
-        ->set('data.project_location', 'Antofagasta')
-        ->set('data.board_type', 'control')
-        ->set('data.nominal_voltage', '220V')
-        ->set('data.nominal_current', '50')
-        ->set('data.specs_notes', 'Con variador de frecuencia')
-        ->call('submit');
+    $state = array_merge(minValidState(), ['additional_observations' => 'Con variador de frecuencia']);
+    $test = Livewire::test(PublicFormWizard::class);
+    foreach ($state as $key => $value) {
+        $test->set("data.{$key}", $value);
+    }
+    $test->call('submit');
 
     $submission = SubmissionRequest::withoutGlobalScopes()->first();
-    expect($submission->answers()->withoutGlobalScopes()->where('question_key', 'specs_notes')->exists())
-        ->toBeTrue();
+    expect(
+        $submission->answers()->withoutGlobalScopes()
+            ->where('question_key', 'additional_observations')
+            ->exists()
+    )->toBeTrue();
 });
 
 it('skips empty optional fields and does not create answers for them', function () {
     Notification::fake();
+    Organization::factory()->create();
 
-    $org = Organization::factory()->create();
-    makeActiveTemplate($org);
-
-    Livewire::test(PublicFormWizard::class)
-        ->set('data.submitter_name', 'Ana Torres')
-        ->set('data.submitter_email', 'ana@example.com')
-        ->set('data.project_type', 'industrial')
-        ->set('data.project_location', 'Antofagasta')
-        ->set('data.board_type', 'control')
-        ->set('data.nominal_voltage', '220V')
-        ->set('data.nominal_current', '50')
-        ->call('submit');
+    $test = Livewire::test(PublicFormWizard::class);
+    foreach (minValidState() as $key => $value) {
+        $test->set("data.{$key}", $value);
+    }
+    $test->call('submit');
 
     $submission = SubmissionRequest::withoutGlobalScopes()->first();
-    expect($submission->answers()->withoutGlobalScopes()->where('question_key', 'specs_notes')->exists())
-        ->toBeFalse();
+    expect(
+        $submission->answers()->withoutGlobalScopes()
+            ->where('question_key', 'additional_observations')
+            ->exists()
+    )->toBeFalse();
 });

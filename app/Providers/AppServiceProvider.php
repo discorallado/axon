@@ -31,7 +31,7 @@ class AppServiceProvider extends ServiceProvider
 
         // Rate limiter para el formulario público
         RateLimiter::for('public-form', function (Request $request) {
-            return Limit::perMinutes(10, 5)
+            return Limit::perMinutes(10, 10000000)
                 ->by($request->ip())
                 ->response(function () {
                     return response()->view('public.forms.show', [

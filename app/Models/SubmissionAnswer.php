@@ -43,6 +43,4 @@ class SubmissionAnswer extends Model
 
         return (string) ($this->value ?? '');
     }
-
-
 }
