@@ -56,14 +56,13 @@ it('form template global scope filters by organization', function () {
         ->and($names)->not->toContain('Template B');
 });
 
-it('public form ignores global scope when loading by slug', function () {
+it('public form solicitud route is accessible without authentication', function () {
     $org = Organization::factory()->create();
-    $template = FormTemplate::factory()
-        ->for($org, 'organization')
-        ->create(['is_active' => true]);
+    FormTemplate::factory()->for($org, 'organization')->create([
+        'slug' => 'tableros-electricos',
+        'is_active' => true,
+    ]);
 
     // Sin usuario autenticado — acceso público
-    $response = $this->get(route('public.form.show', $template->slug));
-
-    $response->assertOk();
+    $this->get(route('solicitud.tableros'))->assertOk();
 });

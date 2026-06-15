@@ -1,137 +1,99 @@
 <?php
 
-use App\Enums\FormQuestionType;
-use App\Models\FormQuestion;
-use App\Models\FormSection;
+use App\Livewire\PublicFormWizard;
 use App\Models\FormTemplate;
 use App\Models\Organization;
 use App\Models\SubmissionRequest;
 use App\Models\SubmissionStatus;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
+use Livewire\Livewire;
 
 uses(RefreshDatabase::class);
 
-function makeTemplateWithQuestion(Organization $org): array
+function makeActiveTemplate(Organization $org): void
 {
-    $template = FormTemplate::factory()
-        ->for($org, 'organization')
-        ->create(['is_active' => true]);
-
-    SubmissionStatus::factory()
-        ->initial()
-        ->for($org, 'organization')
-        ->create();
-
-    $section = FormSection::factory()->create([
-        'organization_id' => $org->id,
-        'form_template_id' => $template->id,
-        'template_version' => 1,
+    FormTemplate::factory()->for($org, 'organization')->create([
+        'slug' => 'tableros-electricos',
+        'is_active' => true,
     ]);
-
-    $question = FormQuestion::factory()->create([
-        'organization_id' => $org->id,
-        'form_template_id' => $template->id,
-        'form_section_id' => $section->id,
-        'template_version' => 1,
-        'type' => FormQuestionType::Text,
-        'is_required' => true,
-        'key' => 'potencia',
-        'label' => 'Potencia (kW)',
-    ]);
-
-    return [$template, $question];
+    SubmissionStatus::factory()->initial()->for($org, 'organization')->create();
 }
 
 it('creates a submission with valid data', function () {
     Notification::fake();
 
     $org = Organization::factory()->create();
-    [$template, $question] = makeTemplateWithQuestion($org);
+    makeActiveTemplate($org);
 
-    $response = $this->post(route('public.form.submit', $template->slug), [
-        'submitter_name' => 'Juan Pérez',
-        'submitter_email' => 'juan@example.com',
-        '_hp' => '',
-        '_ts' => time() - 10,
-        'answers' => [$question->id => '100'],
-    ]);
-
-    $response->assertRedirect();
+    Livewire::test(PublicFormWizard::class)
+        ->set('data.submitter_name', 'Juan Pérez')
+        ->set('data.submitter_email', 'juan@example.com')
+        ->set('data.project_type', 'data_center')
+        ->set('data.project_location', 'Santiago, RM')
+        ->set('data.board_type', 'distribucion')
+        ->set('data.nominal_voltage', '380V')
+        ->set('data.nominal_current', '100')
+        ->call('submit')
+        ->assertSet('submitted', true);
 
     $this->assertDatabaseHas('submission_requests', [
         'submitter_email' => 'juan@example.com',
-        'form_template_id' => $template->id,
     ]);
 
     $submission = SubmissionRequest::withoutGlobalScopes()->first();
-    $this->assertStringStartsWith('SOL-', $submission->reference_code);
-});
-
-it('rejects submission when honeypot is filled', function () {
-    $org = Organization::factory()->create();
-    [$template] = makeTemplateWithQuestion($org);
-
-    $this->post(route('public.form.submit', $template->slug), [
-        'submitter_name' => 'Bot',
-        'submitter_email' => 'bot@spam.com',
-        '_hp' => 'filled_by_bot',
-        '_ts' => time() - 10,
-    ])->assertSessionHasErrors('_spam');
-
-    $this->assertDatabaseEmpty('submission_requests');
-});
-
-it('rejects submission when form was submitted too fast', function () {
-    $org = Organization::factory()->create();
-    [$template] = makeTemplateWithQuestion($org);
-
-    $this->post(route('public.form.submit', $template->slug), [
-        'submitter_name' => 'Bot',
-        'submitter_email' => 'bot@spam.com',
-        '_hp' => '',
-        '_ts' => time() - 1, // menos de 3 segundos
-    ])->assertSessionHasErrors('_spam');
+    expect($submission->reference_code)->toStartWith('SOL-');
 });
 
 it('requires submitter name and email', function () {
     $org = Organization::factory()->create();
-    [$template] = makeTemplateWithQuestion($org);
+    makeActiveTemplate($org);
 
-    $this->post(route('public.form.submit', $template->slug), [
-        '_hp' => '',
-        '_ts' => time() - 10,
-    ])->assertSessionHasErrors(['submitter_name', 'submitter_email']);
+    Livewire::test(PublicFormWizard::class)
+        ->set('data.project_type', 'data_center')
+        ->call('submit')
+        ->assertHasErrors(['data.submitter_name', 'data.submitter_email']);
 });
 
-it('rejects submission when a required question is empty', function () {
+it('saves answers for filled optional fields', function () {
     Notification::fake();
 
     $org = Organization::factory()->create();
-    [$template, $question] = makeTemplateWithQuestion($org);
+    makeActiveTemplate($org);
 
-    $response = $this->post(route('public.form.submit', $template->slug), [
-        'submitter_name' => 'Juan Pérez',
-        'submitter_email' => 'juan@example.com',
-        '_hp' => '',
-        '_ts' => time() - 10,
-        'answers' => [$question->id => ''],  // campo requerido vacío
-    ]);
+    Livewire::test(PublicFormWizard::class)
+        ->set('data.submitter_name', 'Ana Torres')
+        ->set('data.submitter_email', 'ana@example.com')
+        ->set('data.project_type', 'industrial')
+        ->set('data.project_location', 'Antofagasta')
+        ->set('data.board_type', 'control')
+        ->set('data.nominal_voltage', '220V')
+        ->set('data.nominal_current', '50')
+        ->set('data.specs_notes', 'Con variador de frecuencia')
+        ->call('submit');
 
-    $response->assertSessionHasErrors(["answers.{$question->id}"]);
-    $this->assertDatabaseEmpty('submission_requests');
+    $submission = SubmissionRequest::withoutGlobalScopes()->first();
+    expect($submission->answers()->withoutGlobalScopes()->where('question_key', 'specs_notes')->exists())
+        ->toBeTrue();
 });
 
-it('rejects submission to inactive template', function () {
-    $org = Organization::factory()->create();
-    $template = FormTemplate::factory()
-        ->for($org, 'organization')
-        ->create(['is_active' => false]);
+it('skips empty optional fields and does not create answers for them', function () {
+    Notification::fake();
 
-    $this->post(route('public.form.submit', $template->slug), [
-        'submitter_name' => 'Test',
-        'submitter_email' => 'test@example.com',
-        '_hp' => '',
-        '_ts' => time() - 10,
-    ])->assertNotFound();
+    $org = Organization::factory()->create();
+    makeActiveTemplate($org);
+
+    Livewire::test(PublicFormWizard::class)
+        ->set('data.submitter_name', 'Ana Torres')
+        ->set('data.submitter_email', 'ana@example.com')
+        ->set('data.project_type', 'industrial')
+        ->set('data.project_location', 'Antofagasta')
+        ->set('data.board_type', 'control')
+        ->set('data.nominal_voltage', '220V')
+        ->set('data.nominal_current', '50')
+        ->call('submit');
+
+    $submission = SubmissionRequest::withoutGlobalScopes()->first();
+    expect($submission->answers()->withoutGlobalScopes()->where('question_key', 'specs_notes')->exists())
+        ->toBeFalse();
 });

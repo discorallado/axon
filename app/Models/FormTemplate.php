@@ -28,45 +28,15 @@ class FormTemplate extends Model
     protected function casts(): array
     {
         return [
-            'is_active' => 'boolean',
+            'is_active'       => 'boolean',
             'current_version' => 'integer',
-            'settings' => 'array',
+            'settings'        => 'array',
         ];
     }
 
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
-    }
-
-    public function sections(): HasMany
-    {
-        return $this->hasMany(FormSection::class)->orderBy('sort_order');
-    }
-
-    public function currentSections(): HasMany
-    {
-        return $this->sections()->where('template_version', $this->current_version);
-    }
-
-    public function questions(): HasMany
-    {
-        return $this->hasMany(FormQuestion::class)->orderBy('sort_order');
-    }
-
-    public function currentQuestions(): HasMany
-    {
-        return $this->questions()->where('template_version', $this->current_version);
-    }
-
-    public function conditionalRules(): HasMany
-    {
-        return $this->hasMany(FormConditionalRule::class);
-    }
-
-    public function currentConditionalRules(): HasMany
-    {
-        return $this->conditionalRules()->where('template_version', $this->current_version);
     }
 
     public function submissions(): HasMany
@@ -76,6 +46,6 @@ class FormTemplate extends Model
 
     public function publicUrl(): string
     {
-        return route('public.form.show', $this->slug);
+        return route('solicitud.tableros');
     }
 }

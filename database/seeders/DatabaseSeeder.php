@@ -32,6 +32,9 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-        $this->call(SubmissionStatusSeeder::class);
+        $this->call([
+            SubmissionStatusSeeder::class,
+            FormTemplateSeeder::class,
+        ]);
     }
 }

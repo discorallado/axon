@@ -35,11 +35,6 @@ class SubmissionAnswer extends Model
         return $this->belongsTo(SubmissionRequest::class);
     }
 
-    public function question(): BelongsTo
-    {
-        return $this->belongsTo(FormQuestion::class, 'form_question_id')->withoutGlobalScopes();
-    }
-
     public function displayValue(): string
     {
         if ($this->value_json !== null) {
