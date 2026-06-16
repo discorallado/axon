@@ -112,7 +112,6 @@ class PublicFormWizard extends Component implements HasForms
             ]);
     }
 
-
     // ──────────────────────────────────────────────────────────
     // Step 1 — Información General
     // ──────────────────────────────────────────────────────────
@@ -130,7 +129,6 @@ class PublicFormWizard extends Component implements HasForms
                         'producto_electrico' => 'Producto Eléctrico',
                     ])
                     ->required(),
-
 
                 Radio::make('is_new_installation')
                     ->label('¿Corresponde a una instalación nueva o al reemplazo de un tablero existente?')
@@ -194,17 +192,17 @@ class PublicFormWizard extends Component implements HasForms
                     ->reactive()
                     ->label('¿Existen Cargas Críticas?'),
                 Fieldset::make('Respaldo para Cargas Críticas')
-                    ->visible(fn($get) => (bool) $get('has_critical_loads'))
+                    ->visible(fn ($get) => (bool) $get('has_critical_loads'))
                     ->schema([
                         Toggle::make('ups_backup')
                             ->reactive()
                             ->label('¿Requiere Respaldo mediante UPS?')
-                            ->visible(fn($get) => (bool) $get('has_critical_loads')),
+                            ->visible(fn ($get) => (bool) $get('has_critical_loads')),
 
                         Toggle::make('generator_backup')
                             ->reactive()
                             ->label('¿Requiere Respaldo mediante Generador?')
-                            ->visible(fn($get) => (bool) $get('has_critical_loads')),
+                            ->visible(fn ($get) => (bool) $get('has_critical_loads')),
                     ]),
 
                 Toggle::make('requires_energy_monitoring')
@@ -227,8 +225,8 @@ class PublicFormWizard extends Component implements HasForms
                         'opc_ua' => 'OPC-UA',
                         'otro' => 'Otro',
                     ])
-                    ->visible(fn($get) => (bool) $get('requires_communication'))
-                    ->required(fn($get) => (bool) $get('requires_communication')),
+                    ->visible(fn ($get) => (bool) $get('requires_communication'))
+                    ->required(fn ($get) => (bool) $get('requires_communication')),
             ]);
     }
 
@@ -257,7 +255,7 @@ class PublicFormWizard extends Component implements HasForms
                         ->label('Otra Tensión de Alimentación')
                         ->required()
                         ->suffix('V')
-                        ->visible(fn($get) => $get('supply_voltage') === 'otro'),
+                        ->visible(fn ($get) => $get('supply_voltage') === 'otro'),
                 ]),
 
                 Select::make('electrical_system')
@@ -274,8 +272,7 @@ class PublicFormWizard extends Component implements HasForms
                 TextInput::make('other_electrical_system')
                     ->label('Otro sistema eléctrico')
                     ->required()
-                    ->visible(fn($get) => $get('electrical_system') === 'otro'),
-
+                    ->visible(fn ($get) => $get('electrical_system') === 'otro'),
 
                 // Select::make('grounding_system')
                 //     ->label('Sistema de Puesta a Tierra')
@@ -357,7 +354,7 @@ class PublicFormWizard extends Component implements HasForms
                     ->label('Otro ambiente de instalación')
                     ->required()
                     ->reactive()
-                    ->visible(fn($get) => $get('installation_environment') === 'otro'),
+                    ->visible(fn ($get) => $get('installation_environment') === 'otro'),
 
                 Grid::make(3)->schema([
                     TextInput::make('min_temperature')
@@ -377,13 +374,8 @@ class PublicFormWizard extends Component implements HasForms
                 ]),
 
                 Grid::make(2)->schema([
-                    // TextInput::make('ip_rating')
-                    //     ->label('Grado de Protección IP')
-                    //     ->placeholder('Ej: IP54')
-                    //     ->required(),
-                    Select::make('installation_environment')
-                        ->label('Tipo de Ambiente de Instalación')
-                        // ->multiple()
+                    Select::make('ip_rating')
+                        ->label('Grado de Protección IP')
                         ->reactive()
                         ->required()
                         ->options([
@@ -396,13 +388,8 @@ class PublicFormWizard extends Component implements HasForms
                             'IP66' => 'IP66 — Exterior, condiciones severas (costero)',
                         ]),
 
-                    // TextInput::make('ik_rating')
-                    //     ->label('Grado de Protección IK')
-                    //     ->placeholder('Ej: IK08'),
-                    Select::make('installation_environment')
-                        ->label('Tipo de Ambiente de Instalación')
-                        // ->multiple()
-                        ->reactive()
+                    Select::make('ik_rating')
+                        ->label('Grado de Protección IK')
                         ->required()
                         ->options([
                             'IK07' => 'IK07 — Interior, zonas de tránsito normal',
@@ -417,8 +404,8 @@ class PublicFormWizard extends Component implements HasForms
                 Textarea::make('space_description')
                     ->label('Descripción del Espacio Disponible')
                     ->rows(3)
-                    ->visible(fn($get) => (bool) $get('space_restrictions'))
-                    ->required(fn($get) => (bool) $get('space_restrictions')),
+                    ->visible(fn ($get) => (bool) $get('space_restrictions'))
+                    ->required(fn ($get) => (bool) $get('space_restrictions')),
             ]);
     }
 
@@ -571,7 +558,7 @@ class PublicFormWizard extends Component implements HasForms
                     ->label('Adjuntar Listado de Cargas')
                     ->multiple()
                     ->directory('submissions/tmp/load-lists')
-                    ->visible(fn($get) => (bool) $get('has_load_list')),
+                    ->visible(fn ($get) => (bool) $get('has_load_list')),
 
                 Toggle::make('has_existing_plans')
                     ->label('¿Dispone de Planos Existentes?'),
@@ -580,13 +567,13 @@ class PublicFormWizard extends Component implements HasForms
                     ->label('Diagrama Unilineal')
                     ->multiple()
                     ->directory('submissions/tmp/unilineal')
-                    ->visible(fn($get) => (bool) $get('has_existing_plans')),
+                    ->visible(fn ($get) => (bool) $get('has_existing_plans')),
 
                 FileUpload::make('mechanical_plans')
                     ->label('Planos Mecánicos')
                     ->multiple()
                     ->directory('submissions/tmp/mechanical')
-                    ->visible(fn($get) => (bool) $get('has_existing_plans')),
+                    ->visible(fn ($get) => (bool) $get('has_existing_plans')),
 
                 FileUpload::make('technical_specs')
                     ->label('Especificaciones Técnicas')
@@ -614,7 +601,7 @@ class PublicFormWizard extends Component implements HasForms
 
         DB::transaction(function () use ($state) {
             $org = Organization::withoutGlobalScopes()->firstOrFail();
-            $refCode = 'SOL-' . strtoupper(Str::random(3)) . '-' . now()->format('ymd');
+            $refCode = 'SOL-'.strtoupper(Str::random(3)).'-'.now()->format('ymd');
 
             $submission = SubmissionRequest::create([
                 'organization_id' => $org->id,
@@ -656,7 +643,7 @@ class PublicFormWizard extends Component implements HasForms
                     if (! $tmpPath) {
                         continue;
                     }
-                    $newPath = 'submissions/' . $submission->id . '/' . basename((string) $tmpPath);
+                    $newPath = 'submissions/'.$submission->id.'/'.basename((string) $tmpPath);
                     Storage::disk('local')->move((string) $tmpPath, $newPath);
 
                     $submission->attachments()->create([
@@ -683,7 +670,7 @@ class PublicFormWizard extends Component implements HasForms
 
             $admins = User::withoutGlobalScopes()
                 ->where('organization_id', $org->id)
-                ->whereHas('roles', fn($q) => $q->whereIn('name', ['super_admin', 'supervisor']))
+                ->whereHas('roles', fn ($q) => $q->whereIn('name', ['super_admin', 'supervisor']))
                 ->get();
 
             NotificationFacade::send($admins, new NewSubmissionReceived($submission));
@@ -694,6 +681,7 @@ class PublicFormWizard extends Component implements HasForms
         });
 
         $this->submitted = true;
+        $this->dispatch('draft-cleared');
     }
 
     // ──────────────────────────────────────────────────────────

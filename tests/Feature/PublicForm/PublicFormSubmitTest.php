@@ -15,33 +15,34 @@ uses(RefreshDatabase::class);
 function minValidState(): array
 {
     return [
-        // 1. General
+        // Step 0 — Información
         'project_name' => 'Proyecto Test',
         'client_name' => 'Cliente Test',
         'installation_location' => 'Santiago',
+        'contact_name' => 'Juan Pérez',
+        'contact_email' => 'juan@example.com',
+        // Step 1 — Información General
         'delivery_type' => 'tablero',
         'is_new_installation' => 'nueva',
         'engineering_by' => 'nuestra_empresa',
-        'contact_name' => 'Juan Pérez',
-        'contact_email' => 'juan@example.com',
-        // 2. Función y Alcance
-        'board_type' => ['fuerza'],
+        // Step 2 — Función y Alcance
+        'board_type' => 'fuerza',
         'board_function' => 'Distribución principal del edificio',
-        // 3. Eléctrico
-        'supply_voltage' => '380V',
-        'frequency' => '60hz',
+        // Step 3 — Características Eléctricas
+        'supply_voltage' => '400',
         'electrical_system' => 'trifasico',
-        'grounding_system' => 'tn_s',
         'required_protections' => ['interruptor_automatico'],
-        // 4. Instalación
-        'installation_environment' => ['interior'],
+        // Step 4 — Condiciones de Instalación
+        'installation_environment' => 'interior',
         'ip_rating' => 'IP54',
-        // 5. Diseño
+        'ik_rating' => 'IK08',
+        // Step 5 — Diseño Constructivo
         'cabinet_material' => 'acero_pintado',
+        'special_color' => '7035',
         'mounting_type' => 'autosoportado',
         'ventilation_type' => 'natural',
         'future_expansion' => 'no',
-        // 6. Normativa
+        // Step 6 — Normativa
         'applicable_normative' => ['ric_n2'],
     ];
 }
