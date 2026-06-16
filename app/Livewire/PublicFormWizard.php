@@ -2,13 +2,8 @@
 
 namespace App\Livewire;
 
-use App\Enums\SubmissionStatus;
 use App\Models\Organization;
 use App\Models\SubmissionRequest;
-use App\Models\SubmissionStatusHistory;
-use App\Models\User;
-use App\Notifications\NewSubmissionReceived;
-use App\Notifications\SubmissionConfirmed;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Radio;
@@ -23,24 +18,18 @@ use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Wizard;
 use Filament\Schemas\Components\Wizard\Step;
 use Filament\Schemas\Schema;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Notification as NotificationFacade;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use Illuminate\View\View;
 use Livewire\Component;
-use Livewire\WithFileUploads;
 
 class PublicFormWizard extends Component implements HasForms
 {
     use InteractsWithForms;
-    use WithFileUploads;
 
     public array $data = [];
 
     public bool $submitted = false;
 
-    public string $referenceCode = '';
+    public ?string $referenceCode = null;
 
     public function mount(): void
     {
@@ -50,722 +39,731 @@ class PublicFormWizard extends Component implements HasForms
     public function form(Schema $form): Schema
     {
         return $form
-            ->statePath('data')
             ->schema([
-                Wizard::make([
-                    self::contactStep(),
-                    self::generalStep(),
-                    self::scopeStep(),
-                    self::electricalStep(),
-                    self::installationStep(),
-                    self::constructionStep(),
-                    self::normativeStep(),
-                ])
-                    ->columnSpanFull()
-                    ->persistStepInQueryString()
-                    ->skippable(true)
-                    ->submitAction(view('livewire.partials.wizard-submit-btn')),
-            ]);
+                Wizard::make($this->steps())
+                    ->skippable(false)
+                    ->submitAction(view('livewire.partials.wizard-submit-btn'))
+                    ->persistStepInQueryString(),
+            ])
+            ->statePath('data');
     }
 
-    // ──────────────────────────────────────────────────────────
-    // Step  — Información de contacto
-    // ──────────────────────────────────────────────────────────
-    protected static function contactStep(): Step
+    protected function steps(): array
     {
-        return Step::make('Información')
-            ->icon('heroicon-o-building-office')
+        return [
+            $this->contactStep(),
+            $this->generalStep(),
+            $this->scopeStep(),
+            $this->electricalStep(),
+            $this->installationStep(),
+            $this->constructionStep(),
+            $this->documentationStep(),
+        ];
+    }
+
+    // -------------------------------------------------------------------------
+    // Step 1 — Información de Contacto
+    // -------------------------------------------------------------------------
+    protected function contactStep(): Step
+    {
+        return Step::make('Información de Contacto')
+            ->icon('heroicon-o-user')
             ->schema([
                 Grid::make(2)->schema([
                     TextInput::make('project_name')
-                        ->label('Nombre del Proyecto')
+                        ->label('Nombre del Proyecto / Obra (*)')
                         ->required()
                         ->maxLength(255),
 
                     TextInput::make('client_name')
-                        ->label('Cliente / Mandante')
+                        ->label('Empresa / Cliente (*)')
                         ->required()
                         ->maxLength(255),
+                ]),
 
-                    TextInput::make('associated_contract')
-                        ->label('Contrato Asociado')
-                        ->maxLength(255),
-
-                    TextInput::make('installation_location')
-                        ->label('Ubicación de la Instalación')
-                        ->required(),
-
-                    DatePicker::make('estimated_delivery_date')
-                        ->label('Fecha Estimada de Entrega'),
-
+                Grid::make(2)->schema([
                     TextInput::make('contact_name')
-                        ->label('Nombre del Contacto')
+                        ->label('Nombre del Contacto (*)')
                         ->required()
                         ->maxLength(255),
 
                     TextInput::make('contact_email')
-                        ->label('Correo del Contacto')
+                        ->label('Correo Electrónico (*)')
                         ->email()
                         ->required()
                         ->maxLength(255),
                 ]),
-            ]);
-    }
 
-    // ──────────────────────────────────────────────────────────
-    // Step 1 — Información General
-    // ──────────────────────────────────────────────────────────
-    protected static function generalStep(): Step
-    {
-        return Step::make('Información General')
-            ->icon('heroicon-o-building-office')
-            ->schema([
-
-                Select::make('delivery_type')
-                    ->label('Tipo de Entrega')
-                    ->options([
-                        'tablero' => 'Tablero Eléctrico',
-                        'sala' => 'Sala Eléctrica',
-                        'producto_electrico' => 'Producto Eléctrico',
-                    ])
-                    ->required(),
-
-                Radio::make('is_new_installation')
-                    ->label('¿Corresponde a una instalación nueva o al reemplazo de un tablero existente?')
-                    ->options([
-                        'nueva' => 'Instalación nueva',
-                        'reemplazo' => 'Reemplazo de tablero existente',
-                    ])
-                    ->inline()
-                    ->required(),
-
-                Radio::make('engineering_by')
-                    ->label('¿Quién desarrollará la ingeniería?')
-                    ->options([
-                        'cliente' => 'Cliente',
-                        'oficina_externa' => 'Oficina de ingeniería externa',
-                        'nuestra_empresa' => 'Nuestra empresa',
-                    ])
-                    ->inline()
-                    ->required(),
-
-            ]);
-    }
-
-    // ──────────────────────────────────────────────────────────
-    // Step 2 — Función y Alcance
-    // ──────────────────────────────────────────────────────────
-    protected static function scopeStep(): Step
-    {
-        return Step::make('Función y Alcance')
-            ->icon('heroicon-o-bolt')
-            ->schema([
-                Select::make('board_type')
-                    ->label('Tipo de Tablero')
-                    // ->multiple()
-                    ->required()
-                    ->options([
-                        'fuerza' => 'Fuerza',
-                        'automatizacion' => 'Automatización y Control',
-                        'transferencia_ats' => 'Transferencia ATS',
-                        'banco_condensadores' => 'Banco de Condensadores',
-                        'medicion' => 'Medición',
-                        'ccm' => 'CCM',
-                        'distribucion' => 'Distribución',
-                        'otro' => 'Otro',
-                    ]),
-
-                Textarea::make('board_function')
-                    ->label('Objetivo o Función del Tablero')
-                    ->required()
-                    ->rows(4),
-
-                Textarea::make('loads_description')
-                    ->label('Cargas que Serán Alimentadas')
-                    ->rows(4),
-
-                TextInput::make('estimated_power')
-                    ->label('Potencia Total Estimada')
-                    ->placeholder('kW o kVA'),
-
-                Toggle::make('has_critical_loads')
-                    ->reactive()
-                    ->label('¿Existen Cargas Críticas?'),
-                Fieldset::make('Respaldo para Cargas Críticas')
-                    ->visible(fn ($get) => (bool) $get('has_critical_loads'))
-                    ->schema([
-                        Toggle::make('ups_backup')
-                            ->reactive()
-                            ->label('¿Requiere Respaldo mediante UPS?')
-                            ->visible(fn ($get) => (bool) $get('has_critical_loads')),
-
-                        Toggle::make('generator_backup')
-                            ->reactive()
-                            ->label('¿Requiere Respaldo mediante Generador?')
-                            ->visible(fn ($get) => (bool) $get('has_critical_loads')),
-                    ]),
-
-                Toggle::make('requires_energy_monitoring')
-                    ->label('¿Requiere Medición o Monitoreo de Energía?'),
-
-                Toggle::make('requires_communication')
-                    ->reactive()
-
-                    ->label('¿El Tablero debe Comunicarse con Otros Sistemas?'),
-
-                Select::make('communication_type')
-                    ->label('Tipo de Comunicación Requerida')
-                    ->multiple()
-                    ->options([
-                        'modbus_rtu' => 'Modbus RTU',
-                        'modbus_tcp' => 'Modbus TCP',
-                        'profinet' => 'Profinet',
-                        'ethernet_ip' => 'Ethernet/IP',
-                        'bacnet' => 'BACnet',
-                        'opc_ua' => 'OPC-UA',
-                        'otro' => 'Otro',
-                    ])
-                    ->visible(fn ($get) => (bool) $get('requires_communication'))
-                    ->required(fn ($get) => (bool) $get('requires_communication')),
-            ]);
-    }
-
-    // ──────────────────────────────────────────────────────────
-    // Step 3 — Características Eléctricas
-    // ──────────────────────────────────────────────────────────
-    protected static function electricalStep(): Step
-    {
-        return Step::make('Características Eléctricas')
-            ->icon('heroicon-o-cpu-chip')
-            ->schema([
                 Grid::make(2)->schema([
+                    TextInput::make('contact_phone')
+                        ->label('Teléfono de Contacto')
+                        ->tel()
+                        ->maxLength(50),
 
-                    Select::make('supply_voltage')
-                        ->label('Tensión de Alimentación')
-                        ->reactive()
-                        ->options([
-                            '230' => '230 V',
-                            '400' => '400 V',
-                            '480' => '480 V',
-                            '690' => '690 V',
-                            'otro' => 'Otro',
-                        ])
-                        ->required(),
-                    TextInput::make('other_supply_voltage')
-                        ->label('Otra Tensión de Alimentación')
+                    TextInput::make('installation_location')
+                        ->label('Ubicación de la Instalación (*)')
                         ->required()
-                        ->suffix('V')
-                        ->visible(fn ($get) => $get('supply_voltage') === 'otro'),
+                        ->maxLength(255),
                 ]),
 
-                Select::make('electrical_system')
-                    ->label('Tipo de Sistema Eléctrico')
-                    ->reactive()
+                TextInput::make('cost_center')
+                    ->label('Centro de Costo Asociado')
+                    ->maxLength(100),
+
+                DatePicker::make('desired_delivery_date')
+                    ->label('Fecha de Entrega Deseada')
+                    ->displayFormat('d/m/Y')
+                    ->native(false),
+            ]);
+    }
+
+    // -------------------------------------------------------------------------
+    // Step 2 — Información General
+    // -------------------------------------------------------------------------
+    protected function generalStep(): Step
+    {
+        return Step::make('Información General')
+            ->icon('heroicon-o-document-text')
+            ->schema([
+                Radio::make('delivery_type')
+                    ->label('Tipo de Entrega (*)')
+                    ->required()
                     ->options([
-                        'monofasico' => 'Monofásico',
-                        'bifasico' => 'Bifásico',
-                        'trifasico' => 'Trifásico',
-                        'dc' => 'Corriente Continua (DC)',
+                        'tablero' => 'Tablero completo',
+                        'gabinete' => 'Solo gabinete / estructura',
+                        'reparacion' => 'Reparación / modificación de tablero existente',
+                    ])
+                    ->inline(false),
+
+                Radio::make('is_new_installation')
+                    ->label('¿Es instalación nueva o reemplazo? (*)')
+                    ->required()
+                    ->options([
+                        'nueva' => 'Nueva instalación',
+                        'reemplazo' => 'Reemplazo de tablero existente',
+                        'ampliacion' => 'Ampliación de tablero existente',
+                    ])
+                    ->inline(false),
+
+                Radio::make('engineering_by')
+                    ->label('Ingeniería básica (unilineales y especificaciones) (*)')
+                    ->required()
+                    ->options([
+                        'csenergia' => 'CSEnergy',
+                        'cliente' => 'La entrega el cliente',
+                        'conjunta' => 'Conjunta (CSEnergy + cliente)',
+                    ])
+                    ->inline(false),
+            ]);
+    }
+
+    // -------------------------------------------------------------------------
+    // Step 3 — Función y Alcance
+    // -------------------------------------------------------------------------
+    protected function scopeStep(): Step
+    {
+        return Step::make('Función y Alcance')
+            ->icon('heroicon-o-clipboard-document-list')
+            ->schema([
+                Select::make('board_type')
+                    ->label('Tipo de Tablero (*)')
+                    ->required()
+                    ->options([
+                        'fuerza' => 'Tablero de Fuerza / Potencia',
+                        'alumbrado' => 'Tablero de Alumbrado / Distribución BT',
+                        'control' => 'Tablero de Control / Automatización',
+                        'transfer' => 'Tablero de Transferencia (ATS/MTS)',
+                        'sincronizacion' => 'Tablero de Sincronización de Generadores',
+                        'remoto' => 'Tablero de Distribución Remoto',
+                        'pfcs' => 'Panel de Factor de Potencia / Corrección de FP',
+                        'medicion' => 'Tablero de Medición / Centro de Carga',
+                        'variadores' => 'Tablero con Variadores de Frecuencia (VFD)',
+                        'arrancadores' => 'Tablero con Arrancadores Suaves (SS)',
+                        'ups' => 'Tablero UPS / Respaldo',
                         'otro' => 'Otro',
                     ])
-                    ->required(),
-                TextInput::make('other_electrical_system')
-                    ->label('Otro sistema eléctrico')
-                    ->required()
-                    ->visible(fn ($get) => $get('electrical_system') === 'otro'),
+                    ->live(),
 
-                // Select::make('grounding_system')
-                //     ->label('Sistema de Puesta a Tierra')
-                //     ->options([
-                //         'tt' => 'TT',
-                //         'tn_s' => 'TN-S',
-                //         'tn_c' => 'TN-C',
-                //         'tn_c_s' => 'TN-C-S',
-                //         'it' => 'IT',
-                //         'otro' => 'Otro',
-                //     ])
-                //     ->required(),
+                TextInput::make('other_board_type')
+                    ->label('Especifique el tipo de tablero (*)')
+                    ->required(fn ($get) => $get('board_type') === 'otro')
+                    ->visible(fn ($get) => $get('board_type') === 'otro')
+                    ->maxLength(255),
+
+                Textarea::make('board_function')
+                    ->label('Función principal del tablero (*)')
+                    ->required()
+                    ->rows(3)
+                    ->maxLength(1000)
+                    ->placeholder('Ej.: Distribución principal del edificio, alimentación de motores, control de alumbrado...'),
+
+                Textarea::make('loads_to_feed')
+                    ->label('Cargas a alimentar (descripción)')
+                    ->rows(3)
+                    ->maxLength(1000)
+                    ->placeholder('Ej.: 5 motores de 15 kW, 20 circuitos de alumbrado, 3 compresores...'),
+
+                TextInput::make('number_of_circuits')
+                    ->label('Número estimado de salidas / circuitos')
+                    ->numeric()
+                    ->minValue(1)
+                    ->maxValue(9999),
+
+                FileUpload::make('load_list_file')
+                    ->label('Lista de cargas (archivo)')
+                    ->hint('Puede adjuntar una planilla Excel, PDF u otro documento con el detalle de cargas.')
+                    ->acceptedFileTypes([
+                        'application/pdf',
+                        'application/vnd.ms-excel',
+                        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                        'text/csv',
+                        'application/octet-stream',
+                    ])
+                    ->maxSize(10240)
+                    ->disk('local')
+                    ->directory('solicitudes/cargas'),
+            ]);
+    }
+
+    // -------------------------------------------------------------------------
+    // Step 4 — Características Eléctricas
+    // -------------------------------------------------------------------------
+    protected function electricalStep(): Step
+    {
+        return Step::make('Características Eléctricas')
+            ->icon('heroicon-o-bolt')
+            ->schema([
+                Grid::make(2)->schema([
+                    Select::make('supply_voltage')
+                        ->label('Tensión de suministro (V) (*)')
+                        ->required()
+                        ->options([
+                            '220' => '220 V',
+                            '380' => '380 V',
+                            '400' => '400 V',
+                            '440' => '440 V',
+                            '480' => '480 V',
+                            '690' => '690 V',
+                            '1000' => '1.000 V',
+                            'otro' => 'Otro',
+                        ])
+                        ->live()
+                        ->afterStateUpdated(fn ($get, $set) => static::recalculateCurrent($get, $set)),
+
+                    Select::make('electrical_system')
+                        ->label('Sistema eléctrico (*)')
+                        ->required()
+                        ->options([
+                            'trifasico' => 'Trifásico (3F + N)',
+                            'bifasico' => 'Bifásico (2F)',
+                            'monofasico' => 'Monofásico (1F + N)',
+                            'dc' => 'Corriente continua (DC)',
+                            'otro' => 'Otro',
+                        ])
+                        ->live()
+                        ->afterStateUpdated(fn ($get, $set) => static::recalculateCurrent($get, $set)),
+                ]),
+
+                Grid::make(2)->schema([
+                    TextInput::make('supply_voltage_other')
+                        ->label('Tensión de suministro — especifique (V) (*)')
+                        ->required(fn ($get) => $get('supply_voltage') === 'otro')
+                        ->visible(fn ($get) => $get('supply_voltage') === 'otro')
+                        ->numeric()
+                        ->maxLength(20),
+
+                    TextInput::make('electrical_system_other')
+                        ->label('Sistema eléctrico — especifique (*)')
+                        ->required(fn ($get) => $get('electrical_system') === 'otro')
+                        ->visible(fn ($get) => $get('electrical_system') === 'otro')
+                        ->maxLength(100),
+                ]),
 
                 Grid::make(3)->schema([
+                    TextInput::make('estimated_power')
+                        ->label('Potencia estimada (*)')
+                        ->required()
+                        ->numeric()
+                        ->minValue(0)
+                        ->live(debounce: 600)
+                        ->afterStateUpdated(fn ($get, $set) => static::recalculateCurrent($get, $set))
+                        ->suffix(fn ($get) => $get('power_unit') ?? 'kW'),
+
+                    Select::make('power_unit')
+                        ->label('Unidad')
+                        ->options([
+                            'kW' => 'kW',
+                            'kVA' => 'kVA',
+                        ])
+                        ->default('kW')
+                        ->live()
+                        ->afterStateUpdated(fn ($get, $set) => static::recalculateCurrent($get, $set)),
+
                     TextInput::make('nominal_current')
-                        ->label('Corriente Nominal (A)')
+                        ->label('Corriente nominal (A)')
                         ->numeric()
-                        ->suffix('A'),
+                        ->minValue(0)
+                        ->hint('Se calcula automáticamente al ingresar potencia, tensión y sistema. Puede ajustarse manualmente.')
+                        ->live(debounce: 600),
+                ]),
 
-                    TextInput::make('short_circuit_current')
-                        ->label('Corriente de Cortocircuito (kA)')
+                Grid::make(2)->schema([
+                    Select::make('frequency')
+                        ->label('Frecuencia (*)')
+                        ->required()
+                        ->options([
+                            '50' => '50 Hz',
+                            '60' => '60 Hz',
+                            'otro' => 'Otro',
+                        ])
+                        ->live(),
+
+                    TextInput::make('other_frequency')
+                        ->label('Frecuencia — especifique (Hz) (*)')
+                        ->required(fn ($get) => $get('frequency') === 'otro')
+                        ->visible(fn ($get) => $get('frequency') === 'otro')
                         ->numeric()
-                        ->suffix('kA'),
-
-                    TextInput::make('distance_from_main')
-                        ->label('Distancia desde Alimentación Principal')
-                        ->placeholder('metros'),
+                        ->maxLength(20),
                 ]),
 
                 Select::make('required_protections')
-                    ->label('Protecciones Requeridas')
-                    ->multiple()
+                    ->label('Protecciones requeridas (*)')
                     ->required()
+                    ->multiple()
                     ->options([
-                        'interruptor_automatico' => 'Interruptor Automático (MCB)',
-                        'diferencial' => 'Diferencial (RCD)',
-                        'guardamotor' => 'Guardamotor (MMS)',
-                        'sobretension' => 'Descargador de Sobretensión (SPD)',
-                        'fusibles' => 'Fusibles',
-                        'contactor' => 'Contactor',
-                        'rele_proteccion' => 'Relé de Protección',
-                        'arco_electrico' => 'Protección Arco Eléctrico',
+                        'interruptor_automatico' => 'Interruptor automático (termomagnético)',
+                        'diferencial' => 'Interruptor diferencial (RCD)',
+                        'fusible' => 'Fusibles',
+                        'relevo_sobrecarga' => 'Relevo de sobrecarga',
+                        'relevo_falla_tierra' => 'Relevo de falla a tierra',
+                        'proteccion_tension' => 'Protección de tensión (sub/sobre)',
+                        'proteccion_corriente' => 'Protección de corriente diferencial',
+                        'descargador_tension' => 'Descargador de sobretensión (SPD)',
+                        'otro' => 'Otro',
                     ]),
 
-                Toggle::make('requires_selectivity')
-                    ->label('¿Se Requiere Selectividad entre Protecciones?'),
+                Select::make('preferred_brands')
+                    ->label('Marcas preferidas de protecciones')
+                    ->multiple()
+                    ->options([
+                        'schneider' => 'Schneider Electric',
+                        'siemens' => 'Siemens',
+                        'abb' => 'ABB',
+                        'legrand' => 'Legrand',
+                        'eaton' => 'Eaton',
+                        'chint' => 'CHINT',
+                        'hager' => 'Hager',
+                        'weidmuller' => 'Weidmuller',
+                        'phoenix' => 'Phoenix Contact',
+                        'otro' => 'Otro / Sin preferencia',
+                    ]),
 
-                TextInput::make('preferred_protection_brand')
-                    ->label('Preferencia de Marca de Protecciones')
-                    ->placeholder('Ej: Schneider, ABB, Siemens…'),
+                FileUpload::make('unilineal_diagram')
+                    ->label('Diagrama unilineal (si existe)')
+                    ->hint('Formatos aceptados: PDF, PNG, JPG, DWG.')
+                    ->acceptedFileTypes([
+                        'application/pdf',
+                        'image/png',
+                        'image/jpeg',
+                        'application/acad',
+                        'application/octet-stream',
+                    ])
+                    ->maxSize(20480)
+                    ->disk('local')
+                    ->directory('solicitudes/unilineales'),
             ]);
     }
 
-    // ──────────────────────────────────────────────────────────
-    // Step 4 — Condiciones de Instalación
-    // ──────────────────────────────────────────────────────────
-    protected static function installationStep(): Step
+    // -------------------------------------------------------------------------
+    // Step 5 — Condiciones de Instalación
+    // -------------------------------------------------------------------------
+    protected function installationStep(): Step
     {
         return Step::make('Condiciones de Instalación')
-            ->icon('heroicon-o-map-pin')
+            ->icon('heroicon-o-building-office')
             ->schema([
-                Select::make('installation_environment')
-                    ->label('Tipo de Ambiente de Instalación')
-                    // ->multiple()
-                    ->reactive()
+                Radio::make('location_type')
+                    ->label('Ubicación del tablero (*)')
                     ->required()
                     ->options([
                         'interior' => 'Interior',
                         'exterior' => 'Exterior',
-                        'industrial' => 'Industrial',
-                        'minero' => 'Minero',
-                        'marino' => 'Marino',
-                        'corrosivo' => 'Corrosivo',
-                        'polvoriento' => 'Polvoriento',
-                        'humedo' => 'Húmedo',
+                    ])
+                    ->inline(true)
+                    ->live()
+                    ->afterStateUpdated(fn ($set) => $set('ip_rating', null)),
+
+                Select::make('special_environment')
+                    ->label('Ambiente especial')
+                    ->multiple()
+                    ->options([
+                        'marino' => 'Marino / salino',
+                        'minero' => 'Minero / polvo fino',
+                        'humedo' => 'Húmedo / condensación',
+                        'corrosivo' => 'Corrosivo (gases, ácidos)',
+                        'polvoriento' => 'Polvoriento (general)',
+                        'explosivo' => 'Zona ATEX / explosivo',
                         'otro' => 'Otro',
-                    ]),
-                TextInput::make('other_installation_environment')
-                    ->label('Otro ambiente de instalación')
-                    ->required()
-                    ->reactive()
-                    ->visible(fn ($get) => $get('installation_environment') === 'otro'),
+                    ])
+                    ->live(),
 
-                Grid::make(3)->schema([
-                    TextInput::make('min_temperature')
-                        ->label('Temperatura Mínima Ambiente')
-                        ->numeric()
-                        ->suffix('°C'),
-
-                    TextInput::make('max_temperature')
-                        ->label('Temperatura Máxima Ambiente')
-                        ->numeric()
-                        ->suffix('°C'),
-
-                    TextInput::make('installation_altitude')
-                        ->label('Altitud de Instalación')
-                        ->numeric()
-                        ->suffix('msnm'),
-                ]),
+                TextInput::make('other_special_environment')
+                    ->label('Ambiente especial — especifique (*)')
+                    ->required(fn ($get) => in_array('otro', (array) ($get('special_environment') ?? [])))
+                    ->visible(fn ($get) => in_array('otro', (array) ($get('special_environment') ?? [])))
+                    ->maxLength(255),
 
                 Grid::make(2)->schema([
                     Select::make('ip_rating')
-                        ->label('Grado de Protección IP')
-                        ->reactive()
+                        ->label('Grado de protección IP (*)')
                         ->required()
-                        ->options([
-                            'IP20' => 'IP20 — Interior, sala eléctrica, sin riesgo de líquidos',
-                            'IP31' => 'IP31 — Interior, ambiente seco',
-                            'IP41' => 'IP41 — Interior, protección extra contra polvo',
-                            'IP54' => 'IP54 — Interior/exterior protegido, polvo y salpicaduras',
-                            'IP55' => 'IP55 — Exterior, chorros de agua y polvo (estándar RIC)',
-                            'IP65' => 'IP65 — Exterior, estanco al polvo, lavado a presión',
-                            'IP66' => 'IP66 — Exterior, condiciones severas (costero)',
-                        ]),
+                        ->options(fn ($get) => match ($get('location_type')) {
+                            'interior' => [
+                                'IP20' => 'IP20 — Protección básica',
+                                'IP31' => 'IP31 — Contra goteo vertical',
+                                'IP43' => 'IP43 — Contra lluvia a 60°',
+                                'IP54' => 'IP54 — Contra polvo y salpicaduras',
+                                'IP55' => 'IP55 — Contra chorros de agua',
+                                'IP65' => 'IP65 — Hermético al polvo, chorros de agua',
+                            ],
+                            'exterior' => [
+                                'IP54' => 'IP54 — Contra polvo y salpicaduras',
+                                'IP55' => 'IP55 — Contra chorros de agua',
+                                'IP65' => 'IP65 — Hermético al polvo, chorros de agua',
+                                'IP66' => 'IP66 — Contra chorros de agua potentes',
+                                'IP67' => 'IP67 — Inmersión temporal',
+                                'IP68' => 'IP68 — Inmersión continua',
+                            ],
+                            default => [
+                                'IP20' => 'IP20',
+                                'IP31' => 'IP31',
+                                'IP43' => 'IP43',
+                                'IP54' => 'IP54',
+                                'IP55' => 'IP55',
+                                'IP65' => 'IP65',
+                                'IP66' => 'IP66',
+                                'IP67' => 'IP67',
+                                'IP68' => 'IP68',
+                            ],
+                        }),
 
                     Select::make('ik_rating')
-                        ->label('Grado de Protección IK')
+                        ->label('Grado de protección IK (*)')
                         ->required()
-                        ->options([
-                            'IK07' => 'IK07 — Interior, zonas de tránsito normal',
-                            'IK08' => 'IK08 — Interior, zonas con riesgo de golpes',
-                            'IK10' => 'IK10 — Exterior o industrial, riesgo de impactos fuertes',
-                        ]),
+                        ->options(fn ($get) => match ($get('location_type')) {
+                            'interior' => [
+                                'IK06' => 'IK06 — 1 J (uso oficina)',
+                                'IK07' => 'IK07 — 2 J (uso general)',
+                                'IK08' => 'IK08 — 5 J (industrial ligero)',
+                                'IK09' => 'IK09 — 10 J (industrial)',
+                                'IK10' => 'IK10 — 20 J (industrial pesado)',
+                            ],
+                            'exterior' => [
+                                'IK08' => 'IK08 — 5 J (industrial ligero)',
+                                'IK09' => 'IK09 — 10 J (industrial)',
+                                'IK10' => 'IK10 — 20 J (industrial pesado)',
+                            ],
+                            default => [
+                                'IK06' => 'IK06',
+                                'IK07' => 'IK07',
+                                'IK08' => 'IK08',
+                                'IK09' => 'IK09',
+                                'IK10' => 'IK10',
+                            ],
+                        }),
                 ]),
 
-                Toggle::make('space_restrictions')
-                    ->label('¿Existen Restricciones de Espacio para la Instalación?'),
-
-                Textarea::make('space_description')
-                    ->label('Descripción del Espacio Disponible')
-                    ->rows(3)
-                    ->visible(fn ($get) => (bool) $get('space_restrictions'))
-                    ->required(fn ($get) => (bool) $get('space_restrictions')),
+                Textarea::make('additional_installation_conditions')
+                    ->label('Condiciones adicionales de instalación')
+                    ->rows(2)
+                    ->maxLength(500),
             ]);
     }
 
-    // ──────────────────────────────────────────────────────────
-    // Step 5 — Diseño Constructivo
-    // ──────────────────────────────────────────────────────────
-    protected static function constructionStep(): Step
+    // -------------------------------------------------------------------------
+    // Step 6 — Diseño Constructivo
+    // -------------------------------------------------------------------------
+    protected function constructionStep(): Step
     {
         return Step::make('Diseño Constructivo')
-            ->icon('heroicon-o-squares-2x2')
+            ->icon('heroicon-o-wrench-screwdriver')
             ->schema([
-                Grid::make(3)->schema([
-                    TextInput::make('height_mm')
-                        ->label('Alto')
-                        ->numeric()
-                        ->suffix('mm'),
+                Toggle::make('has_dimension_restrictions')
+                    ->label('¿Hay restricciones de dimensiones?')
+                    ->live(),
 
-                    TextInput::make('width_mm')
-                        ->label('Ancho')
-                        ->numeric()
-                        ->suffix('mm'),
-
-                    TextInput::make('depth_mm')
-                        ->label('Profundidad')
-                        ->numeric()
-                        ->suffix('mm'),
-                ]),
+                Fieldset::make('Dimensiones máximas permitidas')
+                    ->visible(fn ($get) => (bool) $get('has_dimension_restrictions'))
+                    ->schema([
+                        Grid::make(3)->schema([
+                            TextInput::make('max_height')
+                                ->label('Alto máximo (mm)')
+                                ->numeric()
+                                ->minValue(1),
+                            TextInput::make('max_width')
+                                ->label('Ancho máximo (mm)')
+                                ->numeric()
+                                ->minValue(1),
+                            TextInput::make('max_depth')
+                                ->label('Profundidad máxima (mm)')
+                                ->numeric()
+                                ->minValue(1),
+                        ]),
+                    ]),
 
                 Select::make('cabinet_material')
-                    ->label('Material del Gabinete')
-                    ->options([
-                        'acero_pintado' => 'Acero Pintado',
-                        'inox_304' => 'Acero Inoxidable 304',
-                        'inox_316' => 'Acero Inoxidable 316',
-                        'poliester' => 'Poliéster',
-                        'plastico' => 'Plástico',
-                        'otro' => 'Otro',
-                    ])
-                    ->required(),
-
-                // TextInput::make('special_color')
-                //     ->label('Color Especial / RAL')
-                //     ->placeholder('Ej: RAL 7035'),
-                Select::make('special_color')
-                    ->label('Color Especial / RAL')
-                    // ->multiple()
-                    ->reactive()
+                    ->label('Material del gabinete (*)')
                     ->required()
                     ->options([
-                        '7035' => 'RAL 7035 — Gris claro (estándar)',
-                        '7032' => 'RAL 7032 — Gris guijarro',
+                        'acero_pintado' => 'Acero pintado (estándar, económico)',
+                        'acero_galvanizado' => 'Acero galvanizado (mayor resistencia a corrosión)',
+                        'acero_inoxidable' => 'Acero inoxidable 304 (ambientes corrosivos / alimentario)',
+                        'acero_inox_316' => 'Acero inoxidable 316 (marino / alta corrosión)',
+                        'fibra_vidrio' => 'Fibra de vidrio GRP (zonas ATEX / exterior extremo)',
+                        'poliester' => 'Poliéster termoestable (alta resistencia UV / outdoor)',
+                        'aluminio' => 'Aluminio (liviano, buena disipación térmica)',
+                    ])
+                    ->hint('Seleccione el material según las condiciones del ambiente y los requisitos del proyecto.'),
+
+                Select::make('special_color')
+                    ->label('Color del gabinete')
+                    ->options([
+                        '7035' => 'RAL 7035 — Gris claro (estándar industria)',
                         '7016' => 'RAL 7016 — Gris antracita',
-                        '9002' => 'RAL 9002 — Blanco grisáceo',
+                        '9016' => 'RAL 9016 — Blanco tráfico',
                         '9005' => 'RAL 9005 — Negro intenso',
-                        '9006' => 'RAL 9006 — Aluminio blanco',
-                        'otro' => 'Otro (especificar código RAL)',
-                    ]),
+                        '5010' => 'RAL 5010 — Azul genciana',
+                        '6005' => 'RAL 6005 — Verde musgo',
+                        'otro' => 'Otro (especificar en observaciones)',
+                    ])
+                    ->default('7035')
+                    ->hint('RAL 7035 es el estándar de la industria para tableros eléctricos.'),
 
                 Select::make('mounting_type')
-                    ->label('Tipo de Montaje')
-                    ->options([
-                        'mural' => 'Mural',
-                        'autosoportado' => 'Autosoportado',
-                        'piso' => 'Piso',
-                        'rack' => 'Rack',
-                        'otro' => 'Otro',
-                    ])
-                    ->required(),
-
-                Grid::make(2)->schema([
-                    Select::make('cable_entry_location')
-                        ->label('Ingreso de Cables')
-                        // ->multiple()
-                        ->options([
-                            'superior' => 'Superior',
-                            'inferior' => 'Inferior',
-                            'laterales' => 'Laterales',
-                            'posterior' => 'Posterior',
-                        ]),
-
-                    Select::make('cable_exit_location')
-                        ->label('Salida de Cables')
-                        // ->multiple()
-                        ->options([
-                            'superior' => 'Superior',
-                            'inferior' => 'Inferior',
-                            'laterales' => 'Laterales',
-                            'posterior' => 'Posterior',
-                        ]),
-                ]),
-
-                Select::make('ventilation_type')
-                    ->label('Tipo de Ventilación')
-                    ->options([
-                        'natural' => 'Natural',
-                        'forzada' => 'Forzada',
-                        'aire_acondicionado' => 'Aire Acondicionado',
-                        'intercambiador_calor' => 'Intercambiador de Calor',
-                        'sin_ventilacion' => 'Sin Ventilación',
-                    ])
-                    ->required(),
-
-                Toggle::make('requires_interior_lighting')
-                    ->label('¿Requiere Iluminación Interior?'),
-
-                Select::make('future_expansion')
-                    ->label('¿Se Contempla Ampliación Futura? Extra al 25% normativo')
-                    ->options([
-                        'no' => 'No',
-                        'entre_25_50' => 'Entre 25% y 50%',
-                        'superior_50' => 'Superior al 50%',
-                    ])
-                    ->required(),
-
-                Select::make('required_signage')
-                    ->label('Tipos de Señaléticas Requeridas (además de las normativas)')
-                    ->multiple()
-                    ->options([
-                        'arc_flash' => 'Arc Flash',
-                        'personalizadas' => 'Personalizadas',
-                    ]),
-            ]);
-    }
-
-    // ──────────────────────────────────────────────────────────
-    // Step 6 — Normativa y Documentación
-    // ──────────────────────────────────────────────────────────
-    protected static function normativeStep(): Step
-    {
-        return Step::make('Normativa y Documentación')
-            ->icon('heroicon-o-document-text')
-            ->schema([
-                Select::make('applicable_normative')
-                    ->label('Normativa Aplicable')
-                    ->multiple()
+                    ->label('Tipo de montaje (*)')
                     ->required()
                     ->options([
-                        'ric_n2' => 'RIC N°2',
-                        'iec_61439' => 'IEC 61439',
-                        'iec_60204' => 'IEC 60204-1',
-                        'nfpa_70' => 'NFPA 70',
-                        'ul_508a' => 'UL 508A',
-                        'otra' => 'Otra',
+                        'autosoportado' => 'Autosoportado (piso)',
+                        'mural' => 'Mural / adosado a pared',
+                        'rack_19' => 'Rack 19"',
+                        'pedestal' => 'Pedestal',
+                        'otro' => 'Otro',
                     ]),
 
-                Toggle::make('has_load_list')
-                    ->label('¿Dispone de Listado de Cargas?'),
+                Select::make('ventilation_type')
+                    ->label('Tipo de ventilación (*)')
+                    ->required()
+                    ->options([
+                        'natural' => 'Natural (rejillas)',
+                        'forzada' => 'Forzada (ventiladores)',
+                        'sellado' => 'Sellado (sin ventilación directa)',
+                        'climatizado' => 'Climatizado (aire acondicionado)',
+                    ]),
 
-                FileUpload::make('load_list_file')
-                    ->label('Adjuntar Listado de Cargas')
-                    ->multiple()
-                    ->directory('submissions/tmp/load-lists')
-                    ->visible(fn ($get) => (bool) $get('has_load_list')),
-
-                Toggle::make('has_existing_plans')
-                    ->label('¿Dispone de Planos Existentes?'),
-
-                FileUpload::make('unilineal_diagram')
-                    ->label('Diagrama Unilineal')
-                    ->multiple()
-                    ->directory('submissions/tmp/unilineal')
-                    ->visible(fn ($get) => (bool) $get('has_existing_plans')),
+                Select::make('future_expansion')
+                    ->label('¿Considera expansión futura? (*)')
+                    ->required()
+                    ->options([
+                        'no' => 'No, sin espacio adicional',
+                        '10' => 'Sí, ~10% de espacio libre',
+                        '20' => 'Sí, ~20% de espacio libre',
+                        '30' => 'Sí, ~30% de espacio libre',
+                        'otro' => 'Sí, otro porcentaje (indicar en observaciones)',
+                    ]),
 
                 FileUpload::make('mechanical_plans')
-                    ->label('Planos Mecánicos')
-                    ->multiple()
-                    ->directory('submissions/tmp/mechanical')
-                    ->visible(fn ($get) => (bool) $get('has_existing_plans')),
-
-                FileUpload::make('technical_specs')
-                    ->label('Especificaciones Técnicas')
-                    ->multiple()
-                    ->directory('submissions/tmp/specs'),
-
-                FileUpload::make('site_photos')
-                    ->label('Fotografías del Sitio')
-                    ->multiple()
-                    ->image()
-                    ->directory('submissions/tmp/photos'),
-
-                Textarea::make('additional_observations')
-                    ->label('Observaciones Adicionales')
-                    ->rows(5),
+                    ->label('Planos mecánicos o de espacio (si existen)')
+                    ->hint('Adjunte planos de la sala eléctrica o espacio físico disponible.')
+                    ->acceptedFileTypes([
+                        'application/pdf',
+                        'image/png',
+                        'image/jpeg',
+                        'application/octet-stream',
+                    ])
+                    ->maxSize(20480)
+                    ->disk('local')
+                    ->directory('solicitudes/planos'),
             ]);
     }
 
-    // ──────────────────────────────────────────────────────────
-    // Submit
-    // ──────────────────────────────────────────────────────────
+    // -------------------------------------------------------------------------
+    // Step 7 — Documentación
+    // -------------------------------------------------------------------------
+    protected function documentationStep(): Step
+    {
+        return Step::make('Documentación')
+            ->icon('heroicon-o-paper-clip')
+            ->schema([
+                Toggle::make('has_technical_specs')
+                    ->label('¿Tiene especificaciones técnicas o pliego de condiciones?')
+                    ->live(),
+
+                FileUpload::make('technical_specs')
+                    ->label('Especificaciones técnicas / pliego de condiciones')
+                    ->visible(fn ($get) => (bool) $get('has_technical_specs'))
+                    ->acceptedFileTypes([
+                        'application/pdf',
+                        'application/msword',
+                        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                        'application/vnd.ms-excel',
+                        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                    ])
+                    ->maxSize(20480)
+                    ->disk('local')
+                    ->directory('solicitudes/specs'),
+
+                FileUpload::make('site_photos')
+                    ->label('Fotografías / Material Gráfico de la Solicitud')
+                    ->hint('Adjunte fotografías del sitio, espacio disponible, tablero existente u otro material gráfico relevante.')
+                    ->multiple()
+                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'application/pdf'])
+                    ->maxSize(10240)
+                    ->maxFiles(10)
+                    ->disk('local')
+                    ->directory('solicitudes/fotos'),
+
+                Textarea::make('additional_observations')
+                    ->label('Observaciones adicionales')
+                    ->rows(4)
+                    ->maxLength(2000)
+                    ->placeholder('Indique cualquier requerimiento especial no contemplado en los pasos anteriores...'),
+            ]);
+    }
+
+    // -------------------------------------------------------------------------
+    // Auto-cálculo de corriente nominal
+    // -------------------------------------------------------------------------
+    protected static function recalculateCurrent($get, $set): void
+    {
+        $power = (float) ($get('estimated_power') ?? 0);
+        $voltage = $get('supply_voltage');
+        $system = $get('electrical_system');
+
+        if ($power <= 0 || ! $voltage || $voltage === 'otro' || ! $system || $system === 'otro') {
+            return;
+        }
+
+        $v = (float) $voltage;
+        if ($v <= 0) {
+            return;
+        }
+
+        $watts = $power * 1000;
+
+        $current = match ($system) {
+            'trifasico' => $watts / (sqrt(3) * $v),
+            'bifasico' => $watts / ($v * 2),
+            'monofasico', 'dc' => $watts / $v,
+            default => null,
+        };
+
+        if ($current !== null) {
+            $set('nominal_current', round($current, 1));
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Envío del formulario
+    // -------------------------------------------------------------------------
     public function submit(): void
     {
-        $state = $this->form->getState();
+        $data = $this->form->getState();
 
-        DB::transaction(function () use ($state) {
-            $org = Organization::withoutGlobalScopes()->firstOrFail();
-            $refCode = 'SOL-'.strtoupper(Str::random(3)).'-'.now()->format('ymd');
+        $organization = Organization::first();
 
-            $submission = SubmissionRequest::create([
-                'organization_id' => $org->id,
-                'reference_code' => $refCode,
-                'status' => SubmissionStatus::Nueva,
-                'submitter_name' => $state['contact_name'] ?? null,
-                'submitter_email' => $state['contact_email'] ?? null,
-                'submitter_company' => $state['client_name'] ?? null,
-                'ip_address' => request()->ip(),
-                'user_agent' => Str::limit(request()->userAgent() ?? '', 290),
-                'submitted_at' => now(),
-            ]);
+        $referenceCode = 'SOL-'.strtoupper(Str::random(8));
 
-            foreach ($this->answerLabels() as $key => $label) {
-                $rawValue = $state[$key] ?? null;
+        $submission = SubmissionRequest::create([
+            'organization_id' => $organization->id,
+            'reference_code' => $referenceCode,
+            'submitter_name' => $data['contact_name'] ?? null,
+            'submitter_email' => $data['contact_email'] ?? null,
+            'submitter_phone' => $data['contact_phone'] ?? null,
+            'project_name' => $data['project_name'] ?? null,
+            'status' => 'nueva',
+            'raw_data' => $data,
+        ]);
 
-                if (! filled($rawValue) && $rawValue !== false) {
-                    continue;
-                }
+        $labels = $this->answerLabels();
 
-                if (is_array($rawValue)) {
-                    $value = implode(', ', array_filter($rawValue));
-                } elseif (is_bool($rawValue)) {
-                    $value = $rawValue ? 'Sí' : 'No';
-                } else {
-                    $value = (string) $rawValue;
-                }
-
-                $submission->answers()->create([
-                    'organization_id' => $org->id,
-                    'question_key' => $key,
-                    'question_label' => $label,
-                    'value' => $value,
-                ]);
+        foreach ($data as $key => $value) {
+            if ($value === null || $value === '' || $value === []) {
+                continue;
             }
 
-            foreach ($this->fileFields() as $fieldKey) {
-                foreach ($state[$fieldKey] ?? [] as $tmpPath) {
-                    if (! $tmpPath) {
-                        continue;
-                    }
-                    $newPath = 'submissions/'.$submission->id.'/'.basename((string) $tmpPath);
-                    Storage::disk('local')->move((string) $tmpPath, $newPath);
-
-                    $submission->attachments()->create([
-                        'organization_id' => $org->id,
-                        'disk' => 'local',
-                        'path' => $newPath,
-                        'original_name' => basename((string) $tmpPath),
-                        'mime_type' => null,
-                        'size_bytes' => Storage::disk('local')->size($newPath),
-                        'uploaded_by' => null,
-                    ]);
-                }
-            }
-
-            SubmissionStatusHistory::create([
-                'organization_id' => $org->id,
-                'submission_request_id' => $submission->id,
-                'from_status' => null,
-                'to_status' => SubmissionStatus::Nueva,
-                'changed_by' => null,
-                'comment' => 'Solicitud recibida vía formulario web.',
-                'created_at' => now(),
+            $submission->answers()->create([
+                'organization_id' => $organization->id,
+                'question_key' => $key,
+                'question_label' => $labels[$key] ?? $key,
+                'answer_value' => is_array($value) ? implode(', ', $value) : (string) $value,
             ]);
+        }
 
-            $admins = User::withoutGlobalScopes()
-                ->where('organization_id', $org->id)
-                ->whereHas('roles', fn ($q) => $q->whereIn('name', ['super_admin', 'supervisor']))
-                ->get();
-
-            NotificationFacade::send($admins, new NewSubmissionReceived($submission));
-            NotificationFacade::route('mail', $submission->submitter_email)
-                ->notify(new SubmissionConfirmed($submission));
-
-            $this->referenceCode = $refCode;
-        });
-
+        $this->referenceCode = $referenceCode;
         $this->submitted = true;
+
         $this->dispatch('draft-cleared');
     }
 
-    // ──────────────────────────────────────────────────────────
-    // Mapeo de campos → etiquetas legibles
-    // Actualiza aquí cuando cambies el formulario.
-    // ──────────────────────────────────────────────────────────
+    // -------------------------------------------------------------------------
+    // Etiquetas de respuestas
+    // -------------------------------------------------------------------------
     protected function answerLabels(): array
     {
         return [
-            // 1. Información General
-            'project_name' => 'Nombre del Proyecto',
-            'client_name' => 'Cliente / Mandante',
-            'associated_contract' => 'Contrato Asociado',
+            'project_name' => 'Nombre del Proyecto / Obra',
+            'client_name' => 'Empresa / Cliente',
             'installation_location' => 'Ubicación de la Instalación',
-            'estimated_delivery_date' => 'Fecha Estimada de Entrega',
-            'delivery_type' => 'Tipo de Entrega',
-            'is_new_installation' => 'Tipo de Instalación',
-            'engineering_by' => 'Responsable de la Ingeniería',
             'contact_name' => 'Nombre del Contacto',
-            'contact_email' => 'Correo del Contacto',
-            // 2. Función y Alcance
+            'contact_email' => 'Correo Electrónico',
+            'contact_phone' => 'Teléfono de Contacto',
+            'cost_center' => 'Centro de Costo Asociado',
+            'desired_delivery_date' => 'Fecha de Entrega Deseada',
+            'delivery_type' => 'Tipo de Entrega',
+            'is_new_installation' => '¿Nueva instalación o reemplazo?',
+            'engineering_by' => 'Ingeniería básica (unilineales y especificaciones)',
             'board_type' => 'Tipo de Tablero',
-            'board_function' => 'Objetivo / Función del Tablero',
-            'loads_description' => 'Cargas Alimentadas',
-            'estimated_power' => 'Potencia Total Estimada',
-            'has_critical_loads' => '¿Cargas Críticas?',
-            'ups_backup' => '¿Respaldo UPS?',
-            'generator_backup' => '¿Respaldo Generador?',
-            'requires_energy_monitoring' => '¿Medición / Monitoreo de Energía?',
-            'requires_communication' => '¿Comunicación con Otros Sistemas?',
-            'communication_type' => 'Tipo de Comunicación',
-            // 3. Características Eléctricas
-            'supply_voltage' => 'Tensión de Alimentación',
+            'other_board_type' => 'Tipo de Tablero (especificado)',
+            'board_function' => 'Función principal del tablero',
+            'loads_to_feed' => 'Cargas a alimentar',
+            'number_of_circuits' => 'Número de salidas / circuitos',
+            'load_list_file' => 'Lista de cargas (archivo)',
+            'supply_voltage' => 'Tensión de suministro',
+            'supply_voltage_other' => 'Tensión de suministro (especificada)',
+            'electrical_system' => 'Sistema eléctrico',
+            'electrical_system_other' => 'Sistema eléctrico (especificado)',
+            'estimated_power' => 'Potencia estimada',
+            'power_unit' => 'Unidad de potencia',
+            'nominal_current' => 'Corriente nominal',
             'frequency' => 'Frecuencia',
-            'electrical_system' => 'Sistema Eléctrico',
-            'grounding_system' => 'Sistema de Puesta a Tierra',
-            'nominal_current' => 'Corriente Nominal (A)',
-            'short_circuit_current' => 'Corriente de Cortocircuito (kA)',
-            'distance_from_main' => 'Distancia desde Alimentación Principal',
-            'required_protections' => 'Protecciones Requeridas',
-            'requires_selectivity' => '¿Selectividad entre Protecciones?',
-            'preferred_protection_brand' => 'Preferencia de Marca (Protecciones)',
-            // 4. Condiciones de Instalación
-            'installation_environment' => 'Ambiente de Instalación',
-            'min_temperature' => 'Temperatura Mínima (°C)',
-            'max_temperature' => 'Temperatura Máxima (°C)',
-            'installation_altitude' => 'Altitud de Instalación (msnm)',
-            'ip_rating' => 'Grado IP',
-            'ik_rating' => 'Grado IK',
-            'space_restrictions' => '¿Restricciones de Espacio?',
-            'space_description' => 'Descripción del Espacio Disponible',
-            // 5. Diseño Constructivo
-            'height_mm' => 'Alto (mm)',
-            'width_mm' => 'Ancho (mm)',
-            'depth_mm' => 'Profundidad (mm)',
-            'cabinet_material' => 'Material del Gabinete',
-            'special_color' => 'Color / RAL',
-            'mounting_type' => 'Tipo de Montaje',
-            'cable_entry_location' => 'Ingreso de Cables',
-            'cable_exit_location' => 'Salida de Cables',
-            'ventilation_type' => 'Tipo de Ventilación',
-            'requires_interior_lighting' => '¿Iluminación Interior?',
-            'future_expansion' => 'Ampliación Futura',
-            'required_signage' => 'Señaléticas Requeridas',
-            // 6. Normativa y Documentación
-            'applicable_normative' => 'Normativa Aplicable',
-            'has_load_list' => '¿Dispone de Listado de Cargas?',
-            'has_existing_plans' => '¿Dispone de Planos Existentes?',
-            'additional_observations' => 'Observaciones Adicionales',
+            'other_frequency' => 'Frecuencia (especificada)',
+            'required_protections' => 'Protecciones requeridas',
+            'preferred_brands' => 'Marcas preferidas de protecciones',
+            'unilineal_diagram' => 'Diagrama unilineal',
+            'location_type' => 'Ubicación del tablero',
+            'special_environment' => 'Ambiente especial',
+            'other_special_environment' => 'Ambiente especial (especificado)',
+            'ip_rating' => 'Grado de protección IP',
+            'ik_rating' => 'Grado de protección IK',
+            'additional_installation_conditions' => 'Condiciones adicionales de instalación',
+            'has_dimension_restrictions' => '¿Restricciones de dimensiones?',
+            'max_height' => 'Alto máximo',
+            'max_width' => 'Ancho máximo',
+            'max_depth' => 'Profundidad máxima',
+            'cabinet_material' => 'Material del gabinete',
+            'special_color' => 'Color del gabinete',
+            'mounting_type' => 'Tipo de montaje',
+            'ventilation_type' => 'Tipo de ventilación',
+            'future_expansion' => '¿Expansión futura?',
+            'mechanical_plans' => 'Planos mecánicos o de espacio',
+            'has_technical_specs' => '¿Tiene especificaciones técnicas?',
+            'technical_specs' => 'Especificaciones técnicas / pliego',
+            'site_photos' => 'Fotografías / Material Gráfico de la Solicitud',
+            'additional_observations' => 'Observaciones adicionales',
         ];
     }
 
-    protected function fileFields(): array
-    {
-        return [
-            'load_list_file',
-            'unilineal_diagram',
-            'mechanical_plans',
-            'technical_specs',
-            'site_photos',
-        ];
-    }
-
-    public function render(): View
+    public function render()
     {
         return view('livewire.public-form-wizard')
             ->layout('layouts.public-livewire', ['title' => 'Solicitud de Tableros Eléctricos']);

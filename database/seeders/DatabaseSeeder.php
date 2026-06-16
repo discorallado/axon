@@ -15,18 +15,18 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $org = Organization::updateOrCreate(
-            ['slug' => 'axon-demo'],
+            ['slug' => 'cse-soluciones-industriales'],
             [
-                'name' => 'Axon Demo',
-                'email' => 'admin@axon.dev',
+                'name' => 'CSE Soluciones Industriales',
+                'email' => 'sebastian.alvarez@csenergy.cl',
                 'is_active' => true,
             ]
         );
 
         User::updateOrCreate(
-            ['email' => 'admin@axon.dev'],
+            ['email' => 'sebastian.alvarez@csenergy.cl'],
             [
-                'name' => 'Administrador',
+                'name' => 'Sebastián Álvarez Cabezas',
                 'password' => Hash::make('password'),
                 'organization_id' => $org->id,
             ]

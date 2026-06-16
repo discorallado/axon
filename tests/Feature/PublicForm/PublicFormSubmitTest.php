@@ -22,28 +22,27 @@ function minValidState(): array
         'contact_name' => 'Juan Pérez',
         'contact_email' => 'juan@example.com',
         // Step 1 — Información General
-        'delivery_type' => 'tablero',
+        'delivery_type'       => 'tablero',
         'is_new_installation' => 'nueva',
-        'engineering_by' => 'nuestra_empresa',
+        'engineering_by'      => 'csenergia',
         // Step 2 — Función y Alcance
-        'board_type' => 'fuerza',
-        'board_function' => 'Distribución principal del edificio',
+        'board_type'      => 'fuerza',
+        'board_function'  => 'Distribución principal del edificio',
         // Step 3 — Características Eléctricas
-        'supply_voltage' => '400',
-        'electrical_system' => 'trifasico',
+        'supply_voltage'       => '400',
+        'electrical_system'    => 'trifasico',
+        'estimated_power'      => '100',
         'required_protections' => ['interruptor_automatico'],
+        'frequency'            => '50',
         // Step 4 — Condiciones de Instalación
-        'installation_environment' => 'interior',
-        'ip_rating' => 'IP54',
-        'ik_rating' => 'IK08',
+        'location_type' => 'interior',
+        'ip_rating'     => 'IP54',
+        'ik_rating'     => 'IK08',
         // Step 5 — Diseño Constructivo
-        'cabinet_material' => 'acero_pintado',
-        'special_color' => '7035',
-        'mounting_type' => 'autosoportado',
-        'ventilation_type' => 'natural',
-        'future_expansion' => 'no',
-        // Step 6 — Normativa
-        'applicable_normative' => ['ric_n2'],
+        'cabinet_material'  => 'acero_pintado',
+        'mounting_type'     => 'autosoportado',
+        'ventilation_type'  => 'natural',
+        'future_expansion'  => 'no',
     ];
 }
 
