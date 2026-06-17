@@ -163,3 +163,29 @@ rol **/arquitecto** y propón el diseño del MVP (Fase 0 + Fase 1):
    real con Reverb, modelado multi-tenant-ready, librería de import/export.
 
 Lo revisamos juntos y, con mi visto bueno, comenzamos a implementar la Fase 0.
+
+## 10. Gestión de contexto entre sesiones
+ 
+Este repo usa `SESSION.md` en la raíz para preservar el estado de trabajo entre
+sesiones de Claude Code y evitar perder contexto al limpiar el historial.
+ 
+**Al INICIO de cada sesión de trabajo:**
+- Leer `SESSION.md` antes de empezar a trabajar, si existe.
+- Confirmar brevemente con el usuario que el "Próximo paso concreto" registrado
+  sigue siendo válido antes de continuar.
+**Al FINAL de cada sesión de trabajo (o cuando el usuario lo pida, o cuando se
+note que la conversación se está volviendo muy larga):**
+- Mover el contenido actual de las secciones de estado a "Historial de sesiones
+  anteriores" (como bloque `<details>` colapsado, con fecha y módulo).
+- Completar de nuevo las secciones de estado con el estado real al cierre:
+  completado, a mitad de camino, decisiones tomadas, archivos tocados, dudas
+  abiertas, y el próximo paso concreto.
+- No usar lenguaje vago en "Próximo paso concreto" — debe ser una acción
+  ejecutable sin ambigüedad (ej: "implementar el método `calculateChecksum()`
+  en `app/Services/FatSnapshotService.php`", no "seguir con el checklist").
+- Avisar al usuario que SESSION.md fue actualizado, antes de que cierre o
+  limpie la conversación.
+**No usar SESSION.md para:**
+- Decisiones de arquitectura permanentes → eso va en un ADR (`docs/adr/`).
+- Convenciones de código → eso va en este mismo CLAUDE.md.
+- SESSION.md es solo el "estado en proceso", se reescribe constantemente.
