@@ -6,6 +6,7 @@ use App\Models\Comment;
 use App\Models\SubmissionAnswer;
 use App\Models\SubmissionRequest;
 use App\Models\User;
+use Filament\Support\Facades\FilamentColor;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\Request;
@@ -21,6 +22,12 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        // Registra el color primario globalmente para que el formulario público
+        // lo reciba sin pasar por el middleware del panel de Filament
+        FilamentColor::register([
+            'primary' => config('public-form.primary'),
+        ]);
+
         // Morphmap explícito para evitar FQCNs en la DB
         Relation::enforceMorphMap([
             'user' => User::class,

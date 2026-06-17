@@ -4,224 +4,297 @@
 @source '../../storage/framework/views/*.php';
 
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-sans:
+        'Instrument Sans',
+        ui-sans-serif,
+        system-ui,
+        sans-serif,
+        'Apple Color Emoji',
+        'Segoe UI Emoji',
+        'Segoe UI Symbol',
+        'Noto Color Emoji';
 }
-
-/*
- * Los valores de color primario (--pf-50 … --pf-950) se inyectan en runtime
- * desde el layout public.blade.php, tomados de config('public-form.primary').
- * Todas las clases pf-* usan rgb(var(--pf-N)) para respetar ese color dinámico.
- */
-
-/* ── Componentes públicos (tema oscuro, estilo Filament) ───────────────── */
 
 @layer components {
 
-    /* ── Layout ────────────────────────────────────────────────────────── */
+    /* ==========================================================
+       Layout
+    ========================================================== */
 
     .pf-body {
-        @apply min-h-screen bg-zinc-950 text-zinc-100 antialiased;
+        @apply min-h-screen bg-zinc-100 text-zinc-900 antialiased;
     }
 
     .pf-header {
-        @apply sticky top-0 z-10 border-b border-white/10 bg-zinc-900/80 backdrop-blur px-6 py-4;
+        @apply border-b border-zinc-200 bg-white;
     }
 
     .pf-header-inner {
-        @apply mx-auto max-w-3xl flex items-center gap-3;
+        @apply mx-auto max-w-5xl px-6 py-5 flex items-center gap-3;
     }
 
     .pf-header-icon {
-        @apply flex h-7 w-7 items-center justify-center rounded-lg;
-        background-color: rgb(var(--pf-600) / 0.2);
+        @apply flex h-10 w-10 items-center justify-center rounded-xl;
+        background-color: rgb(var(--pf-600) / 0.15);
         color: rgb(var(--pf-400));
     }
 
     .pf-header-logo {
-        @apply text-sm font-semibold tracking-tight text-zinc-100;
+        @apply text-base font-semibold tracking-tight;
     }
 
     .pf-main {
-        @apply mx-auto max-w-3xl px-4 py-10;
+        @apply mx-auto max-w-5xl px-6 py-12;
     }
 
     .pf-footer {
-        @apply mx-auto max-w-3xl px-4 py-8 text-center text-xs text-zinc-600;
+        @apply mx-auto max-w-5xl px-6 py-8 text-center text-sm text-zinc-500;
     }
 
-    /* ── Cards / secciones ─────────────────────────────────────────────── */
+    /* ==========================================================
+       Cards
+    ========================================================== */
 
     .pf-card {
-        @apply rounded-xl border border-white/10 bg-zinc-900 p-6 shadow-sm;
+        @apply rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm;
     }
 
     .pf-card-description {
-        @apply text-sm text-zinc-400;
+        @apply text-sm text-zinc-500;
     }
 
-    /* ── Etiquetas ─────────────────────────────────────────────────────── */
+    /* ==========================================================
+       Typography
+    ========================================================== */
+
+    .pf-form-heading {
+        @apply text-4xl font-bold tracking-tight text-zinc-900;
+    }
+
+    .pf-form-description {
+        @apply mt-3 text-base text-zinc-500 leading-relaxed;
+    }
+
+    .pf-section-title {
+        @apply text-lg font-semibold text-zinc-800 mb-6;
+    }
 
     .pf-label {
-        @apply block text-sm font-medium text-zinc-300 mb-1.5;
+        @apply block mb-2 text-sm font-medium text-zinc-700;
     }
 
     .pf-label-required {
-        @apply ml-0.5;
-        color: rgb(var(--pf-400));
+        color: rgb(var(--pf-600));
+    }
+
+    .fi-fo-field-label-required-mark {
+        /* font-size: 1.25rem !important; */
+        font-weight: bold !important;
+        content: 'asdasdasd' !important;
     }
 
     .pf-label-optional {
-        @apply text-xs font-normal text-zinc-500 ml-1;
+        @apply ml-1 text-xs text-zinc-400;
     }
 
     .pf-help {
-        @apply text-xs text-zinc-500 mt-1.5;
+        @apply mt-2 text-xs text-zinc-400;
     }
 
-    /* ── Inputs ────────────────────────────────────────────────────────── */
+    /* ==========================================================
+       Inputs
+    ========================================================== */
 
-    .pf-input {
-        @apply block w-full rounded-lg border border-white/10 bg-white/5
-               px-3 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-500
-               transition duration-75 outline-none
-               disabled:opacity-50 disabled:cursor-not-allowed;
-    }
-    .pf-input:focus {
-        box-shadow: 0 0 0 2px rgb(var(--pf-500));
-        border-color: rgb(var(--pf-500) / 0.5);
-    }
-
-    .pf-input-error {
-        @apply border-red-500/50 bg-red-500/5;
-    }
-    .pf-input-error:focus {
-        box-shadow: 0 0 0 2px theme(colors.red.500);
+    .pf-input,
+    .pf-textarea,
+    .pf-select {
+        @apply block w-full rounded-xl
+               border border-zinc-300
+               bg-white
+               px-4 py-3
+               text-base
+               text-zinc-900
+               placeholder:text-zinc-400
+               transition-all duration-200
+               outline-none
+               disabled:opacity-50
+               disabled:cursor-not-allowed;
     }
 
-    .pf-textarea {
-        @apply block w-full rounded-lg border border-white/10 bg-white/5
-               px-3 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-500
-               transition duration-75 outline-none resize-y
-               disabled:opacity-50 disabled:cursor-not-allowed;
+    .pf-input:hover,
+    .pf-textarea:hover,
+    .pf-select:hover {
+        @apply border-zinc-400;
     }
-    .pf-textarea:focus {
-        box-shadow: 0 0 0 2px rgb(var(--pf-500));
-        border-color: rgb(var(--pf-500) / 0.5);
+
+    .pf-input:focus,
+    .pf-textarea:focus,
+    .pf-select:focus {
+        border-color: rgb(var(--pf-500));
+        box-shadow:
+            0 0 0 1px rgb(var(--pf-500)),
+            0 0 0 4px rgb(var(--pf-500) / 0.15);
     }
+
+    .pf-input-error,
+    .pf-textarea-error,
+    .pf-select-error {
+        @apply border-red-500;
+    }
+
+    .pf-input-error:focus,
+    .pf-textarea-error:focus,
+    .pf-select-error:focus {
+        box-shadow:
+            0 0 0 1px rgb(239 68 68),
+            0 0 0 4px rgb(239 68 68 / 0.15);
+    }
+
+    /* ==========================================================
+       Select
+    ========================================================== */
 
     .pf-select {
-        @apply block w-full rounded-lg border border-white/10 bg-white/5
-               px-3 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-500
-               transition duration-75 outline-none cursor-pointer
-               disabled:opacity-50 disabled:cursor-not-allowed;
         appearance: none;
-        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2371717a' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
-        background-position: right 0.6rem center;
-        background-size: 1.2rem;
+
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%239ca3af' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+
+        background-position: right 0.9rem center;
         background-repeat: no-repeat;
-        padding-right: 2.25rem;
+        background-size: 1.1rem;
+
+        padding-right: 2.75rem;
     }
-    .pf-select:focus {
-        box-shadow: 0 0 0 2px rgb(var(--pf-500));
-        border-color: rgb(var(--pf-500) / 0.5);
-    }
+
     .pf-select option {
-        @apply bg-zinc-800 text-zinc-100;
+        @apply bg-white text-zinc-900;
     }
 
-    /* ── Checkbox / radio ──────────────────────────────────────────────── */
+    /* ==========================================================
+       Textarea
+    ========================================================== */
 
-    .pf-checkbox {
-        @apply h-4 w-4 rounded border-white/20 bg-white/5;
-        accent-color: rgb(var(--pf-600));
+    .pf-textarea {
+        @apply resize-y min-h-32;
     }
 
+    /* ==========================================================
+       Checkbox / Radio
+    ========================================================== */
+
+    .pf-checkbox,
     .pf-radio {
-        @apply h-4 w-4 border-white/20 bg-white/5;
+        @apply h-4 w-4 border-zinc-300 bg-white;
         accent-color: rgb(var(--pf-600));
     }
 
     .pf-choice-label {
-        @apply flex items-center gap-2.5 text-sm text-zinc-300 cursor-pointer select-none;
+        @apply flex items-center gap-3 text-sm text-zinc-700 cursor-pointer;
     }
 
-    /* ── File input ────────────────────────────────────────────────────── */
+    /* ==========================================================
+       File Upload
+    ========================================================== */
 
     .pf-file {
-        @apply block w-full rounded-lg border border-white/10 bg-white/5
-               px-3 py-2 text-sm text-zinc-400 cursor-pointer
-               transition duration-75 outline-none;
+        @apply block w-full rounded-xl
+               border border-dashed border-zinc-300
+               bg-white
+               px-4 py-3
+               text-sm text-zinc-500
+               cursor-pointer
+               transition-all;
     }
+
+    .pf-file:hover {
+        @apply border-zinc-400;
+    }
+
     .pf-file:focus {
-        box-shadow: 0 0 0 2px rgb(var(--pf-500));
+        box-shadow:
+            0 0 0 1px rgb(var(--pf-500)),
+            0 0 0 4px rgb(var(--pf-500) / 0.15);
     }
+
     .pf-file::file-selector-button {
-        @apply mr-3 rounded-md border-0 px-3 py-1 text-xs font-medium cursor-pointer transition duration-75;
-        background-color: rgb(var(--pf-600) / 0.2);
+        @apply mr-4 rounded-lg border-0 px-4 py-2 text-sm font-medium cursor-pointer transition-all;
+
+        background-color: rgb(var(--pf-600) / 0.15);
         color: rgb(var(--pf-300));
     }
-    .pf-file:hover::file-selector-button {
-        background-color: rgb(var(--pf-600) / 0.3);
+
+    .pf-file::file-selector-button:hover {
+        background-color: rgb(var(--pf-600) / 0.25);
     }
 
-    /* ── Errores ───────────────────────────────────────────────────────── */
+    /* ==========================================================
+       Errors
+    ========================================================== */
 
     .pf-error-bag {
-        @apply mb-6 rounded-xl border border-red-500/30 bg-red-500/10 p-4;
+        @apply mb-8 rounded-xl border border-red-500/30 bg-red-500/10 p-4;
     }
 
     .pf-field-error {
-        @apply mt-1.5 text-xs text-red-400;
+        @apply mt-2 text-sm text-red-600;
     }
 
-    /* ── Botón primario ────────────────────────────────────────────────── */
+    /* ==========================================================
+       Buttons
+    ========================================================== */
 
     .pf-btn-primary {
-        @apply inline-flex items-center gap-2 rounded-lg px-5 py-2.5
-               text-sm font-semibold text-white shadow-sm
-               transition duration-75 outline-none
-               disabled:opacity-50 disabled:cursor-not-allowed;
+        @apply inline-flex items-center justify-center
+               gap-2
+               rounded-xl
+               px-6 py-3
+               text-sm
+               font-semibold
+               text-white
+               transition-all duration-200
+               disabled:opacity-50
+               disabled:cursor-not-allowed;
+        
         background-color: rgb(var(--pf-600));
     }
+
     .pf-btn-primary:hover:not(:disabled) {
         background-color: rgb(var(--pf-500));
+        transform: translateY(-1px);
     }
+
+    .pf-btn-primary:active:not(:disabled) {
+        transform: translateY(0);
+    }
+
     .pf-btn-primary:focus-visible {
-        box-shadow: 0 0 0 2px rgb(var(--pf-500)), 0 0 0 4px theme(colors.zinc.950);
+        box-shadow:
+            0 0 0 1px rgb(var(--pf-500)),
+            0 0 0 4px rgb(var(--pf-500) / 0.25);
     }
 
-    /* ── Tipografía del formulario ─────────────────────────────────────── */
-
-    .pf-form-heading {
-        @apply text-2xl font-semibold text-zinc-100;
-    }
-
-    .pf-form-description {
-        @apply mt-2 text-sm text-zinc-400 leading-relaxed;
-    }
-
-    .pf-section-title {
-        @apply text-sm font-semibold text-zinc-200 mb-4 pb-3 border-b border-white/10;
-    }
-
-    /* ── Spinner ───────────────────────────────────────────────────────── */
-
-    .pf-spinner {
-        @apply h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white;
-    }
-
-    /* ── Pantalla de gracias ───────────────────────────────────────────── */
+    /* ==========================================================
+       Reference badge
+    ========================================================== */
 
     .pf-reference-badge {
         @apply inline-flex items-center gap-2 rounded-xl px-6 py-3;
+
+        background-color: rgb(var(--pf-600) / 0.1);
         border: 1px solid rgb(var(--pf-500) / 0.3);
-        background-color: rgb(var(--pf-500) / 0.1);
     }
 
     .pf-reference-code {
         @apply text-sm font-semibold tracking-wide;
-        color: rgb(var(--pf-300));
+        color: rgb(var(--pf-700));
+    }
+
+    /* ==========================================================
+       Spinner
+    ========================================================== */
+
+    .pf-spinner {
+        @apply h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white;
     }
 
 }

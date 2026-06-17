@@ -52,43 +52,41 @@ class PublicFormWizard extends Component implements HasForms
     {
         return [
             $this->contactStep(),
-            $this->generalStep(),
-            $this->scopeStep(),
-            $this->electricalStep(),
+            $this->needsStep(),
             $this->installationStep(),
-            $this->constructionStep(),
+            $this->electricalConstructiveStep(),
             $this->documentationStep(),
         ];
     }
 
     // -------------------------------------------------------------------------
-    // Step 1 — Información de Contacto
+    // Step 1 — Contacto y Proyecto
     // -------------------------------------------------------------------------
     protected function contactStep(): Step
     {
-        return Step::make('Información de Contacto')
+        return Step::make('Contacto y Proyecto')
             ->icon('heroicon-o-user')
             ->schema([
                 Grid::make(2)->schema([
                     TextInput::make('project_name')
-                        ->label('Nombre del Proyecto / Obra (*)')
+                        ->label('Nombre del Proyecto / Obra')
                         ->required()
                         ->maxLength(255),
 
                     TextInput::make('client_name')
-                        ->label('Empresa / Cliente (*)')
+                        ->label('Empresa / Cliente')
                         ->required()
                         ->maxLength(255),
                 ]),
 
                 Grid::make(2)->schema([
                     TextInput::make('contact_name')
-                        ->label('Nombre del Contacto (*)')
+                        ->label('Nombre del Contacto')
                         ->required()
                         ->maxLength(255),
 
                     TextInput::make('contact_email')
-                        ->label('Correo Electrónico (*)')
+                        ->label('Correo Electrónico')
                         ->email()
                         ->required()
                         ->maxLength(255),
@@ -101,97 +99,89 @@ class PublicFormWizard extends Component implements HasForms
                         ->maxLength(50),
 
                     TextInput::make('installation_location')
-                        ->label('Ubicación de la Instalación (*)')
+                        ->label('Ubicación de la Instalación')
                         ->required()
                         ->maxLength(255),
                 ]),
 
-                TextInput::make('cost_center')
-                    ->label('Centro de Costo Asociado')
-                    ->maxLength(100),
+                Grid::make(2)->schema([
+                    TextInput::make('cost_center')
+                        ->label('Centro de Costo Asociado')
+                        ->maxLength(100),
 
-                DatePicker::make('desired_delivery_date')
-                    ->label('Fecha de Entrega Deseada')
-                    ->displayFormat('d/m/Y')
-                    ->native(false),
+                    DatePicker::make('desired_delivery_date')
+                        ->label('Fecha de Entrega Deseada')
+                        ->displayFormat('d/m/Y')
+                        ->native(false),
+                ]),
             ]);
     }
 
     // -------------------------------------------------------------------------
-    // Step 2 — Información General
+    // Step 2 — ¿Qué necesitas?
     // -------------------------------------------------------------------------
-    protected function generalStep(): Step
+    protected function needsStep(): Step
     {
-        return Step::make('Información General')
-            ->icon('heroicon-o-document-text')
+        return Step::make('¿Qué necesitas?')
+            ->icon('heroicon-o-clipboard-document-list')
             ->schema([
                 Radio::make('delivery_type')
-                    ->label('Tipo de Entrega (*)')
+                    ->label('Tipo de entrega')
                     ->required()
                     ->options([
-                        'tablero' => 'Tablero completo',
-                        'gabinete' => 'Solo gabinete / estructura',
+                        'tablero'    => 'Tablero completo',
+                        'gabinete'   => 'Solo gabinete / estructura',
                         'reparacion' => 'Reparación / modificación de tablero existente',
                     ])
                     ->inline(false),
 
                 Radio::make('is_new_installation')
-                    ->label('¿Es instalación nueva o reemplazo? (*)')
+                    ->label('¿Es instalación nueva o reemplazo?')
                     ->required()
                     ->options([
-                        'nueva' => 'Nueva instalación',
-                        'reemplazo' => 'Reemplazo de tablero existente',
+                        'nueva'      => 'Nueva instalación',
+                        'reemplazo'  => 'Reemplazo de tablero existente',
                         'ampliacion' => 'Ampliación de tablero existente',
                     ])
                     ->inline(false),
 
                 Radio::make('engineering_by')
-                    ->label('Ingeniería básica (unilineales y especificaciones) (*)')
+                    ->label('Ingeniería básica — ¿quién la entrega?')
                     ->required()
                     ->options([
-                        'csenergia' => 'CSEnergy',
-                        'cliente' => 'La entrega el cliente',
-                        'conjunta' => 'Conjunta (CSEnergy + cliente)',
+                        'csenergia' => 'CSEnergy se encarga',
+                        'cliente'   => 'La entrega el cliente',
+                        'conjunta'  => 'Conjunta (CSEnergy + cliente)',
                     ])
                     ->inline(false),
-            ]);
-    }
 
-    // -------------------------------------------------------------------------
-    // Step 3 — Función y Alcance
-    // -------------------------------------------------------------------------
-    protected function scopeStep(): Step
-    {
-        return Step::make('Función y Alcance')
-            ->icon('heroicon-o-clipboard-document-list')
-            ->schema([
                 Select::make('board_type')
-                    ->label('Tipo de Tablero (*)')
+                    ->label('Tipo de tablero')
                     ->required()
                     ->options([
-                        'fuerza' => 'Tablero de Fuerza / Potencia',
-                        'alumbrado' => 'Tablero de Alumbrado / Distribución BT',
-                        'control' => 'Tablero de Control / Automatización',
-                        'transfer' => 'Tablero de Transferencia (ATS/MTS)',
+                        'fuerza'         => 'Tablero de Fuerza / Potencia',
+                        'alumbrado'      => 'Tablero de Alumbrado / Distribución BT',
+                        'control'        => 'Tablero de Control / Automatización',
+                        'transfer'       => 'Tablero de Transferencia (ATS/MTS)',
                         'sincronizacion' => 'Tablero de Sincronización de Generadores',
-                        'remoto' => 'Tablero de Distribución Remoto',
-                        'pfcs' => 'Panel de Factor de Potencia / Corrección de FP',
-                        'medicion' => 'Tablero de Medición / Centro de Carga',
-                        'variadores' => 'Tablero con Variadores de Frecuencia (VFD)',
-                        'arrancadores' => 'Tablero con Arrancadores Suaves (SS)',
-                        'ups' => 'Tablero UPS / Respaldo',
-                        'otro' => 'Otro',
+                        'remoto'         => 'Tablero de Distribución Remoto',
+                        'pfcs'           => 'Panel de Factor de Potencia / Corrección de FP',
+                        'medicion'       => 'Tablero de Medición / Centro de Carga',
+                        'variadores'     => 'Tablero con Variadores de Frecuencia (VFD)',
+                        'arrancadores'   => 'Tablero con Arrancadores Suaves (SS)',
+                        'ups'            => 'Tablero UPS / Respaldo',
+                        'otro'           => 'Otro',
                     ])
                     ->live(),
 
                 TextInput::make('other_board_type')
-                    ->label('Especifique el tipo de tablero (*)')
+                    ->label('Especifique el tipo de tablero')
                     ->required(fn ($get) => $get('board_type') === 'otro')
                     ->visible(fn ($get) => $get('board_type') === 'otro')
                     ->maxLength(255),
 
                 Textarea::make('board_function')
-                    ->label('Función principal del tablero (*)')
+                    ->label('Función principal del tablero')
                     ->required()
                     ->rows(3)
                     ->maxLength(1000)
@@ -203,187 +193,40 @@ class PublicFormWizard extends Component implements HasForms
                     ->maxLength(1000)
                     ->placeholder('Ej.: 5 motores de 15 kW, 20 circuitos de alumbrado, 3 compresores...'),
 
-                TextInput::make('number_of_circuits')
-                    ->label('Número estimado de salidas / circuitos')
-                    ->numeric()
-                    ->minValue(1)
-                    ->maxValue(9999),
+                Grid::make(2)->schema([
+                    TextInput::make('number_of_circuits')
+                        ->label('Número estimado de salidas / circuitos')
+                        ->numeric()
+                        ->minValue(1)
+                        ->maxValue(9999),
 
-                FileUpload::make('load_list_file')
-                    ->label('Lista de cargas (archivo)')
-                    ->hint('Puede adjuntar una planilla Excel, PDF u otro documento con el detalle de cargas.')
-                    ->acceptedFileTypes([
-                        'application/pdf',
-                        'application/vnd.ms-excel',
-                        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                        'text/csv',
-                        'application/octet-stream',
-                    ])
-                    ->maxSize(10240)
-                    ->disk('local')
-                    ->directory('solicitudes/cargas'),
+                    FileUpload::make('load_list_file')
+                        ->label('Lista de cargas (archivo)')
+                        ->hint('Excel, PDF u otro documento con el detalle de cargas.')
+                        ->acceptedFileTypes([
+                            'application/pdf',
+                            'application/vnd.ms-excel',
+                            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                            'text/csv',
+                            'application/octet-stream',
+                        ])
+                        ->maxSize(10240)
+                        ->disk('local')
+                        ->directory('solicitudes/cargas'),
+                ]),
             ]);
     }
 
     // -------------------------------------------------------------------------
-    // Step 4 — Características Eléctricas
-    // -------------------------------------------------------------------------
-    protected function electricalStep(): Step
-    {
-        return Step::make('Características Eléctricas')
-            ->icon('heroicon-o-bolt')
-            ->schema([
-                Grid::make(2)->schema([
-                    Select::make('supply_voltage')
-                        ->label('Tensión de suministro (V) (*)')
-                        ->required()
-                        ->options([
-                            '220' => '220 V',
-                            '380' => '380 V',
-                            '400' => '400 V',
-                            '440' => '440 V',
-                            '480' => '480 V',
-                            '690' => '690 V',
-                            '1000' => '1.000 V',
-                            'otro' => 'Otro',
-                        ])
-                        ->live()
-                        ->afterStateUpdated(fn ($get, $set) => static::recalculateCurrent($get, $set)),
-
-                    Select::make('electrical_system')
-                        ->label('Sistema eléctrico (*)')
-                        ->required()
-                        ->options([
-                            'trifasico' => 'Trifásico (3F + N)',
-                            'bifasico' => 'Bifásico (2F)',
-                            'monofasico' => 'Monofásico (1F + N)',
-                            'dc' => 'Corriente continua (DC)',
-                            'otro' => 'Otro',
-                        ])
-                        ->live()
-                        ->afterStateUpdated(fn ($get, $set) => static::recalculateCurrent($get, $set)),
-                ]),
-
-                Grid::make(2)->schema([
-                    TextInput::make('supply_voltage_other')
-                        ->label('Tensión de suministro — especifique (V) (*)')
-                        ->required(fn ($get) => $get('supply_voltage') === 'otro')
-                        ->visible(fn ($get) => $get('supply_voltage') === 'otro')
-                        ->numeric()
-                        ->maxLength(20),
-
-                    TextInput::make('electrical_system_other')
-                        ->label('Sistema eléctrico — especifique (*)')
-                        ->required(fn ($get) => $get('electrical_system') === 'otro')
-                        ->visible(fn ($get) => $get('electrical_system') === 'otro')
-                        ->maxLength(100),
-                ]),
-
-                Grid::make(3)->schema([
-                    TextInput::make('estimated_power')
-                        ->label('Potencia estimada (*)')
-                        ->required()
-                        ->numeric()
-                        ->minValue(0)
-                        ->live(debounce: 600)
-                        ->afterStateUpdated(fn ($get, $set) => static::recalculateCurrent($get, $set))
-                        ->suffix(fn ($get) => $get('power_unit') ?? 'kW'),
-
-                    Select::make('power_unit')
-                        ->label('Unidad')
-                        ->options([
-                            'kW' => 'kW',
-                            'kVA' => 'kVA',
-                        ])
-                        ->default('kW')
-                        ->live()
-                        ->afterStateUpdated(fn ($get, $set) => static::recalculateCurrent($get, $set)),
-
-                    TextInput::make('nominal_current')
-                        ->label('Corriente nominal (A)')
-                        ->numeric()
-                        ->minValue(0)
-                        ->hint('Se calcula automáticamente al ingresar potencia, tensión y sistema. Puede ajustarse manualmente.')
-                        ->live(debounce: 600),
-                ]),
-
-                Grid::make(2)->schema([
-                    Select::make('frequency')
-                        ->label('Frecuencia (*)')
-                        ->required()
-                        ->options([
-                            '50' => '50 Hz',
-                            '60' => '60 Hz',
-                            'otro' => 'Otro',
-                        ])
-                        ->live(),
-
-                    TextInput::make('other_frequency')
-                        ->label('Frecuencia — especifique (Hz) (*)')
-                        ->required(fn ($get) => $get('frequency') === 'otro')
-                        ->visible(fn ($get) => $get('frequency') === 'otro')
-                        ->numeric()
-                        ->maxLength(20),
-                ]),
-
-                Select::make('required_protections')
-                    ->label('Protecciones requeridas (*)')
-                    ->required()
-                    ->multiple()
-                    ->options([
-                        'interruptor_automatico' => 'Interruptor automático (termomagnético)',
-                        'diferencial' => 'Interruptor diferencial (RCD)',
-                        'fusible' => 'Fusibles',
-                        'relevo_sobrecarga' => 'Relevo de sobrecarga',
-                        'relevo_falla_tierra' => 'Relevo de falla a tierra',
-                        'proteccion_tension' => 'Protección de tensión (sub/sobre)',
-                        'proteccion_corriente' => 'Protección de corriente diferencial',
-                        'descargador_tension' => 'Descargador de sobretensión (SPD)',
-                        'otro' => 'Otro',
-                    ]),
-
-                Select::make('preferred_brands')
-                    ->label('Marcas preferidas de protecciones')
-                    ->multiple()
-                    ->options([
-                        'schneider' => 'Schneider Electric',
-                        'siemens' => 'Siemens',
-                        'abb' => 'ABB',
-                        'legrand' => 'Legrand',
-                        'eaton' => 'Eaton',
-                        'chint' => 'CHINT',
-                        'hager' => 'Hager',
-                        'weidmuller' => 'Weidmuller',
-                        'phoenix' => 'Phoenix Contact',
-                        'otro' => 'Otro / Sin preferencia',
-                    ]),
-
-                FileUpload::make('unilineal_diagram')
-                    ->label('Diagrama unilineal (si existe)')
-                    ->hint('Formatos aceptados: PDF, PNG, JPG, DWG.')
-                    ->acceptedFileTypes([
-                        'application/pdf',
-                        'image/png',
-                        'image/jpeg',
-                        'application/acad',
-                        'application/octet-stream',
-                    ])
-                    ->maxSize(20480)
-                    ->disk('local')
-                    ->directory('solicitudes/unilineales'),
-            ]);
-    }
-
-    // -------------------------------------------------------------------------
-    // Step 5 — Condiciones de Instalación
+    // Step 3 — ¿Dónde y cómo se instala?
     // -------------------------------------------------------------------------
     protected function installationStep(): Step
     {
-        return Step::make('Condiciones de Instalación')
+        return Step::make('¿Dónde se instala?')
             ->icon('heroicon-o-building-office')
             ->schema([
                 Radio::make('location_type')
-                    ->label('Ubicación del tablero (*)')
+                    ->label('Ubicación del tablero')
                     ->required()
                     ->options([
                         'interior' => 'Interior',
@@ -397,25 +240,25 @@ class PublicFormWizard extends Component implements HasForms
                     ->label('Ambiente especial')
                     ->multiple()
                     ->options([
-                        'marino' => 'Marino / salino',
-                        'minero' => 'Minero / polvo fino',
-                        'humedo' => 'Húmedo / condensación',
-                        'corrosivo' => 'Corrosivo (gases, ácidos)',
+                        'marino'      => 'Marino / salino',
+                        'minero'      => 'Minero / polvo fino',
+                        'humedo'      => 'Húmedo / condensación',
+                        'corrosivo'   => 'Corrosivo (gases, ácidos)',
                         'polvoriento' => 'Polvoriento (general)',
-                        'explosivo' => 'Zona ATEX / explosivo',
-                        'otro' => 'Otro',
+                        'explosivo'   => 'Zona ATEX / explosivo',
+                        'otro'        => 'Otro',
                     ])
                     ->live(),
 
                 TextInput::make('other_special_environment')
-                    ->label('Ambiente especial — especifique (*)')
+                    ->label('Ambiente especial — especifique')
                     ->required(fn ($get) => in_array('otro', (array) ($get('special_environment') ?? [])))
                     ->visible(fn ($get) => in_array('otro', (array) ($get('special_environment') ?? [])))
                     ->maxLength(255),
 
                 Grid::make(2)->schema([
                     Select::make('ip_rating')
-                        ->label('Grado de protección IP (*)')
+                        ->label('Grado de protección IP')
                         ->required()
                         ->options(fn ($get) => match ($get('location_type')) {
                             'interior' => [
@@ -435,20 +278,14 @@ class PublicFormWizard extends Component implements HasForms
                                 'IP68' => 'IP68 — Inmersión continua',
                             ],
                             default => [
-                                'IP20' => 'IP20',
-                                'IP31' => 'IP31',
-                                'IP43' => 'IP43',
-                                'IP54' => 'IP54',
-                                'IP55' => 'IP55',
-                                'IP65' => 'IP65',
-                                'IP66' => 'IP66',
-                                'IP67' => 'IP67',
-                                'IP68' => 'IP68',
+                                'IP20' => 'IP20', 'IP31' => 'IP31', 'IP43' => 'IP43',
+                                'IP54' => 'IP54', 'IP55' => 'IP55', 'IP65' => 'IP65',
+                                'IP66' => 'IP66', 'IP67' => 'IP67', 'IP68' => 'IP68',
                             ],
                         }),
 
                     Select::make('ik_rating')
-                        ->label('Grado de protección IK (*)')
+                        ->label('Grado de protección IK')
                         ->required()
                         ->options(fn ($get) => match ($get('location_type')) {
                             'interior' => [
@@ -464,30 +301,23 @@ class PublicFormWizard extends Component implements HasForms
                                 'IK10' => 'IK10 — 20 J (industrial pesado)',
                             ],
                             default => [
-                                'IK06' => 'IK06',
-                                'IK07' => 'IK07',
-                                'IK08' => 'IK08',
-                                'IK09' => 'IK09',
-                                'IK10' => 'IK10',
+                                'IK06' => 'IK06', 'IK07' => 'IK07', 'IK08' => 'IK08',
+                                'IK09' => 'IK09', 'IK10' => 'IK10',
                             ],
                         }),
                 ]),
 
-                Textarea::make('additional_installation_conditions')
-                    ->label('Condiciones adicionales de instalación')
-                    ->rows(2)
-                    ->maxLength(500),
-            ]);
-    }
+                Select::make('mounting_type')
+                    ->label('Tipo de montaje')
+                    ->required()
+                    ->options([
+                        'autosoportado' => 'Autosoportado (piso)',
+                        'mural'         => 'Mural / adosado a pared',
+                        'rack_19'       => 'Rack 19"',
+                        'pedestal'      => 'Pedestal',
+                        'otro'          => 'Otro',
+                    ]),
 
-    // -------------------------------------------------------------------------
-    // Step 6 — Diseño Constructivo
-    // -------------------------------------------------------------------------
-    protected function constructionStep(): Step
-    {
-        return Step::make('Diseño Constructivo')
-            ->icon('heroicon-o-wrench-screwdriver')
-            ->schema([
                 Toggle::make('has_dimension_restrictions')
                     ->label('¿Hay restricciones de dimensiones?')
                     ->live(),
@@ -511,83 +341,227 @@ class PublicFormWizard extends Component implements HasForms
                         ]),
                     ]),
 
-                Select::make('cabinet_material')
-                    ->label('Material del gabinete (*)')
-                    ->required()
-                    ->options([
-                        'acero_pintado' => 'Acero pintado (estándar, económico)',
-                        'acero_galvanizado' => 'Acero galvanizado (mayor resistencia a corrosión)',
-                        'acero_inoxidable' => 'Acero inoxidable 304 (ambientes corrosivos / alimentario)',
-                        'acero_inox_316' => 'Acero inoxidable 316 (marino / alta corrosión)',
-                        'fibra_vidrio' => 'Fibra de vidrio GRP (zonas ATEX / exterior extremo)',
-                        'poliester' => 'Poliéster termoestable (alta resistencia UV / outdoor)',
-                        'aluminio' => 'Aluminio (liviano, buena disipación térmica)',
-                    ])
-                    ->hint('Seleccione el material según las condiciones del ambiente y los requisitos del proyecto.'),
-
-                Select::make('special_color')
-                    ->label('Color del gabinete')
-                    ->options([
-                        '7035' => 'RAL 7035 — Gris claro (estándar industria)',
-                        '7016' => 'RAL 7016 — Gris antracita',
-                        '9016' => 'RAL 9016 — Blanco tráfico',
-                        '9005' => 'RAL 9005 — Negro intenso',
-                        '5010' => 'RAL 5010 — Azul genciana',
-                        '6005' => 'RAL 6005 — Verde musgo',
-                        'otro' => 'Otro (especificar en observaciones)',
-                    ])
-                    ->default('7035')
-                    ->hint('RAL 7035 es el estándar de la industria para tableros eléctricos.'),
-
-                Select::make('mounting_type')
-                    ->label('Tipo de montaje (*)')
-                    ->required()
-                    ->options([
-                        'autosoportado' => 'Autosoportado (piso)',
-                        'mural' => 'Mural / adosado a pared',
-                        'rack_19' => 'Rack 19"',
-                        'pedestal' => 'Pedestal',
-                        'otro' => 'Otro',
-                    ]),
-
-                Select::make('ventilation_type')
-                    ->label('Tipo de ventilación (*)')
-                    ->required()
-                    ->options([
-                        'natural' => 'Natural (rejillas)',
-                        'forzada' => 'Forzada (ventiladores)',
-                        'sellado' => 'Sellado (sin ventilación directa)',
-                        'climatizado' => 'Climatizado (aire acondicionado)',
-                    ]),
-
-                Select::make('future_expansion')
-                    ->label('¿Considera expansión futura? (*)')
-                    ->required()
-                    ->options([
-                        'no' => 'No, sin espacio adicional',
-                        '10' => 'Sí, ~10% de espacio libre',
-                        '20' => 'Sí, ~20% de espacio libre',
-                        '30' => 'Sí, ~30% de espacio libre',
-                        'otro' => 'Sí, otro porcentaje (indicar en observaciones)',
-                    ]),
-
-                FileUpload::make('mechanical_plans')
-                    ->label('Planos mecánicos o de espacio (si existen)')
-                    ->hint('Adjunte planos de la sala eléctrica o espacio físico disponible.')
-                    ->acceptedFileTypes([
-                        'application/pdf',
-                        'image/png',
-                        'image/jpeg',
-                        'application/octet-stream',
-                    ])
-                    ->maxSize(20480)
-                    ->disk('local')
-                    ->directory('solicitudes/planos'),
+                Textarea::make('additional_installation_conditions')
+                    ->label('Condiciones adicionales de instalación')
+                    ->rows(2)
+                    ->maxLength(500),
             ]);
     }
 
     // -------------------------------------------------------------------------
-    // Step 7 — Documentación
+    // Step 4 — Características Eléctricas y Constructivas
+    // -------------------------------------------------------------------------
+    protected function electricalConstructiveStep(): Step
+    {
+        return Step::make('Características Técnicas')
+            ->icon('heroicon-o-bolt')
+            ->schema([
+                Fieldset::make('Parámetros Eléctricos')
+                    ->schema([
+                        Grid::make(2)->schema([
+                            Select::make('supply_voltage')
+                                ->label('Tensión de suministro (V)')
+                                ->required()
+                                ->options([
+                                    '220'  => '220 V',
+                                    '380'  => '380 V',
+                                    '400'  => '400 V',
+                                    '440'  => '440 V',
+                                    '480'  => '480 V',
+                                    '690'  => '690 V',
+                                    '1000' => '1.000 V',
+                                    'otro' => 'Otro',
+                                ])
+                                ->live()
+                                ->afterStateUpdated(fn ($get, $set) => static::recalculateCurrent($get, $set)),
+
+                            Select::make('electrical_system')
+                                ->label('Sistema eléctrico')
+                                ->required()
+                                ->options([
+                                    'trifasico'  => 'Trifásico (3F + N)',
+                                    'bifasico'   => 'Bifásico (2F)',
+                                    'monofasico' => 'Monofásico (1F + N)',
+                                    'dc'         => 'Corriente continua (DC)',
+                                    'otro'       => 'Otro',
+                                ])
+                                ->live()
+                                ->afterStateUpdated(fn ($get, $set) => static::recalculateCurrent($get, $set)),
+                        ]),
+
+                        Grid::make(2)->schema([
+                            TextInput::make('supply_voltage_other')
+                                ->label('Tensión de suministro — especifique (V)')
+                                ->required(fn ($get) => $get('supply_voltage') === 'otro')
+                                ->visible(fn ($get) => $get('supply_voltage') === 'otro')
+                                ->numeric()
+                                ->maxLength(20),
+
+                            TextInput::make('electrical_system_other')
+                                ->label('Sistema eléctrico — especifique')
+                                ->required(fn ($get) => $get('electrical_system') === 'otro')
+                                ->visible(fn ($get) => $get('electrical_system') === 'otro')
+                                ->maxLength(100),
+                        ]),
+
+                        Grid::make(3)->schema([
+                            TextInput::make('estimated_power')
+                                ->label('Potencia estimada')
+                                ->required()
+                                ->numeric()
+                                ->minValue(0)
+                                ->live(debounce: 600)
+                                ->afterStateUpdated(fn ($get, $set) => static::recalculateCurrent($get, $set))
+                                ->suffix(fn ($get) => $get('power_unit') ?? 'kW'),
+
+                            Select::make('power_unit')
+                                ->label('Unidad')
+                                ->options(['kW' => 'kW', 'kVA' => 'kVA'])
+                                ->default('kW')
+                                ->live()
+                                ->afterStateUpdated(fn ($get, $set) => static::recalculateCurrent($get, $set)),
+
+                            TextInput::make('nominal_current')
+                                ->label('Corriente nominal (A)')
+                                ->numeric()
+                                ->minValue(0)
+                                ->hint('Se calcula automáticamente al ingresar potencia, tensión y sistema.')
+                                ->live(debounce: 600),
+                        ]),
+
+                        Grid::make(2)->schema([
+                            Select::make('frequency')
+                                ->label('Frecuencia')
+                                ->required()
+                                ->options(['50' => '50 Hz', '60' => '60 Hz', 'otro' => 'Otro'])
+                                ->live(),
+
+                            TextInput::make('other_frequency')
+                                ->label('Frecuencia — especifique (Hz)')
+                                ->required(fn ($get) => $get('frequency') === 'otro')
+                                ->visible(fn ($get) => $get('frequency') === 'otro')
+                                ->numeric()
+                                ->maxLength(20),
+                        ]),
+
+                        Select::make('required_protections')
+                            ->label('Protecciones requeridas')
+                            ->required()
+                            ->multiple()
+                            ->options([
+                                'interruptor_automatico' => 'Interruptor automático (termomagnético)',
+                                'diferencial'            => 'Interruptor diferencial (RCD)',
+                                'fusible'                => 'Fusibles',
+                                'relevo_sobrecarga'      => 'Relevo de sobrecarga',
+                                'relevo_falla_tierra'    => 'Relevo de falla a tierra',
+                                'proteccion_tension'     => 'Protección de tensión (sub/sobre)',
+                                'proteccion_corriente'   => 'Protección de corriente diferencial',
+                                'descargador_tension'    => 'Descargador de sobretensión (SPD)',
+                                'otro'                   => 'Otro',
+                            ]),
+
+                        Select::make('preferred_brands')
+                            ->label('Marcas preferidas de protecciones')
+                            ->multiple()
+                            ->options([
+                                'schneider'  => 'Schneider Electric',
+                                'siemens'    => 'Siemens',
+                                'abb'        => 'ABB',
+                                'legrand'    => 'Legrand',
+                                'eaton'      => 'Eaton',
+                                'chint'      => 'CHINT',
+                                'hager'      => 'Hager',
+                                'weidmuller' => 'Weidmuller',
+                                'phoenix'    => 'Phoenix Contact',
+                                'otro'       => 'Otro / Sin preferencia',
+                            ]),
+
+                        FileUpload::make('unilineal_diagram')
+                            ->label('Diagrama unilineal (si existe)')
+                            ->hint('Formatos aceptados: PDF, PNG, JPG, DWG.')
+                            ->acceptedFileTypes([
+                                'application/pdf',
+                                'image/png',
+                                'image/jpeg',
+                                'application/acad',
+                                'application/octet-stream',
+                            ])
+                            ->maxSize(20480)
+                            ->disk('local')
+                            ->directory('solicitudes/unilineales'),
+                    ]),
+
+                Fieldset::make('Diseño Constructivo')
+                    ->schema([
+                        Select::make('cabinet_material')
+                            ->label('Material del gabinete')
+                            ->required()
+                            ->options([
+                                'acero_pintado'     => 'Acero pintado (estándar, económico)',
+                                'acero_galvanizado' => 'Acero galvanizado (mayor resistencia a corrosión)',
+                                'acero_inoxidable'  => 'Acero inoxidable 304 (ambientes corrosivos / alimentario)',
+                                'acero_inox_316'    => 'Acero inoxidable 316 (marino / alta corrosión)',
+                                'fibra_vidrio'      => 'Fibra de vidrio GRP (zonas ATEX / exterior extremo)',
+                                'poliester'         => 'Poliéster termoestable (alta resistencia UV / outdoor)',
+                                'aluminio'          => 'Aluminio (liviano, buena disipación térmica)',
+                            ])
+                            ->hint('El ambiente seleccionado en el paso anterior orienta la elección.'),
+
+                        Grid::make(2)->schema([
+                            Select::make('special_color')
+                                ->label('Color del gabinete')
+                                ->options([
+                                    '7035' => 'RAL 7035 — Gris claro (estándar industria)',
+                                    '7016' => 'RAL 7016 — Gris antracita',
+                                    '9016' => 'RAL 9016 — Blanco tráfico',
+                                    '9005' => 'RAL 9005 — Negro intenso',
+                                    '5010' => 'RAL 5010 — Azul genciana',
+                                    '6005' => 'RAL 6005 — Verde musgo',
+                                    'otro' => 'Otro (especificar en observaciones)',
+                                ])
+                                ->default('7035')
+                                ->hint('RAL 7035 es el estándar de la industria.'),
+
+                            Select::make('ventilation_type')
+                                ->label('Tipo de ventilación')
+                                ->required()
+                                ->options([
+                                    'natural'     => 'Natural (rejillas)',
+                                    'forzada'     => 'Forzada (ventiladores)',
+                                    'sellado'     => 'Sellado (sin ventilación directa)',
+                                    'climatizado' => 'Climatizado (aire acondicionado)',
+                                ]),
+                        ]),
+
+                        Select::make('future_expansion')
+                            ->label('¿Considera expansión futura?')
+                            ->required()
+                            ->options([
+                                'no'   => 'No, sin espacio adicional',
+                                '10'   => 'Sí, ~10% de espacio libre',
+                                '20'   => 'Sí, ~20% de espacio libre',
+                                '30'   => 'Sí, ~30% de espacio libre',
+                                'otro' => 'Sí, otro porcentaje (indicar en observaciones)',
+                            ]),
+
+                        FileUpload::make('mechanical_plans')
+                            ->label('Planos mecánicos o de espacio (si existen)')
+                            ->hint('Adjunte planos de la sala eléctrica o espacio físico disponible.')
+                            ->acceptedFileTypes([
+                                'application/pdf',
+                                'image/png',
+                                'image/jpeg',
+                                'application/octet-stream',
+                            ])
+                            ->maxSize(20480)
+                            ->disk('local')
+                            ->directory('solicitudes/planos'),
+                    ]),
+            ]);
+    }
+
+    // -------------------------------------------------------------------------
+    // Step 5 — Documentación y Cierre
     // -------------------------------------------------------------------------
     protected function documentationStep(): Step
     {
@@ -635,9 +609,9 @@ class PublicFormWizard extends Component implements HasForms
     // -------------------------------------------------------------------------
     protected static function recalculateCurrent($get, $set): void
     {
-        $power = (float) ($get('estimated_power') ?? 0);
+        $power   = (float) ($get('estimated_power') ?? 0);
         $voltage = $get('supply_voltage');
-        $system = $get('electrical_system');
+        $system  = $get('electrical_system');
 
         if ($power <= 0 || ! $voltage || $voltage === 'otro' || ! $system || $system === 'otro') {
             return;
@@ -651,10 +625,10 @@ class PublicFormWizard extends Component implements HasForms
         $watts = $power * 1000;
 
         $current = match ($system) {
-            'trifasico' => $watts / (sqrt(3) * $v),
-            'bifasico' => $watts / ($v * 2),
+            'trifasico'        => $watts / (sqrt(3) * $v),
+            'bifasico'         => $watts / ($v * 2),
             'monofasico', 'dc' => $watts / $v,
-            default => null,
+            default            => null,
         };
 
         if ($current !== null) {
@@ -671,17 +645,18 @@ class PublicFormWizard extends Component implements HasForms
 
         $organization = Organization::first();
 
-        $referenceCode = 'SOL-'.strtoupper(Str::random(8));
+        $referenceCode = 'SOL-' . strtoupper(Str::random(8));
 
         $submission = SubmissionRequest::create([
             'organization_id' => $organization->id,
-            'reference_code' => $referenceCode,
-            'submitter_name' => $data['contact_name'] ?? null,
+            'reference_code'  => $referenceCode,
+            'submitter_name'  => $data['contact_name'] ?? null,
             'submitter_email' => $data['contact_email'] ?? null,
             'submitter_phone' => $data['contact_phone'] ?? null,
-            'project_name' => $data['project_name'] ?? null,
-            'status' => 'nueva',
-            'raw_data' => $data,
+            'project_name'    => $data['project_name'] ?? null,
+            'status'          => 'nueva',
+            'submitted_at'    => now(),
+            'raw_data'        => $data,
         ]);
 
         $labels = $this->answerLabels();
@@ -693,14 +668,14 @@ class PublicFormWizard extends Component implements HasForms
 
             $submission->answers()->create([
                 'organization_id' => $organization->id,
-                'question_key' => $key,
-                'question_label' => $labels[$key] ?? $key,
-                'answer_value' => is_array($value) ? implode(', ', $value) : (string) $value,
+                'question_key'    => $key,
+                'question_label'  => $labels[$key] ?? $key,
+                'answer_value'    => is_array($value) ? implode(', ', $value) : (string) $value,
             ]);
         }
 
         $this->referenceCode = $referenceCode;
-        $this->submitted = true;
+        $this->submitted     = true;
 
         $this->dispatch('draft-cleared');
     }
@@ -711,55 +686,55 @@ class PublicFormWizard extends Component implements HasForms
     protected function answerLabels(): array
     {
         return [
-            'project_name' => 'Nombre del Proyecto / Obra',
-            'client_name' => 'Empresa / Cliente',
-            'installation_location' => 'Ubicación de la Instalación',
-            'contact_name' => 'Nombre del Contacto',
-            'contact_email' => 'Correo Electrónico',
-            'contact_phone' => 'Teléfono de Contacto',
-            'cost_center' => 'Centro de Costo Asociado',
-            'desired_delivery_date' => 'Fecha de Entrega Deseada',
-            'delivery_type' => 'Tipo de Entrega',
-            'is_new_installation' => '¿Nueva instalación o reemplazo?',
-            'engineering_by' => 'Ingeniería básica (unilineales y especificaciones)',
-            'board_type' => 'Tipo de Tablero',
-            'other_board_type' => 'Tipo de Tablero (especificado)',
-            'board_function' => 'Función principal del tablero',
-            'loads_to_feed' => 'Cargas a alimentar',
-            'number_of_circuits' => 'Número de salidas / circuitos',
-            'load_list_file' => 'Lista de cargas (archivo)',
-            'supply_voltage' => 'Tensión de suministro',
-            'supply_voltage_other' => 'Tensión de suministro (especificada)',
-            'electrical_system' => 'Sistema eléctrico',
-            'electrical_system_other' => 'Sistema eléctrico (especificado)',
-            'estimated_power' => 'Potencia estimada',
-            'power_unit' => 'Unidad de potencia',
-            'nominal_current' => 'Corriente nominal',
-            'frequency' => 'Frecuencia',
-            'other_frequency' => 'Frecuencia (especificada)',
-            'required_protections' => 'Protecciones requeridas',
-            'preferred_brands' => 'Marcas preferidas de protecciones',
-            'unilineal_diagram' => 'Diagrama unilineal',
-            'location_type' => 'Ubicación del tablero',
-            'special_environment' => 'Ambiente especial',
-            'other_special_environment' => 'Ambiente especial (especificado)',
-            'ip_rating' => 'Grado de protección IP',
-            'ik_rating' => 'Grado de protección IK',
+            'project_name'                       => 'Nombre del Proyecto / Obra',
+            'client_name'                        => 'Empresa / Cliente',
+            'installation_location'              => 'Ubicación de la Instalación',
+            'contact_name'                       => 'Nombre del Contacto',
+            'contact_email'                      => 'Correo Electrónico',
+            'contact_phone'                      => 'Teléfono de Contacto',
+            'cost_center'                        => 'Centro de Costo Asociado',
+            'desired_delivery_date'              => 'Fecha de Entrega Deseada',
+            'delivery_type'                      => 'Tipo de Entrega',
+            'is_new_installation'                => '¿Nueva instalación o reemplazo?',
+            'engineering_by'                     => 'Ingeniería básica',
+            'board_type'                         => 'Tipo de Tablero',
+            'other_board_type'                   => 'Tipo de Tablero (especificado)',
+            'board_function'                     => 'Función principal del tablero',
+            'loads_to_feed'                      => 'Cargas a alimentar',
+            'number_of_circuits'                 => 'Número de salidas / circuitos',
+            'load_list_file'                     => 'Lista de cargas (archivo)',
+            'location_type'                      => 'Ubicación del tablero',
+            'special_environment'                => 'Ambiente especial',
+            'other_special_environment'          => 'Ambiente especial (especificado)',
+            'ip_rating'                          => 'Grado de protección IP',
+            'ik_rating'                          => 'Grado de protección IK',
+            'mounting_type'                      => 'Tipo de montaje',
+            'has_dimension_restrictions'         => '¿Restricciones de dimensiones?',
+            'max_height'                         => 'Alto máximo',
+            'max_width'                          => 'Ancho máximo',
+            'max_depth'                          => 'Profundidad máxima',
             'additional_installation_conditions' => 'Condiciones adicionales de instalación',
-            'has_dimension_restrictions' => '¿Restricciones de dimensiones?',
-            'max_height' => 'Alto máximo',
-            'max_width' => 'Ancho máximo',
-            'max_depth' => 'Profundidad máxima',
-            'cabinet_material' => 'Material del gabinete',
-            'special_color' => 'Color del gabinete',
-            'mounting_type' => 'Tipo de montaje',
-            'ventilation_type' => 'Tipo de ventilación',
-            'future_expansion' => '¿Expansión futura?',
-            'mechanical_plans' => 'Planos mecánicos o de espacio',
-            'has_technical_specs' => '¿Tiene especificaciones técnicas?',
-            'technical_specs' => 'Especificaciones técnicas / pliego',
-            'site_photos' => 'Fotografías / Material Gráfico de la Solicitud',
-            'additional_observations' => 'Observaciones adicionales',
+            'supply_voltage'                     => 'Tensión de suministro',
+            'supply_voltage_other'               => 'Tensión de suministro (especificada)',
+            'electrical_system'                  => 'Sistema eléctrico',
+            'electrical_system_other'            => 'Sistema eléctrico (especificado)',
+            'estimated_power'                    => 'Potencia estimada',
+            'power_unit'                         => 'Unidad de potencia',
+            'nominal_current'                    => 'Corriente nominal',
+            'frequency'                          => 'Frecuencia',
+            'other_frequency'                    => 'Frecuencia (especificada)',
+            'required_protections'               => 'Protecciones requeridas',
+            'preferred_brands'                   => 'Marcas preferidas de protecciones',
+            'unilineal_diagram'                  => 'Diagrama unilineal',
+            'cabinet_material'                   => 'Material del gabinete',
+            'special_color'                      => 'Color del gabinete',
+            'ventilation_type'                   => 'Tipo de ventilación',
+            'future_expansion'                   => '¿Expansión futura?',
+            'mechanical_plans'                   => 'Planos mecánicos o de espacio',
+            'has_technical_specs'                => '¿Tiene especificaciones técnicas?',
+            'technical_specs'                    => 'Especificaciones técnicas / pliego',
+            'site_photos'                        => 'Fotografías / Material Gráfico',
+            'additional_observations'            => 'Observaciones adicionales',
         ];
     }
 

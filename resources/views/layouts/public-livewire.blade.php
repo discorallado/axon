@@ -2,7 +2,7 @@
 <html
     lang="es"
     dir="ltr"
-    class="fi dark antialiased"
+    class="fi antialiased"
 >
 <head>
     <meta charset="utf-8">
@@ -23,7 +23,7 @@
     <style>
         :root {
             --font-family: '{{ filament()->getFontFamily() }}';
-            --default-theme-mode: dark;
+            --default-theme-mode: light;
 
             {{-- Variables de color primario para los pf-* helpers --}}
             @foreach(config('public-form.primary') as $shade => $rgb)
