@@ -24,7 +24,7 @@
 
     @filamentStyles
 
-    {{-- CSS del tema de Filament (variables Tailwind + colores del panel) --}}
+    {{-- CSS --}}
     {{ filament()->getTheme()->getHtml() }}
     {{ filament()->getFontHtml() }}
 
@@ -47,7 +47,7 @@
 
     <header class="pf-header">
         <div class="pf-header-inner">
-            <div class="flex flex-1">
+            <div class="flex">
                 <img src="{{ asset('storage/images/logo_cse.png') }}" width="200px" alt="CS Energy">
             </div>
 

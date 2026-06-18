@@ -118,7 +118,7 @@ class PublicFormWizard extends Component implements HasActions, HasForms
         return $form
             ->schema([
                 Wizard::make($this->steps())
-                    ->skippable(false)
+                    ->skippable(true)
                     ->submitAction(view('livewire.partials.wizard-submit-btn'))
                     ->persistStepInQueryString(),
             ])
