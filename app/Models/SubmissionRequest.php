@@ -11,15 +11,21 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class SubmissionRequest extends Model
 {
-    use HasAttachments, HasComments, HasFactory, HasOrganizationScope, HasUlids;
+    use HasAttachments, HasComments, HasFactory, HasOrganizationScope, HasUlids, SoftDeletes;
 
     protected $fillable = [
         'organization_id',
         'reference_code',
         'status',
+        'project_name',
+        'installation_location',
+        'cost_center',
+        'desired_delivery_date',
+        'engineering_by',
         'submitter_name',
         'submitter_email',
         'submitter_phone',
@@ -29,13 +35,19 @@ class SubmissionRequest extends Model
         'submitted_at',
         'assigned_to',
         'internal_notes',
+        'technical_specs_path',
+        'site_photos_paths',
+        'raw_data',
     ];
 
     protected function casts(): array
     {
         return [
             'submitted_at' => 'datetime',
+            'desired_delivery_date' => 'date',
             'status' => SubmissionStatus::class,
+            'site_photos_paths' => 'array',
+            'raw_data' => 'array',
         ];
     }
 
@@ -52,5 +64,10 @@ class SubmissionRequest extends Model
     public function statusHistories(): HasMany
     {
         return $this->hasMany(SubmissionStatusHistory::class)->latest('created_at');
+    }
+
+    public function items(): HasMany
+    {
+        return $this->hasMany(SubmissionItem::class)->orderBy('sort_order');
     }
 }

@@ -3,15 +3,11 @@
 namespace App\Notifications;
 
 use App\Models\SubmissionRequest;
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class NewSubmissionReceived extends Notification implements ShouldQueue
+class NewSubmissionReceived extends Notification
 {
-    use Queueable;
-
     public function __construct(
         public readonly SubmissionRequest $submission
     ) {}

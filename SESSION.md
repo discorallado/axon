@@ -3,103 +3,117 @@
 > Este archivo lo mantiene Claude Code. Se actualiza al final de cada sesión de trabajo
 > y se lee al inicio de la siguiente, para no depender del historial de chat ni de
 > copiar/pegar resúmenes a mano.
->
-> Flujo de uso:
-> 1. Al terminar de trabajar (o cuando el contexto esté alto), pedir:
->    "Actualizá SESSION.md con el estado actual antes de cerrar."
-> 2. Correr `/clear` (o `/compact` si querés conservar parte del historial).
-> 3. En la sesión nueva, pedir: "Leé SESSION.md y seguimos desde ahí."
 
 ---
 
 ## Última actualización
-2026-06-17 13:55
+2026-06-18
 
 ## Módulo / feature en curso
-Módulo de Solicitudes de Tableros Eléctricos — refinamiento del PublicFormWizard
+Módulo de Solicitudes de Tableros Eléctricos — mejoras de formulario y back-office
 
 ## Objetivo de esta sesión
-Aplicar 18 modificaciones al formulario público (`PublicFormWizard.php`) acordadas con Sebastián, incluyendo nuevos campos, campos renombrados, lógica condicional y auto-cálculo de corriente nominal.
+Implementar 6 mejoras aprobadas en `/arquitecto`:
+1. Notificaciones síncronas al submit()
+2. Acciones agrupadas en back-office (editar, cambiar estado, asignar, eliminar)
+3. Confirmación antes de enviar (wire:confirm)
+4. Fix de colores de botones (CSS variable → Tailwind estático)
+5. Toggle dark/light en el formulario externo
+6. Edición de solicitud via URL firmada desde back-office
 
 ## Estado actual
 
-### Completado
-- Reescritura completa de `app/Livewire/PublicFormWizard.php` con los 18 cambios:
-  1. Nota de pie `(*)` en blade
-  2. `associated_contract` → `cost_center` ("Centro de Costo Asociado")
-  3. `engineering_by`: opción `nuestra_empresa` → `csenergia` / "CSEnergy"; label → "Ingeniería básica (unilineales y especificaciones)"
-  4. `board_type` "otro" → campo condicional `other_board_type`
-  5. `power_unit` Select (kW/kVA) junto a `estimated_power`
-  6. `frequency` Select (50 Hz / 60 Hz / otro) + `other_frequency` condicional
-  7. Auto-cálculo de `nominal_current` via `recalculateCurrent()` estático (√3×V trifásico, 2×V bifásico, V mono/DC)
-  8. Eliminado `distance_from_main`
-  9. Eliminado `requires_selectivity`
-  10. `preferred_protection_brand` TextInput → `preferred_brands` Select múltiple con marcas conocidas
-  11. `installation_environment` → `location_type` Radio (interior/exterior) + `special_environment` Select múltiple
-  12. `ip_rating` e `ik_rating` con opciones filtradas dinámicamente por `location_type`
-  13. Dimensiones (alto/ancho/profundidad) detrás de toggle `has_dimension_restrictions`
-  14. `special_color` con `->default('7035')` y hint descriptivo
-  15. `cabinet_material` con labels descriptivos y hint
-  16. Eliminado `applicable_normative`
-  17. `has_technical_specs` Toggle → `technical_specs` FileUpload condicional
-  18. Label "Fotografías / Material Gráfico de la Solicitud" en `site_photos`
-- Paso 7 renombrado de "Normativa y Documentación" → "Documentación" (método `documentationStep()`)
-- `tests/Feature/PublicForm/PublicFormSubmitTest.php` actualizado: `engineering_by` → `csenergia`, `installation_environment` → `location_type`, eliminado `applicable_normative`, agregado `frequency` y `estimated_power`
-- Nota `(*)` agregada al blade
-- `submitted_at = now()` agregado al create en `submit()`
-- Pint limpio, 12/12 tests en verde
+### Completado ✅
+- **Notificaciones sync**: eliminado `ShouldQueue`/`Queueable` de `SubmissionConfirmed` y `NewSubmissionReceived`
+- **Despacho en submit()**: `SubmissionConfirmed` al solicitante (AnonymousNotifiable via mail), `NewSubmissionReceived` a usuarios con rol super_admin/supervisor (usando `whereHas` para evitar excepción si roles no existen)
+- **Modo edición en PublicFormWizard**: `mount(?string $submission = null)` carga datos existentes; `$editingSubmissionId` controla si es create vs update; el `submit()` bifurca: si edita, hace `update` + borra y recrea items; si crea, genera reference_code y despacha notificaciones
+- **Ruta firmada**: `GET /solicitud/editar/{submission}` con middleware `signed` + `throttle:public-form`
+- **ActionGroup en back-office**: `ViewAction` suelto + `ActionGroup` con: Editar solicitud (URL firmada 4h), Cambiar estado, Asignar, Eliminar (soft delete, solo super_admin)
+- **Soft delete**: `SoftDeletes` en `SubmissionRequest` + migración `2026_06_18_000005_add_soft_deletes_to_submission_requests.php`
+- **wire:confirm**: en `wizard-submit-btn.blade.php`
+- **Fix colores**: `.pf-btn-primary` usa `@apply bg-blue-600 hover:bg-blue-500`; botón "Agregar tablero" ya no usa `style=` con CSS variable
+- **Dark mode**: `@variant dark` en `app.css`; clases `dark:` en `pf-body`, `pf-header`, `pf-card`, `pf-form-heading`, `pf-form-description`, `pf-section-title`, `pf-label`, `pf-card-description`; layout actualizado con Alpine.js `isDark` + toggle sol/luna
+- **ADR**: `docs/adr/0003-mejoras-formulario-backoffice.md`
+- **Pint**: limpio (4 style issues fixed, luego 0)
+- **Pest**: 13/13 en verde
 
-### A mitad de camino
-- (ninguno)
+### Decisiones de diseño tomadas
+- `whereHas('roles', ...)` en lugar de `->role([...])` de Spatie para evitar excepción si roles no están seedeados
+- Notificaciones NO se reenvían al editar una solicitud (solo en creación nueva)
+- URL firmada expira en 4 horas; el admin puede regenerarla clicando "Editar" de nuevo
+- `DeleteAction` hace soft-delete por defecto al tener `SoftDeletes` en el modelo — no hay cambios adicionales
+- `@variant dark (&:where(.dark, .dark *))` es la sintaxis de Tailwind v4 para dark mode basado en clase
 
-### Decisiones de diseño tomadas (y por qué)
-- **Closures sin type hints** (`fn($get)` no `fn(Get $get)`): Filament 5 pasa `Filament\Schemas\Components\Utilities\Get`, no `Filament\Forms\Get`. Typehints causan TypeError. Solución: closures sin tipado igual que en el archivo original.
-- **`Wizard`, `Step`, `Grid`, `Fieldset` desde `Filament\Schemas\Components\*`**: En Filament 5 estos componentes migraron al namespace `Schemas`, mientras que `Select`, `TextInput`, `Toggle`, etc. siguen en `Filament\Forms\Components\*`.
-- **`form(Schema $form): Schema`**: Filament 5 cambió la firma del método `form()` de `Form` a `Schema` (`Filament\Schemas\Schema`).
-- **`submitted_at = now()`**: columna NOT NULL sin default en migración; el `submit()` original la incluía, el rewrite la había omitido.
-- **`->layout('layouts.public-livewire', [...])`** en `render()`: necesario para que la ruta HTTP devuelva 200 (el Livewire component renderiza en ese layout).
+## Archivos modificados en esta sesión
+- `app/Notifications/SubmissionConfirmed.php` — eliminado ShouldQueue/Queueable
+- `app/Notifications/NewSubmissionReceived.php` — eliminado ShouldQueue/Queueable
+- `app/Models/SubmissionRequest.php` — añadido SoftDeletes
+- `app/Livewire/PublicFormWizard.php` — modo edición, despacho de notificaciones, fix color botón
+- `routes/web.php` — ruta `/solicitud/editar/{submission}` firmada
+- `app/Filament/Resources/SubmissionRequestResource.php` — ActionGroup + edit URL firmada + DeleteAction
+- `resources/views/livewire/partials/wizard-submit-btn.blade.php` — wire:confirm
+- `resources/css/app.css` — dark mode + fix colores botón primario
+- `resources/views/layouts/public-livewire.blade.php` — Alpine.js dark toggle + botón sol/luna
+- `database/migrations/2026_06_18_000005_add_soft_deletes_to_submission_requests.php` — creado
+- `docs/adr/0003-mejoras-formulario-backoffice.md` — creado
 
-## Archivos relevantes tocados
-- `app/Livewire/PublicFormWizard.php` — reescrito completo
-- `resources/views/livewire/public-form-wizard.blade.php` — nota pie de página `(*)`
-- `tests/Feature/PublicForm/PublicFormSubmitTest.php` — `minValidState()` actualizado
-
-## Comandos / pasos para verificar el estado actual
+## Comandos para verificar
 ```bash
-# Dentro de DDEV:
-ddev exec ./vendor/bin/pest                          # 12/12 verde
-./vendor/bin/pint app/Livewire/PublicFormWizard.php  # limpio
-
-# Para ver el formulario en el browser:
-ddev launch  # → http://axon.ddev.site/solicitud/tableros
+ddev exec ./vendor/bin/pest         # 13/13 verde
+ddev exec ./vendor/bin/pint --test  # limpio
+ddev launch                         # → axon.ddev.site/solicitud
 ```
 
 ## Decisiones pendientes / dudas abiertas
-- El formulario no fue verificado visualmente en el browser todavía (solo tests).
-  Conviene hacer un `/qa` visual antes de cerrar el requerimiento.
-- `Weidmuller` aparece sin tilde (ü) porque el carácter causaba problemas en scripts de escritura a disco. Si se quiere corregir hay que editar `preferred_brands` en `electricalStep()`.
-- No hay commit con los cambios de esta sesión todavía (working tree limpio, cambios sin commitear al repo).
+- El formulario oscuro no fue verificado visualmente — conviene probar el toggle en el browser
+- Verificar que `DeleteAction` en Filament 5 aplica soft-delete automáticamente al detectar `SoftDeletes` en el modelo (debería, es el comportamiento estándar de Filament)
+- Las notificaciones de correo requieren configurar `.env` con MAIL_* para funcionar en producción
+- El canal `database` de `NewSubmissionReceived` guarda en `notifications` table — para verlas en Filament se necesita implementar el panel de notificaciones (trabajo futuro)
+- No hay tests para: soft delete, edit via URL firmada, notificaciones (quedaron fuera de scope esta sesión)
 
 ## Próximo paso concreto
-Hacer commit de los tres archivos modificados con un mensaje descriptivo y luego correr un QA visual rápido en el browser (`ddev launch`) para verificar que el formulario renderiza correctamente y los campos condicionales funcionan:
+Hacer QA visual en el browser y luego hacer commit de todos los cambios:
 ```bash
-git add app/Livewire/PublicFormWizard.php \
-        resources/views/livewire/public-form-wizard.blade.php \
-        tests/Feature/PublicForm/PublicFormSubmitTest.php
-git commit -m "feat(solicitudes): refinar formulario público — 18 cambios de campos y UX"
+git add \
+  app/Notifications/SubmissionConfirmed.php \
+  app/Notifications/NewSubmissionReceived.php \
+  app/Models/SubmissionRequest.php \
+  app/Livewire/PublicFormWizard.php \
+  routes/web.php \
+  "app/Filament/Resources/SubmissionRequestResource.php" \
+  "resources/views/livewire/partials/wizard-submit-btn.blade.php" \
+  resources/css/app.css \
+  resources/views/layouts/public-livewire.blade.php \
+  database/migrations/2026_06_18_000005_add_soft_deletes_to_submission_requests.php \
+  "docs/adr/0003-mejoras-formulario-backoffice.md" \
+  SESSION.md
+
+git commit -m "feat(solicitudes): notificaciones, acciones agrupadas, dark mode, edición firmada, soft delete"
 ```
 
-## Notas técnicas puntuales no documentadas en CLAUDE.md / ADRs
-- **Limitación de escritura a disco en WSL2/DDEV desde Windows**: heredocs bash fallan al anidar `<< 'INNER'` dentro de `wsl ... bash << 'OUTER'` porque ambos leen stdin. PowerShell here-strings (`@'...'@`) pueden activar hooks. La solución que funcionó fue el **Write tool de Claude Code** con UNC path `\\wsl.localhost\ddev\home\ubuntu\axon\...` — escribe directo al filesystem WSL sin pasar por shell.
-- El backup del PHP original que había en `/tmp/PublicFormWizard_backup.php` fue eliminado al reiniciar el contenedor DDEV entre sesiones.
+## Notas técnicas puntuales
+- `@variant dark (&:where(.dark, .dark *))` en `app.css` (Tailwind v4) habilita `dark:` utility classes cuando `<html>` tiene clase `.dark`
+- `URL::signedRoute('solicitud.editar', ['submission' => $record->id], now()->addHours(4))` genera URL que expira en 4h; middleware `signed` la valida automáticamente
+- `DeleteAction` de `Filament\Tables\Actions\DeleteAction` (no `Filament\Actions\DeleteAction`) es el correcto para tablas
+- `whereHas('roles', fn($q) => $q->whereIn('name', ['super_admin', 'supervisor']))` no lanza excepción si los roles no existen (a diferencia del scope `->role()` de Spatie)
 
 ---
 
 ## Historial de sesiones anteriores
 
 <details>
-<summary>YYYY-MM-DD — Sesión inicial (placeholder)</summary>
+<summary>2026-06-18 — Rediseño multi-tablero (submission_items, modal wizard)</summary>
 
-(No había historial previo — primera vez que se usa SESSION.md en este proyecto)
+Implementada arquitectura multi-tablero: tabla `submission_items`, modal wizard
+de 3 pasos con Filament Actions, `PublicFormWizard` reescrito, `ViewSubmissionRequest`
+reescrito con RepeatableEntry. 13/13 tests en verde.
+
+</details>
+
+<details>
+<summary>2026-06-17 — Refinamiento del PublicFormWizard (18 cambios UX/campos)</summary>
+
+Aplicadas 18 modificaciones al formulario público: campos renombrados, Select múltiple,
+lógica condicional, auto-cálculo de corriente, toggles. Pint limpio, 12/12 tests verde.
 
 </details>

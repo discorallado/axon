@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Models\Comment;
 use App\Models\SubmissionAnswer;
+use App\Models\SubmissionItem;
 use App\Models\SubmissionRequest;
 use App\Models\User;
 use Filament\Support\Facades\FilamentColor;
@@ -33,6 +34,7 @@ class AppServiceProvider extends ServiceProvider
             'user' => User::class,
             'submission_request' => SubmissionRequest::class,
             'submission_answer' => SubmissionAnswer::class,
+            'submission_item' => SubmissionItem::class,
             'comment' => Comment::class,
         ]);
 
