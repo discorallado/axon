@@ -16,7 +16,7 @@
 
     @filamentStyles
 
-    {{-- CSS del tema de Filament (variables Tailwind + colores del panel) --}}
+    {{-- CSS --}}
     {{ filament()->getTheme()->getHtml() }}
     {{ filament()->getFontHtml() }}
 
