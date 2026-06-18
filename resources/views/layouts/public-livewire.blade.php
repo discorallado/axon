@@ -40,7 +40,7 @@
     <header class="pf-header">
         <div class="pf-header-inner">
             <div class="flex">
-                <img src="{{ asset('storage/images/logo_cse.png') }}" width="200px" alt="CS Energy">
+                <img src="{{ asset('storage/images/logo_cse_nuevo.png') }}" width="200px" alt="CS Energy">
             </div>
         </div>
     </header>
