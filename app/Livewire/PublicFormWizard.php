@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Models\Attachment;
 use App\Models\Organization;
 use App\Models\SubmissionItem;
 use App\Models\SubmissionRequest;
@@ -920,8 +921,7 @@ class PublicFormWizard extends Component implements HasActions, HasForms
             'submitter_email' => $data['contact_email'] ?? null,
             'submitter_phone' => $data['contact_phone'] ?? null,
             'submitter_company' => $data['client_company'] ?? null,
-            'technical_specs_path' => $data['technical_specs'] ?? null,
-            'site_photos_paths' => $data['site_photos'] ?? null,
+            'project_observations' => $data['project_observations'] ?? null,
             'raw_data' => ['outer' => $data, 'items' => $this->items],
         ];
 
@@ -937,7 +937,6 @@ class PublicFormWizard extends Component implements HasActions, HasForms
             'board_function' => $itemData['board_function'] ?? null,
             'loads_to_feed' => $itemData['loads_to_feed'] ?? null,
             'number_of_circuits' => $itemData['number_of_circuits'] ?? null,
-            'load_list_file_path' => $itemData['load_list_file'] ?? null,
             'location_type' => $itemData['location_type'] ?? null,
             'special_environment' => $itemData['special_environment'] ?? null,
             'other_special_environment' => $itemData['other_special_environment'] ?? null,
@@ -964,20 +963,21 @@ class PublicFormWizard extends Component implements HasActions, HasForms
             'special_color' => $itemData['special_color'] ?? '7035',
             'ventilation_type' => $itemData['ventilation_type'] ?? null,
             'future_expansion' => $itemData['future_expansion'] ?? null,
-            'unilineal_diagram_path' => $itemData['unilineal_diagram'] ?? null,
-            'mechanical_plans_path' => $itemData['mechanical_plans'] ?? null,
             'additional_observations' => $itemData['additional_observations'] ?? null,
         ])->all();
 
         if ($this->editingSubmissionId) {
             $submission = SubmissionRequest::withoutGlobalScopes()->findOrFail($this->editingSubmissionId);
             $submission->update(array_merge($submissionFields, ['submitted_at' => now()]));
-            $submission->items()->delete();
-            foreach ($itemsData as $row) {
-                SubmissionItem::withoutGlobalScopes()->create(
+            // Usar each->delete() para disparar el observer por ítem
+            $submission->items->each->delete();
+            foreach ($itemsData as $index => $row) {
+                $item = SubmissionItem::withoutGlobalScopes()->create(
                     array_merge($row, ['submission_request_id' => $submission->id])
                 );
+                $this->attachItemFiles($item, $this->items[$index] ?? [], $organization->id);
             }
+            $this->attachSubmissionFiles($submission, $data, $organization->id);
         } else {
             $referenceCode = 'SOL-'.strtoupper(Str::random(8));
             $submission = SubmissionRequest::withoutGlobalScopes()->create(array_merge($submissionFields, [
@@ -988,20 +988,20 @@ class PublicFormWizard extends Component implements HasActions, HasForms
                 'user_agent' => substr(request()->userAgent() ?? '', 0, 300),
                 'submitted_at' => now(),
             ]));
-            foreach ($itemsData as $row) {
-                SubmissionItem::withoutGlobalScopes()->create(
+            foreach ($itemsData as $index => $row) {
+                $item = SubmissionItem::withoutGlobalScopes()->create(
                     array_merge($row, ['submission_request_id' => $submission->id])
                 );
+                $this->attachItemFiles($item, $this->items[$index] ?? [], $organization->id);
             }
+            $this->attachSubmissionFiles($submission, $data, $organization->id);
 
-            // Notificar al solicitante (solo en nuevas solicitudes)
             if ($submission->submitter_email) {
                 (new AnonymousNotifiable)
                     ->route('mail', $submission->submitter_email)
                     ->notify(new SubmissionConfirmed($submission));
             }
 
-            // Notificar a admins y supervisores de la organización
             User::withoutGlobalScopes()
                 ->where('organization_id', $organization->id)
                 ->whereHas('roles', fn ($q) => $q->whereIn('name', ['super_admin', 'supervisor']))
@@ -1013,6 +1013,68 @@ class PublicFormWizard extends Component implements HasActions, HasForms
         $this->submitted = true;
 
         $this->dispatch('draft-cleared');
+    }
+
+    // -------------------------------------------------------------------------
+    // Helpers de adjuntos
+    // -------------------------------------------------------------------------
+    private function attachItemFiles(SubmissionItem $item, array $itemData, string $orgId): void
+    {
+        $fileFields = [
+            'load_list_file' => 'load_list',
+            'unilineal_diagram' => 'unilineal_diagram',
+            'mechanical_plans' => 'mechanical_plans',
+        ];
+
+        foreach ($fileFields as $formField => $tag) {
+            $path = $itemData[$formField] ?? null;
+            if (! $path) {
+                continue;
+            }
+            Attachment::create([
+                'organization_id' => $orgId,
+                'attachable_type' => 'submission_item',
+                'attachable_id' => $item->id,
+                'disk' => 'local',
+                'path' => $path,
+                'original_name' => basename($path),
+                'mime_type' => null,
+                'size_bytes' => 0,
+                'tag' => $tag,
+            ]);
+        }
+    }
+
+    private function attachSubmissionFiles(SubmissionRequest $submission, array $data, string $orgId): void
+    {
+        $techSpecs = $data['technical_specs'] ?? null;
+        if ($techSpecs) {
+            Attachment::create([
+                'organization_id' => $orgId,
+                'attachable_type' => 'submission_request',
+                'attachable_id' => $submission->id,
+                'disk' => 'local',
+                'path' => $techSpecs,
+                'original_name' => basename($techSpecs),
+                'mime_type' => null,
+                'size_bytes' => 0,
+                'tag' => 'technical_specs',
+            ]);
+        }
+
+        foreach ((array) ($data['site_photos'] ?? []) as $path) {
+            Attachment::create([
+                'organization_id' => $orgId,
+                'attachable_type' => 'submission_request',
+                'attachable_id' => $submission->id,
+                'disk' => 'local',
+                'path' => $path,
+                'original_name' => basename($path),
+                'mime_type' => null,
+                'size_bytes' => 0,
+                'tag' => 'site_photo',
+            ]);
+        }
     }
 
     public function render()

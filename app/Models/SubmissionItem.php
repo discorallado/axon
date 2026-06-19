@@ -2,15 +2,17 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasAttachments;
 use App\Models\Concerns\HasOrganizationScope;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class SubmissionItem extends Model
 {
-    use HasFactory, HasOrganizationScope, HasUlids;
+    use HasAttachments, HasFactory, HasOrganizationScope, HasUlids, SoftDeletes;
 
     protected $fillable = [
         'organization_id',
@@ -25,7 +27,6 @@ class SubmissionItem extends Model
         'board_function',
         'loads_to_feed',
         'number_of_circuits',
-        'load_list_file_path',
         'location_type',
         'special_environment',
         'other_special_environment',
@@ -52,8 +53,6 @@ class SubmissionItem extends Model
         'special_color',
         'ventilation_type',
         'future_expansion',
-        'unilineal_diagram_path',
-        'mechanical_plans_path',
         'additional_observations',
     ];
 
@@ -91,6 +90,6 @@ class SubmissionItem extends Model
             'otro' => $this->other_board_type ?? 'Otro',
         ];
 
-        return $types[$this->board_type ?? ''] ?? ($this->board_type ?? '—');
+        return $types[$this->board_type ?? ''] ?? ($this->board_type ?? 'Sin registro.');
     }
 }

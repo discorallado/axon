@@ -30,11 +30,6 @@ class Organization extends Model
         return $this->hasMany(User::class);
     }
 
-    public function formTemplates(): HasMany
-    {
-        return $this->hasMany(FormTemplate::class);
-    }
-
     public function submissionRequests(): HasMany
     {
         return $this->hasMany(SubmissionRequest::class);

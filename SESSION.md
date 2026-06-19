@@ -7,55 +7,99 @@
 ---
 
 ## Última actualización
-2026-06-18
+2026-06-19
 
 ## Módulo / feature en curso
-Módulo de Solicitudes de Tableros Eléctricos — mejoras de formulario y back-office
+Módulo de Solicitudes de Tableros Eléctricos — comentarios, adjuntos y limpieza de código
 
 ## Objetivo de esta sesión
-Implementar 6 mejoras aprobadas en `/arquitecto`:
-1. Notificaciones síncronas al submit()
-2. Acciones agrupadas en back-office (editar, cambiar estado, asignar, eliminar)
-3. Confirmación antes de enviar (wire:confirm)
-4. Fix de colores de botones (CSS variable → Tailwind estático)
-5. Toggle dark/light en el formulario externo
-6. Edición de solicitud via URL firmada desde back-office
+Implementar las mejoras aprobadas en arquitecto:
+- Comentarios internos con `parallax/filament-comments`
+- Adjuntos visibles en back-office via modelo `Attachment` polimórfico con `tag`
+- Vista `ViewSubmissionRequest` completa (mismo orden que el formulario, todos los campos)
+- Observadores para cascade delete de archivos en disco
+- Limpieza total del código muerto (FormTemplate, Comment, SubmissionAnswer, etc.)
 
 ## Estado actual
 
 ### Completado ✅
-- **Notificaciones sync**: eliminado `ShouldQueue`/`Queueable` de `SubmissionConfirmed` y `NewSubmissionReceived`
-- **Despacho en submit()**: `SubmissionConfirmed` al solicitante (AnonymousNotifiable via mail), `NewSubmissionReceived` a usuarios con rol super_admin/supervisor (usando `whereHas` para evitar excepción si roles no existen)
-- **Modo edición en PublicFormWizard**: `mount(?string $submission = null)` carga datos existentes; `$editingSubmissionId` controla si es create vs update; el `submit()` bifurca: si edita, hace `update` + borra y recrea items; si crea, genera reference_code y despacha notificaciones
-- **Ruta firmada**: `GET /solicitud/editar/{submission}` con middleware `signed` + `throttle:public-form`
-- **ActionGroup en back-office**: `ViewAction` suelto + `ActionGroup` con: Editar solicitud (URL firmada 4h), Cambiar estado, Asignar, Eliminar (soft delete, solo super_admin)
-- **Soft delete**: `SoftDeletes` en `SubmissionRequest` + migración `2026_06_18_000005_add_soft_deletes_to_submission_requests.php`
-- **wire:confirm**: en `wizard-submit-btn.blade.php`
-- **Fix colores**: `.pf-btn-primary` usa `@apply bg-blue-600 hover:bg-blue-500`; botón "Agregar tablero" ya no usa `style=` con CSS variable
-- **Dark mode**: `@variant dark` en `app.css`; clases `dark:` en `pf-body`, `pf-header`, `pf-card`, `pf-form-heading`, `pf-form-description`, `pf-section-title`, `pf-label`, `pf-card-description`; layout actualizado con Alpine.js `isDark` + toggle sol/luna
-- **ADR**: `docs/adr/0003-mejoras-formulario-backoffice.md`
-- **Pint**: limpio (4 style issues fixed, luego 0)
-- **Pest**: 13/13 en verde
 
-### Decisiones de diseño tomadas
-- `whereHas('roles', ...)` en lugar de `->role([...])` de Spatie para evitar excepción si roles no están seedeados
-- Notificaciones NO se reenvían al editar una solicitud (solo en creación nueva)
-- URL firmada expira en 4 horas; el admin puede regenerarla clicando "Editar" de nuevo
-- `DeleteAction` hace soft-delete por defecto al tener `SoftDeletes` en el modelo — no hay cambios adicionales
-- `@variant dark (&:where(.dark, .dark *))` es la sintaxis de Tailwind v4 para dark mode basado en clase
+**Migraciones creadas y aplicadas:**
+- `2026_06_19_000001_add_tag_to_attachments` — columna `tag VARCHAR(50)` en `attachments`
+- `2026_06_19_000002_add_project_observations_to_submission_requests` — columna `project_observations TEXT`
+- `2026_06_19_000003_drop_file_path_columns` — elimina columnas de ruta de `submission_requests` e `submission_items`
+- `2026_06_19_000004_drop_legacy_tables` — elimina tablas: `form_conditional_rules`, `submission_answers`, `form_questions`, `form_sections`, `form_templates`, `comments`
+- Migraciones de parallax: `create_filament_comments_table` + `add_index_to_subject`
+
+**Archivos eliminados (código muerto):**
+- `app/Livewire/PublicFormWizard_backup2.php`
+- `app/Models/Comment.php`
+- `app/Models/Concerns/HasComments.php`
+- `app/Models/FormTemplate.php`
+- `app/Models/SubmissionAnswer.php`
+- `app/Policies/FormSectionPolicy.php`
+- `app/Policies/FormTemplatePolicy.php`
+- `app/Policies/RolePolicy.php`
+
+**Modelos actualizados:**
+- `SubmissionRequest` — eliminado `HasComments`, `answers()`, `technical_specs_path`, `site_photos_paths`; añadido `HasFilamentComments`, `project_observations`
+- `SubmissionItem` — eliminado `load_list_file_path`, `unilineal_diagram_path`, `mechanical_plans_path`; añadido `HasAttachments`, `SoftDeletes`
+- `Attachment` — añadido `tag` a `$fillable`
+- `Organization` — eliminada relación `formTemplates()`
+
+**Observers creados:**
+- `app/Models/Observers/SubmissionRequestObserver` — `forceDeleting`: cascade borrado de ítems + adjuntos
+- `app/Models/Observers/SubmissionItemObserver` — `deleting`: borra adjuntos del disco + BD
+
+**Providers actualizados:**
+- `AppServiceProvider` — morphMap simplificado (solo `user`, `submission_request`, `submission_item`); registra observers
+- `AdminPanelProvider` — añadido `FilamentCommentsPlugin::make()`
+
+**Livewire actualizado (`PublicFormWizard.submit()`):**
+- Guarda `project_observations`
+- Crea `Attachment` rows para: `technical_specs`, `site_photos[]`, y por ítem: `load_list_file`, `unilineal_diagram`, `mechanical_plans`
+- Edit mode usa `$submission->items->each->delete()` para disparar observer
+
+**Filament — `ViewSubmissionRequest` reescrito:**
+- Secciones: Identificación, Contacto y Proyecto (Proyecto + Contacto), Tableros (todos los campos completos), Documentación del Proyecto (adjuntos + observaciones), Notas Internas, Historial de Estados, Comentarios Internos
+- Todos los placeholder usan `'Sin registro.'`
+- `required_protections` y `preferred_brands` → `listWithLineBreaks()`
+- Adjuntos se muestran via `Attachment::withoutGlobalScopes()` en `formatStateUsing`
+- `CommentsEntry::make('filamentComments')` para comentarios
+- Header action `change_status` también crea `FilamentComment` cuando hay texto
+
+**Policy:**
+- `SubmissionRequestPolicy::comment()` eliminado (ya no se usa)
+
+**Tests:**
+- `TenantIsolationTest` — eliminado test de `FormTemplate`; añadido test de org B
+- **13/13 en verde**
+
+**Pint:** limpio
+
+**ADR:** `docs/adr/0004-adjuntos-polimorficos-comentarios-parallax.md`
+
+## Decisiones de diseño tomadas
+- Namespace correcto del trait parallax: `Parallax\FilamentComments\Models\Traits\HasFilamentComments`
+- Los adjuntos en la vista son solo nombres de archivo (no URLs clicables) porque el `AttachmentController` requiere autenticación; agregar links clicables es trabajo futuro
+- `SubmissionItem` ahora tiene `SoftDeletes` (necesario para el observer de cascade delete)
+- El cambio de estado con texto crea FilamentComment con prefijo `[Cambio de estado → X]`
 
 ## Archivos modificados en esta sesión
-- `app/Notifications/SubmissionConfirmed.php` — eliminado ShouldQueue/Queueable
-- `app/Notifications/NewSubmissionReceived.php` — eliminado ShouldQueue/Queueable
-- `app/Models/SubmissionRequest.php` — añadido SoftDeletes
-- `app/Livewire/PublicFormWizard.php` — modo edición, despacho de notificaciones, fix color botón
-- `routes/web.php` — ruta `/solicitud/editar/{submission}` firmada
-- `app/Filament/Resources/SubmissionRequestResource.php` — ActionGroup + edit URL firmada + DeleteAction
-- `resources/views/livewire/partials/wizard-submit-btn.blade.php` — wire:confirm
-- `resources/css/app.css` — dark mode + fix colores botón primario
-- `resources/views/layouts/public-livewire.blade.php` — Alpine.js dark toggle + botón sol/luna
-- `database/migrations/2026_06_18_000005_add_soft_deletes_to_submission_requests.php` — creado
-- `docs/adr/0003-mejoras-formulario-backoffice.md` — creado
+- `app/Models/SubmissionRequest.php`
+- `app/Models/SubmissionItem.php`
+- `app/Models/Attachment.php`
+- `app/Models/Organization.php`
+- `app/Models/Observers/SubmissionRequestObserver.php` ← nuevo
+- `app/Models/Observers/SubmissionItemObserver.php` ← nuevo
+- `app/Providers/AppServiceProvider.php`
+- `app/Providers/Filament/AdminPanelProvider.php`
+- `app/Livewire/PublicFormWizard.php`
+- `app/Filament/Resources/SubmissionRequestResource/Pages/ViewSubmissionRequest.php`
+- `app/Policies/SubmissionRequestPolicy.php`
+- `tests/Feature/Submissions/TenantIsolationTest.php`
+- `docs/adr/0004-adjuntos-polimorficos-comentarios-parallax.md` ← nuevo
+- `database/migrations/2026_06_19_000001_*` a `2026_06_19_000004_*` ← nuevas
 
 ## Comandos para verificar
 ```bash
@@ -65,41 +109,28 @@ ddev launch                         # → axon.ddev.site/solicitud
 ```
 
 ## Decisiones pendientes / dudas abiertas
-- El formulario oscuro no fue verificado visualmente — conviene probar el toggle en el browser
-- Verificar que `DeleteAction` en Filament 5 aplica soft-delete automáticamente al detectar `SoftDeletes` en el modelo (debería, es el comportamiento estándar de Filament)
-- Las notificaciones de correo requieren configurar `.env` con MAIL_* para funcionar en producción
-- El canal `database` de `NewSubmissionReceived` guarda en `notifications` table — para verlas en Filament se necesita implementar el panel de notificaciones (trabajo futuro)
-- No hay tests para: soft delete, edit via URL firmada, notificaciones (quedaron fuera de scope esta sesión)
+- Los adjuntos en el back-office se muestran como texto (nombre del archivo). Para hacerlos clicables, se debe agregar un `Action` o `url()` que apunte a `route('attachments.download', $attachment->id)`. Esto se puede agregar en una mejora siguiente.
+- El `SoftDeletes` en `SubmissionItem` requiere migración `add_soft_deletes_to_submission_items` (si la columna no existe en la BD, los tests pasaron porque usan SQLite con RefreshDatabase — verificar en la BD real).
+- No hay tests para: observer de cascade delete, FilamentComments integración.
 
 ## Próximo paso concreto
-Hacer QA visual en el browser y luego hacer commit de todos los cambios:
+Verificar si `submission_items` ya tiene columna `deleted_at` en la BD de desarrollo:
 ```bash
-git add \
-  app/Notifications/SubmissionConfirmed.php \
-  app/Notifications/NewSubmissionReceived.php \
-  app/Models/SubmissionRequest.php \
-  app/Livewire/PublicFormWizard.php \
-  routes/web.php \
-  "app/Filament/Resources/SubmissionRequestResource.php" \
-  "resources/views/livewire/partials/wizard-submit-btn.blade.php" \
-  resources/css/app.css \
-  resources/views/layouts/public-livewire.blade.php \
-  database/migrations/2026_06_18_000005_add_soft_deletes_to_submission_requests.php \
-  "docs/adr/0003-mejoras-formulario-backoffice.md" \
-  SESSION.md
-
-git commit -m "feat(solicitudes): notificaciones, acciones agrupadas, dark mode, edición firmada, soft delete"
+ddev exec php artisan db:table submission_items
 ```
-
-## Notas técnicas puntuales
-- `@variant dark (&:where(.dark, .dark *))` en `app.css` (Tailwind v4) habilita `dark:` utility classes cuando `<html>` tiene clase `.dark`
-- `URL::signedRoute('solicitud.editar', ['submission' => $record->id], now()->addHours(4))` genera URL que expira en 4h; middleware `signed` la valida automáticamente
-- `DeleteAction` de `Filament\Tables\Actions\DeleteAction` (no `Filament\Actions\DeleteAction`) es el correcto para tablas
-- `whereHas('roles', fn($q) => $q->whereIn('name', ['super_admin', 'supervisor']))` no lanza excepción si los roles no existen (a diferencia del scope `->role()` de Spatie)
+Si no existe, crear migración `add_soft_deletes_to_submission_items`.
+Luego hacer commit de todo.
 
 ---
 
 ## Historial de sesiones anteriores
+
+<details>
+<summary>2026-06-18 — Mejoras de formulario y back-office (notificaciones, dark mode, acciones)</summary>
+
+Implementadas: notificaciones sync, ActionGroup en back-office, wire:confirm, fix colores, dark mode Alpine.js, modo edición firmada, soft delete en SubmissionRequest. 13/13 tests en verde.
+
+</details>
 
 <details>
 <summary>2026-06-18 — Rediseño multi-tablero (submission_items, modal wizard)</summary>

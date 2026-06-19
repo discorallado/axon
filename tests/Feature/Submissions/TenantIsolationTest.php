@@ -1,7 +1,6 @@
 <?php
 
 use App\Enums\SubmissionStatus;
-use App\Models\FormTemplate;
 use App\Models\Organization;
 use App\Models\SubmissionRequest;
 use App\Models\User;
@@ -26,20 +25,21 @@ it('users cannot see submissions from other organizations', function () {
         ->and($visibleIds[0])->toBe($orgA->id);
 });
 
-it('form template global scope filters by organization', function () {
+it('users from org B cannot see submissions from org A', function () {
     $orgA = Organization::factory()->create();
     $orgB = Organization::factory()->create();
 
-    FormTemplate::factory()->for($orgA, 'organization')->create(['name' => 'Template A']);
-    FormTemplate::factory()->for($orgB, 'organization')->create(['name' => 'Template B']);
+    $userB = User::factory()->create(['organization_id' => $orgB->id]);
 
-    $userA = User::factory()->create(['organization_id' => $orgA->id]);
-    $this->actingAs($userA);
+    SubmissionRequest::factory()->for($orgA, 'organization')->create(['status' => SubmissionStatus::Nueva]);
+    SubmissionRequest::factory()->for($orgB, 'organization')->create(['status' => SubmissionStatus::Nueva]);
 
-    $names = FormTemplate::pluck('name')->all();
+    $this->actingAs($userB);
 
-    expect($names)->toContain('Template A')
-        ->and($names)->not->toContain('Template B');
+    $visibleIds = SubmissionRequest::pluck('organization_id')->unique()->all();
+
+    expect($visibleIds)->toHaveCount(1)
+        ->and($visibleIds[0])->toBe($orgB->id);
 });
 
 it('public form solicitud route is accessible without authentication', function () {

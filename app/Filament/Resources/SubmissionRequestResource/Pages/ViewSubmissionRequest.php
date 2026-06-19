@@ -4,7 +4,7 @@ namespace App\Filament\Resources\SubmissionRequestResource\Pages;
 
 use App\Enums\SubmissionStatus;
 use App\Filament\Resources\SubmissionRequestResource;
-use App\Models\Comment;
+use App\Models\Attachment;
 use App\Models\SubmissionRequest;
 use App\Services\SubmissionStateMachine;
 use Filament\Actions\Action;
@@ -18,6 +18,8 @@ use Filament\Schemas\Components\Fieldset;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use Parallax\FilamentComments\Infolists\Components\CommentsEntry;
+use Parallax\FilamentComments\Models\FilamentComment;
 
 class ViewSubmissionRequest extends ViewRecord
 {
@@ -48,40 +50,40 @@ class ViewSubmissionRequest extends ViewRecord
                             TextEntry::make('submitted_at')
                                 ->label('Fecha de envío')
                                 ->dateTime('d/m/Y H:i')
-                                ->placeholder('Pendiente')
+                                ->placeholder('Sin registro.')
                                 ->icon('heroicon-o-clock'),
 
                             TextEntry::make('assignee.name')
                                 ->label('Asignado a')
-                                ->placeholder('Sin asignar')
+                                ->placeholder('Sin registro.')
                                 ->icon('heroicon-o-user'),
                         ]),
                     ]),
 
-                // ── Datos del proyecto ────────────────────────────────────
-                Section::make('Datos del Proyecto')
+                // ── Contacto y Proyecto ───────────────────────────────────
+                Section::make('Contacto y Proyecto')
                     ->icon('heroicon-o-building-office-2')
                     ->iconColor('info')
                     ->schema([
-                        Fieldset::make('Proyecto')
+                        Fieldset::make('Datos del Proyecto')
                             ->schema([
                                 Grid::make(3)->schema([
                                     TextEntry::make('project_name')
                                         ->label('Nombre del proyecto / obra')
-                                        ->placeholder('—'),
+                                        ->placeholder('Sin registro.'),
 
                                     TextEntry::make('installation_location')
                                         ->label('Ubicación de la instalación')
-                                        ->placeholder('—'),
+                                        ->placeholder('Sin registro.'),
 
                                     TextEntry::make('desired_delivery_date')
                                         ->label('Fecha de entrega deseada')
                                         ->date('d/m/Y')
-                                        ->placeholder('—'),
+                                        ->placeholder('Sin registro.'),
 
                                     TextEntry::make('cost_center')
                                         ->label('Centro de costo')
-                                        ->placeholder('—'),
+                                        ->placeholder('Sin registro.'),
 
                                     TextEntry::make('engineering_by')
                                         ->label('Ingeniería básica')
@@ -89,32 +91,34 @@ class ViewSubmissionRequest extends ViewRecord
                                             'csenergia' => 'CSEnergy se encarga',
                                             'cliente' => 'La entrega el cliente',
                                             'conjunta' => 'Conjunta (CSEnergy + cliente)',
-                                            default => $state ?? '—',
+                                            default => $state ?? 'Sin registro.',
                                         })
-                                        ->placeholder('—'),
+                                        ->placeholder('Sin registro.'),
                                 ]),
                             ]),
 
-                        Fieldset::make('Contacto')
+                        Fieldset::make('Datos de Contacto')
                             ->schema([
                                 Grid::make(4)->schema([
                                     TextEntry::make('submitter_name')
                                         ->label('Nombre del contacto')
+                                        ->placeholder('Sin registro.')
                                         ->icon('heroicon-o-user'),
 
                                     TextEntry::make('submitter_email')
                                         ->label('Correo electrónico')
                                         ->copyable()
+                                        ->placeholder('Sin registro.')
                                         ->icon('heroicon-o-envelope'),
 
                                     TextEntry::make('submitter_phone')
                                         ->label('Teléfono')
-                                        ->placeholder('—')
+                                        ->placeholder('Sin registro.')
                                         ->icon('heroicon-o-phone'),
 
                                     TextEntry::make('submitter_company')
                                         ->label('Empresa / cliente')
-                                        ->placeholder('—')
+                                        ->placeholder('Sin registro.')
                                         ->icon('heroicon-o-building-office'),
                                 ]),
                             ]),
@@ -130,11 +134,12 @@ class ViewSubmissionRequest extends ViewRecord
                             ->schema([
                                 Fieldset::make(fn ($record) => ($record->label ?? 'Tablero').'  ×'.($record->quantity ?? 1))
                                     ->schema([
+                                        // Identificación
                                         Grid::make(3)->schema([
                                             TextEntry::make('board_type')
-                                                ->label('Tipo')
+                                                ->label('Tipo de tablero')
                                                 ->formatStateUsing(fn ($state, $record) => $record->boardTypeLabel())
-                                                ->placeholder('—'),
+                                                ->placeholder('Sin registro.'),
 
                                             TextEntry::make('delivery_type')
                                                 ->label('¿Qué se requiere?')
@@ -142,9 +147,9 @@ class ViewSubmissionRequest extends ViewRecord
                                                     'tablero' => 'Tablero completo',
                                                     'gabinete' => 'Solo gabinete',
                                                     'reparacion' => 'Reparación / modificación',
-                                                    default => $state ?? '—',
+                                                    default => $state ?? 'Sin registro.',
                                                 })
-                                                ->placeholder('—'),
+                                                ->placeholder('Sin registro.'),
 
                                             TextEntry::make('is_new_installation')
                                                 ->label('Tipo de instalación')
@@ -152,62 +157,54 @@ class ViewSubmissionRequest extends ViewRecord
                                                     'nueva' => 'Nueva instalación',
                                                     'reemplazo' => 'Reemplazo',
                                                     'ampliacion' => 'Ampliación',
-                                                    default => $state ?? '—',
+                                                    default => $state ?? 'Sin registro.',
                                                 })
-                                                ->placeholder('—'),
-
-                                            TextEntry::make('board_function')
-                                                ->label('Función principal')
-                                                ->columnSpanFull()
-                                                ->placeholder('—'),
+                                                ->placeholder('Sin registro.'),
                                         ]),
 
-                                        Grid::make(4)->schema([
-                                            TextEntry::make('supply_voltage')
-                                                ->label('Tensión (V)')
-                                                ->placeholder('—'),
+                                        TextEntry::make('board_function')
+                                            ->label('Función principal')
+                                            ->columnSpanFull()
+                                            ->placeholder('Sin registro.'),
 
-                                            TextEntry::make('electrical_system')
-                                                ->label('Sistema eléctrico')
-                                                ->formatStateUsing(fn ($state) => match ($state) {
-                                                    'trifasico' => 'Trifásico',
-                                                    'bifasico' => 'Bifásico',
-                                                    'monofasico' => 'Monofásico',
-                                                    'dc' => 'DC',
-                                                    default => $state ?? '—',
-                                                })
-                                                ->placeholder('—'),
+                                        Grid::make(2)->schema([
+                                            TextEntry::make('loads_to_feed')
+                                                ->label('Cargas a alimentar')
+                                                ->placeholder('Sin registro.'),
 
-                                            TextEntry::make('estimated_power')
-                                                ->label('Potencia')
-                                                ->formatStateUsing(fn ($state, $record) => $state ? "{$state} {$record->power_unit}" : '—')
-                                                ->placeholder('—'),
-
-                                            TextEntry::make('nominal_current')
-                                                ->label('Corriente nominal (A)')
-                                                ->placeholder('—'),
+                                            TextEntry::make('number_of_circuits')
+                                                ->label('N.° de salidas / circuitos')
+                                                ->placeholder('Sin registro.'),
                                         ]),
 
+                                        // Instalación
                                         Grid::make(4)->schema([
                                             TextEntry::make('location_type')
                                                 ->label('Ubicación')
                                                 ->formatStateUsing(fn ($state) => match ($state) {
                                                     'interior' => 'Interior',
                                                     'exterior' => 'Exterior',
-                                                    default => $state ?? '—',
+                                                    default => $state ?? 'Sin registro.',
                                                 })
                                                 ->badge()
                                                 ->color(fn ($state) => $state === 'exterior' ? 'warning' : 'info')
-                                                ->placeholder('—'),
+                                                ->placeholder('Sin registro.'),
+
+                                            TextEntry::make('special_environment')
+                                                ->label('Ambiente especial')
+                                                ->listWithLineBreaks()
+                                                ->placeholder('Sin registro.'),
 
                                             TextEntry::make('ip_rating')
                                                 ->label('IP')
-                                                ->placeholder('—'),
+                                                ->placeholder('Sin registro.'),
 
                                             TextEntry::make('ik_rating')
                                                 ->label('IK')
-                                                ->placeholder('—'),
+                                                ->placeholder('Sin registro.'),
+                                        ]),
 
+                                        Grid::make(3)->schema([
                                             TextEntry::make('mounting_type')
                                                 ->label('Montaje')
                                                 ->formatStateUsing(fn ($state) => match ($state) {
@@ -216,15 +213,102 @@ class ViewSubmissionRequest extends ViewRecord
                                                     'rack_19' => 'Rack 19"',
                                                     'pedestal' => 'Pedestal',
                                                     'otro' => 'Otro',
-                                                    default => $state ?? '—',
+                                                    default => $state ?? 'Sin registro.',
                                                 })
-                                                ->placeholder('—'),
+                                                ->placeholder('Sin registro.'),
+
+                                            TextEntry::make('max_height')
+                                                ->label('Alto máx. (mm)')
+                                                ->placeholder('Sin registro.')
+                                                ->visible(fn ($record) => $record->has_dimension_restrictions),
+
+                                            TextEntry::make('max_width')
+                                                ->label('Ancho máx. (mm)')
+                                                ->placeholder('Sin registro.')
+                                                ->visible(fn ($record) => $record->has_dimension_restrictions),
+
+                                            TextEntry::make('max_depth')
+                                                ->label('Prof. máx. (mm)')
+                                                ->placeholder('Sin registro.')
+                                                ->visible(fn ($record) => $record->has_dimension_restrictions),
                                         ]),
 
-                                        Grid::make(2)->schema([
+                                        TextEntry::make('additional_installation_conditions')
+                                            ->label('Condiciones adicionales de instalación')
+                                            ->placeholder('Sin registro.')
+                                            ->columnSpanFull(),
+
+                                        // Especificaciones Eléctricas
+                                        Grid::make(4)->schema([
+                                            TextEntry::make('supply_voltage')
+                                                ->label('Tensión (V)')
+                                                ->formatStateUsing(fn ($state, $record) => $state === 'otro'
+                                                    ? ($record->supply_voltage_other.' V')
+                                                    : ($state ? $state.' V' : 'Sin registro.'))
+                                                ->placeholder('Sin registro.'),
+
+                                            TextEntry::make('electrical_system')
+                                                ->label('Sistema eléctrico')
+                                                ->formatStateUsing(fn ($state, $record) => match ($state) {
+                                                    'trifasico' => 'Trifásico (3F+N)',
+                                                    'bifasico' => 'Bifásico (2F)',
+                                                    'monofasico' => 'Monofásico (1F+N)',
+                                                    'dc' => 'Corriente continua (DC)',
+                                                    'otro' => $record->electrical_system_other ?? 'Otro',
+                                                    default => $state ?? 'Sin registro.',
+                                                })
+                                                ->placeholder('Sin registro.'),
+
+                                            TextEntry::make('estimated_power')
+                                                ->label('Potencia')
+                                                ->formatStateUsing(fn ($state, $record) => $state
+                                                    ? "{$state} {$record->power_unit}"
+                                                    : 'Sin registro.')
+                                                ->placeholder('Sin registro.'),
+
+                                            TextEntry::make('nominal_current')
+                                                ->label('Corriente nominal (A)')
+                                                ->placeholder('Sin registro.'),
+
+                                            TextEntry::make('frequency')
+                                                ->label('Frecuencia')
+                                                ->formatStateUsing(fn ($state, $record) => $state === 'otro'
+                                                    ? ($record->other_frequency.' Hz')
+                                                    : ($state ? $state.' Hz' : 'Sin registro.'))
+                                                ->placeholder('Sin registro.'),
+                                        ]),
+
+                                        TextEntry::make('required_protections')
+                                            ->label('Protecciones requeridas')
+                                            ->listWithLineBreaks()
+                                            ->placeholder('Sin registro.')
+                                            ->columnSpanFull(),
+
+                                        TextEntry::make('preferred_brands')
+                                            ->label('Marcas preferidas')
+                                            ->listWithLineBreaks()
+                                            ->placeholder('Sin registro.')
+                                            ->columnSpanFull(),
+
+                                        // Diseño Constructivo
+                                        Grid::make(3)->schema([
                                             TextEntry::make('cabinet_material')
                                                 ->label('Material del gabinete')
-                                                ->placeholder('—'),
+                                                ->placeholder('Sin registro.'),
+
+                                            TextEntry::make('special_color')
+                                                ->label('Color del gabinete')
+                                                ->formatStateUsing(fn ($state) => match ($state) {
+                                                    '7035' => 'RAL 7035 — Gris claro',
+                                                    '7016' => 'RAL 7016 — Gris antracita',
+                                                    '9016' => 'RAL 9016 — Blanco tráfico',
+                                                    '9005' => 'RAL 9005 — Negro intenso',
+                                                    '5010' => 'RAL 5010 — Azul genciana',
+                                                    '6005' => 'RAL 6005 — Verde musgo',
+                                                    'otro' => 'Otro',
+                                                    default => $state ?? 'Sin registro.',
+                                                })
+                                                ->placeholder('Sin registro.'),
 
                                             TextEntry::make('ventilation_type')
                                                 ->label('Ventilación')
@@ -233,28 +317,100 @@ class ViewSubmissionRequest extends ViewRecord
                                                     'forzada' => 'Forzada (ventiladores)',
                                                     'sellado' => 'Sellado',
                                                     'climatizado' => 'Climatizado',
-                                                    default => $state ?? '—',
+                                                    default => $state ?? 'Sin registro.',
                                                 })
-                                                ->placeholder('—'),
+                                                ->placeholder('Sin registro.'),
+
+                                            TextEntry::make('future_expansion')
+                                                ->label('Expansión futura')
+                                                ->formatStateUsing(fn ($state) => match ($state) {
+                                                    'no' => 'Sin espacio adicional',
+                                                    '10' => '~10% espacio libre',
+                                                    '20' => '~20% espacio libre',
+                                                    '30' => '~30% espacio libre',
+                                                    'otro' => 'Otro porcentaje',
+                                                    default => $state ?? 'Sin registro.',
+                                                })
+                                                ->placeholder('Sin registro.'),
                                         ]),
+
+                                        // Adjuntos del ítem
+                                        TextEntry::make('id')
+                                            ->label('Adjuntos del tablero')
+                                            ->columnSpanFull()
+                                            ->formatStateUsing(function ($state, $record) {
+                                                $attachments = Attachment::withoutGlobalScopes()
+                                                    ->where('attachable_type', 'submission_item')
+                                                    ->where('attachable_id', $record->id)
+                                                    ->get();
+
+                                                if ($attachments->isEmpty()) {
+                                                    return 'Sin registro.';
+                                                }
+
+                                                $labels = [
+                                                    'load_list' => 'Lista de cargas',
+                                                    'unilineal_diagram' => 'Diagrama unilineal',
+                                                    'mechanical_plans' => 'Planos mecánicos',
+                                                ];
+
+                                                return $attachments->map(function ($a) use ($labels) {
+                                                    $label = $labels[$a->tag] ?? $a->tag;
+
+                                                    return "{$label}: {$a->original_name}";
+                                                })->join("\n");
+                                            })
+                                            ->html(false),
 
                                         TextEntry::make('additional_observations')
                                             ->label('Observaciones del tablero')
                                             ->columnSpanFull()
-                                            ->placeholder('—'),
+                                            ->placeholder('Sin registro.'),
                                     ]),
                             ])
                             ->contained(false),
                     ]),
 
-                // ── Notas internas ────────────────────────────────────────
-                Section::make('Notas Internas')
-                    ->icon('heroicon-o-pencil-square')
-                    ->hidden(fn () => blank($this->record->internal_notes))
+                // ── Documentación del Proyecto ────────────────────────────
+                Section::make('Documentación del Proyecto')
+                    ->icon('heroicon-o-paper-clip')
+                    ->iconColor('success')
                     ->schema([
-                        TextEntry::make('internal_notes')
-                            ->label('')
-                            ->columnSpanFull(),
+                        TextEntry::make('id')
+                            ->label('Especificaciones técnicas')
+                            ->columnSpanFull()
+                            ->formatStateUsing(function ($state, $record) {
+                                $att = Attachment::withoutGlobalScopes()
+                                    ->where('attachable_type', 'submission_request')
+                                    ->where('attachable_id', $record->id)
+                                    ->where('tag', 'technical_specs')
+                                    ->first();
+
+                                return $att ? $att->original_name : 'Sin registro.';
+                            }),
+
+                        TextEntry::make('id')
+                            ->label('Fotografías del sitio')
+                            ->key('site_photos_entry')
+                            ->columnSpanFull()
+                            ->formatStateUsing(function ($state, $record) {
+                                $attachments = Attachment::withoutGlobalScopes()
+                                    ->where('attachable_type', 'submission_request')
+                                    ->where('attachable_id', $record->id)
+                                    ->where('tag', 'site_photo')
+                                    ->get();
+
+                                if ($attachments->isEmpty()) {
+                                    return 'Sin registro.';
+                                }
+
+                                return $attachments->map(fn ($a) => $a->original_name)->join("\n");
+                            }),
+
+                        TextEntry::make('project_observations')
+                            ->label('Observaciones generales del proyecto')
+                            ->columnSpanFull()
+                            ->placeholder('Sin registro.'),
                     ]),
 
                 // ── Historial de estados ──────────────────────────────────
@@ -277,7 +433,7 @@ class ViewSubmissionRequest extends ViewRecord
 
                                 TextEntry::make('from_status')
                                     ->label('Desde')
-                                    ->placeholder('—')
+                                    ->placeholder('Sin registro.')
                                     ->badge()
                                     ->size('sm'),
 
@@ -288,33 +444,18 @@ class ViewSubmissionRequest extends ViewRecord
 
                                 TextEntry::make('comment')
                                     ->label('Comentario')
-                                    ->placeholder('—')
+                                    ->placeholder('Sin registro.')
                                     ->columnSpanFull()
                                     ->size('sm'),
                             ])
                             ->columns(4),
                     ]),
 
-                // ── Comentarios internos ──────────────────────────────────
-                Section::make('Comentarios')
+                // ── Comentarios internos (parallax/filament-comments) ─────
+                Section::make('Comentarios Internos')
                     ->icon('heroicon-o-chat-bubble-left-right')
                     ->schema([
-                        RepeatableEntry::make('comments')
-                            ->label('')
-                            ->schema([
-                                TextEntry::make('author.name')
-                                    ->label('Usuario')
-                                    ->weight('medium')
-                                    ->size('sm'),
-                                TextEntry::make('created_at')
-                                    ->label('Fecha')
-                                    ->since()
-                                    ->size('sm'),
-                                TextEntry::make('body')
-                                    ->label('Comentario')
-                                    ->columnSpanFull(),
-                            ])
-                            ->columns(2),
+                        CommentsEntry::make('filamentComments'),
                     ]),
             ]);
     }
@@ -329,7 +470,13 @@ class ViewSubmissionRequest extends ViewRecord
                 ->form([
                     Select::make('status')
                         ->label('Estado')
-                        ->options(SubmissionStatus::class)
+                        ->options(function () {
+                            $machine = app(SubmissionStateMachine::class);
+
+                            return collect($machine->allowedNextStatuses($this->record))
+                                ->mapWithKeys(fn (SubmissionStatus $s) => [$s->value => $s->getLabel()])
+                                ->all();
+                        })
                         ->required(),
 
                     Textarea::make('comment')
@@ -344,6 +491,17 @@ class ViewSubmissionRequest extends ViewRecord
 
                     try {
                         $machine->transition(auth()->user(), $this->record, $toStatus, $data['comment'] ?? null);
+
+                        // Si se dejó un comentario, registrarlo también en FilamentComments
+                        if (! blank($data['comment'] ?? null)) {
+                            FilamentComment::create([
+                                'user_id' => auth()->id(),
+                                'subject_type' => SubmissionRequest::class,
+                                'subject_id' => $this->record->id,
+                                'comment' => '[Cambio de estado → '.($toStatus->getLabel() ?? $toStatus->value).'] '.$data['comment'],
+                            ]);
+                        }
+
                         $this->refreshFormData(['status']);
                         Notification::make()->title('Estado actualizado.')->success()->send();
                     } catch (\Exception $e) {
@@ -351,28 +509,6 @@ class ViewSubmissionRequest extends ViewRecord
                     }
                 })
                 ->visible(fn () => auth()->user()->can('updateStatus', $this->record)),
-
-            Action::make('add_comment')
-                ->label('Agregar comentario')
-                ->icon('heroicon-o-chat-bubble-left')
-                ->color('gray')
-                ->form([
-                    Textarea::make('body')
-                        ->label('Comentario')
-                        ->required()
-                        ->rows(3),
-                ])
-                ->action(function (array $data): void {
-                    Comment::create([
-                        'organization_id' => $this->record->organization_id,
-                        'commentable_type' => SubmissionRequest::class,
-                        'commentable_id' => $this->record->id,
-                        'user_id' => auth()->id(),
-                        'body' => $data['body'],
-                    ]);
-                    Notification::make()->title('Comentario agregado.')->success()->send();
-                })
-                ->visible(fn () => auth()->user()->can('comment', $this->record)),
         ];
     }
 }

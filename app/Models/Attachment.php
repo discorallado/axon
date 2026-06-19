@@ -24,6 +24,7 @@ class Attachment extends Model
         'mime_type',
         'size_bytes',
         'uploaded_by',
+        'tag',
     ];
 
     protected function casts(): array

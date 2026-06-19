@@ -4,7 +4,6 @@ namespace App\Models;
 
 use App\Enums\SubmissionStatus;
 use App\Models\Concerns\HasAttachments;
-use App\Models\Concerns\HasComments;
 use App\Models\Concerns\HasOrganizationScope;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -12,10 +11,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Parallax\FilamentComments\Models\Traits\HasFilamentComments;
 
 class SubmissionRequest extends Model
 {
-    use HasAttachments, HasComments, HasFactory, HasOrganizationScope, HasUlids, SoftDeletes;
+    use HasAttachments, HasFactory, HasFilamentComments, HasOrganizationScope, HasUlids, SoftDeletes;
 
     protected $fillable = [
         'organization_id',
@@ -34,9 +34,7 @@ class SubmissionRequest extends Model
         'user_agent',
         'submitted_at',
         'assigned_to',
-        'internal_notes',
-        'technical_specs_path',
-        'site_photos_paths',
+        'project_observations',
         'raw_data',
     ];
 
@@ -46,7 +44,6 @@ class SubmissionRequest extends Model
             'submitted_at' => 'datetime',
             'desired_delivery_date' => 'date',
             'status' => SubmissionStatus::class,
-            'site_photos_paths' => 'array',
             'raw_data' => 'array',
         ];
     }
@@ -54,11 +51,6 @@ class SubmissionRequest extends Model
     public function assignee(): BelongsTo
     {
         return $this->belongsTo(User::class, 'assigned_to');
-    }
-
-    public function answers(): HasMany
-    {
-        return $this->hasMany(SubmissionAnswer::class)->orderBy('id');
     }
 
     public function statusHistories(): HasMany

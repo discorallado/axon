@@ -11,14 +11,11 @@ use Filament\Actions\Action;
 use Filament\Actions\ActionGroup as ActionsActionGroup;
 use Filament\Actions\DeleteAction as ActionsDeleteAction;
 use Filament\Actions\ForceDeleteAction;
-use Filament\Actions\ViewAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
-use Filament\Tables\Actions\ActionGroup;
-use Filament\Tables\Actions\DeleteAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TrashedFilter;
@@ -103,13 +100,13 @@ class SubmissionRequestResource extends Resource
                     ->modalHeading('Eliminar permanentemente')
                     ->modalDescription('Esta acción eliminará la solicitud de forma permanente. No se podrá recuperar.')
                     ->successNotificationTitle('Solicitud eliminada permanentemente.')
-                    ->visible(fn() => auth()->user()->hasRole(['super_admin'])),
+                    ->visible(fn () => auth()->user()->hasRole(['super_admin'])),
                 ActionsActionGroup::make([
                     Action::make('edit_external')
                         ->label('Editar solicitud')
                         ->icon('heroicon-o-pencil-square')
                         ->color('info')
-                        ->url(fn(SubmissionRequest $record): string => URL::signedRoute(
+                        ->url(fn (SubmissionRequest $record): string => URL::signedRoute(
                             'solicitud.editar',
                             ['submission' => $record->id],
                             now()->addHours(4),
@@ -143,7 +140,7 @@ class SubmissionRequestResource extends Resource
                                 Notification::make()->title($e->getMessage())->danger()->send();
                             }
                         })
-                        ->visible(fn(SubmissionRequest $record) => auth()->user()->can('updateStatus', $record)),
+                        ->visible(fn (SubmissionRequest $record) => auth()->user()->can('updateStatus', $record)),
 
                     Action::make('assign')
                         ->label(__('submissions.actions.assign'))
@@ -153,7 +150,7 @@ class SubmissionRequestResource extends Resource
                             Select::make('assigned_to')
                                 ->label(__('submissions.fields.assigned_to'))
                                 ->options(
-                                    fn(SubmissionRequest $record) => User::where('organization_id', $record->organization_id)
+                                    fn (SubmissionRequest $record) => User::where('organization_id', $record->organization_id)
                                         ->pluck('name', 'id')
                                 )
                                 ->nullable()
@@ -163,7 +160,7 @@ class SubmissionRequestResource extends Resource
                             $record->update(['assigned_to' => $data['assigned_to']]);
                             Notification::make()->title('Responsable actualizado.')->success()->send();
                         })
-                        ->visible(fn(SubmissionRequest $record) => auth()->user()->can('assign', $record)),
+                        ->visible(fn (SubmissionRequest $record) => auth()->user()->can('assign', $record)),
 
                     ActionsDeleteAction::make()
                         ->label('Eliminar solicitud')
@@ -171,7 +168,7 @@ class SubmissionRequestResource extends Resource
                         ->modalHeading('Eliminar solicitud')
                         ->modalDescription('La solicitud será eliminada y no aparecerá en la bandeja. Esta acción se puede revertir desde la base de datos.')
                         ->successNotificationTitle('Solicitud eliminada.')
-                        ->visible(fn() => auth()->user()->hasRole(['super_admin'])),
+                        ->visible(fn () => auth()->user()->hasRole(['super_admin'])),
                 ]),
             ]);
     }

@@ -16,13 +16,35 @@ class SubmissionStateMachine
 
     private const REOPEN_ROLES = ['super_admin'];
 
+    /**
+     * Transiciones permitidas por estado origen.
+     * Estados terminales (aprobada/rechazada) solo pueden reabrirse a 'nueva' por super_admin.
+     */
+    private const ALLOWED_TRANSITIONS = [
+        'nueva' => ['en_revision', 'rechazada'],
+        'en_revision' => ['cotizada', 'rechazada'],
+        'cotizada' => ['aprobada', 'rechazada', 'en_revision'],
+    ];
+
     public function canTransition(User $user, SubmissionRequest $request, SubmissionStatus $toStatus): bool
     {
         $from = $request->status;
 
+        // Mismo estado: nunca permitido
+        if ($from === $toStatus) {
+            return false;
+        }
+
+        // Estados terminales: solo super_admin puede reabrir a 'nueva'
         if ($from->isTerminal()) {
-            return $user->hasAnyRole(self::REOPEN_ROLES)
-                || ($user->hasRole('supervisor') && $user->can('reopen', $request));
+            return $toStatus === SubmissionStatus::Nueva
+                && $user->hasAnyRole(self::REOPEN_ROLES);
+        }
+
+        // Verificar que la transición esté en la tabla de transiciones válidas
+        $allowed = self::ALLOWED_TRANSITIONS[$from->value] ?? [];
+        if (! in_array($toStatus->value, $allowed, true)) {
+            return false;
         }
 
         if ($toStatus === SubmissionStatus::Rechazada) {
@@ -57,5 +79,20 @@ class SubmissionStateMachine
                 'created_at' => now(),
             ]);
         });
+    }
+
+    /**
+     * Retorna los estados a los que puede transicionar la solicitud desde su estado actual.
+     */
+    public function allowedNextStatuses(SubmissionRequest $request): array
+    {
+        if ($request->status->isTerminal()) {
+            return [SubmissionStatus::Nueva];
+        }
+
+        return array_map(
+            fn (string $value) => SubmissionStatus::from($value),
+            self::ALLOWED_TRANSITIONS[$request->status->value] ?? []
+        );
     }
 }

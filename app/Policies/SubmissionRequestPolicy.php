@@ -30,12 +30,6 @@ class SubmissionRequestPolicy
             && $user->organization_id === $submission->organization_id;
     }
 
-    public function comment(User $user, SubmissionRequest $submission): bool
-    {
-        return $user->hasAnyRole(['super_admin', 'ingeniero', 'supervisor', 'calidad'])
-            && $user->organization_id === $submission->organization_id;
-    }
-
     public function export(User $user, SubmissionRequest $submission): bool
     {
         return $user->hasAnyRole(['super_admin', 'ingeniero', 'supervisor', 'calidad'])

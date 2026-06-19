@@ -2,8 +2,8 @@
 
 namespace App\Providers;
 
-use App\Models\Comment;
-use App\Models\SubmissionAnswer;
+use App\Models\Observers\SubmissionItemObserver;
+use App\Models\Observers\SubmissionRequestObserver;
 use App\Models\SubmissionItem;
 use App\Models\SubmissionRequest;
 use App\Models\User;
@@ -23,22 +23,19 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        // Registra el color primario globalmente para que el formulario público
-        // lo reciba sin pasar por el middleware del panel de Filament
         FilamentColor::register([
             'primary' => config('public-form.primary'),
         ]);
 
-        // Morphmap explícito para evitar FQCNs en la DB
         Relation::enforceMorphMap([
             'user' => User::class,
             'submission_request' => SubmissionRequest::class,
-            'submission_answer' => SubmissionAnswer::class,
             'submission_item' => SubmissionItem::class,
-            'comment' => Comment::class,
         ]);
 
-        // Rate limiter para el formulario público
+        SubmissionRequest::observe(SubmissionRequestObserver::class);
+        SubmissionItem::observe(SubmissionItemObserver::class);
+
         RateLimiter::for('public-form', function (Request $request) {
             return Limit::perMinutes(10, 10000000)
                 ->by($request->ip())
