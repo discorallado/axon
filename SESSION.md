@@ -10,120 +10,51 @@
 2026-06-19
 
 ## Módulo / feature en curso
-Módulo de Solicitudes de Tableros Eléctricos — comentarios, adjuntos y limpieza de código
-
-## Objetivo de esta sesión
-Implementar las mejoras aprobadas en arquitecto:
-- Comentarios internos con `parallax/filament-comments`
-- Adjuntos visibles en back-office via modelo `Attachment` polimórfico con `tag`
-- Vista `ViewSubmissionRequest` completa (mismo orden que el formulario, todos los campos)
-- Observadores para cascade delete de archivos en disco
-- Limpieza total del código muerto (FormTemplate, Comment, SubmissionAnswer, etc.)
+Módulo de Solicitudes de Tableros Eléctricos — commit `210ace1` completo
 
 ## Estado actual
 
-### Completado ✅
+### Completado ✅ (commit `210ace1`)
 
-**Migraciones creadas y aplicadas:**
-- `2026_06_19_000001_add_tag_to_attachments` — columna `tag VARCHAR(50)` en `attachments`
-- `2026_06_19_000002_add_project_observations_to_submission_requests` — columna `project_observations TEXT`
-- `2026_06_19_000003_drop_file_path_columns` — elimina columnas de ruta de `submission_requests` e `submission_items`
-- `2026_06_19_000004_drop_legacy_tables` — elimina tablas: `form_conditional_rules`, `submission_answers`, `form_questions`, `form_sections`, `form_templates`, `comments`
-- Migraciones de parallax: `create_filament_comments_table` + `add_index_to_subject`
+- Adjuntos polimórficos (`Attachment` + `tag`) reemplazando columnas de ruta
+- `parallax/filament-comments` v3.0.0 instalado; `subject_id` corregido a `varchar(26)` para ULIDs
+- `ViewSubmissionRequest` reescrito: todos los campos en orden del formulario, placeholder `'Sin registro.'`, comentarios con `CommentsEntry`
+- `internal_notes` eliminado
+- Dead code eliminado: FormTemplate, Comment, SubmissionAnswer, backups, policies huérfanas
+- Observers para borrado en cascada de archivos en disco (SubmissionRequestObserver, SubmissionItemObserver)
+- Máquina de estados reforzada: `ALLOWED_TRANSITIONS` constante, bloqueo de mismo estado y transiciones inválidas
+- Select de cambio de estado muestra solo estados válidos vía `allowedNextStatuses()`
+- 13/13 tests Pest en verde, Pint limpio
+- ADR: `docs/adr/0004-adjuntos-polimorficos-comentarios-parallax.md`
 
-**Archivos eliminados (código muerto):**
-- `app/Livewire/PublicFormWizard_backup2.php`
-- `app/Models/Comment.php`
-- `app/Models/Concerns/HasComments.php`
-- `app/Models/FormTemplate.php`
-- `app/Models/SubmissionAnswer.php`
-- `app/Policies/FormSectionPolicy.php`
-- `app/Policies/FormTemplatePolicy.php`
-- `app/Policies/RolePolicy.php`
+## Decisiones pendientes (de /revisor anterior — requieren decisión del usuario)
 
-**Modelos actualizados:**
-- `SubmissionRequest` — eliminado `HasComments`, `answers()`, `technical_specs_path`, `site_photos_paths`; añadido `HasFilamentComments`, `project_observations`
-- `SubmissionItem` — eliminado `load_list_file_path`, `unilineal_diagram_path`, `mechanical_plans_path`; añadido `HasAttachments`, `SoftDeletes`
-- `Attachment` — añadido `tag` a `$fillable`
-- `Organization` — eliminada relación `formTemplates()`
-
-**Observers creados:**
-- `app/Models/Observers/SubmissionRequestObserver` — `forceDeleting`: cascade borrado de ítems + adjuntos
-- `app/Models/Observers/SubmissionItemObserver` — `deleting`: borra adjuntos del disco + BD
-
-**Providers actualizados:**
-- `AppServiceProvider` — morphMap simplificado (solo `user`, `submission_request`, `submission_item`); registra observers
-- `AdminPanelProvider` — añadido `FilamentCommentsPlugin::make()`
-
-**Livewire actualizado (`PublicFormWizard.submit()`):**
-- Guarda `project_observations`
-- Crea `Attachment` rows para: `technical_specs`, `site_photos[]`, y por ítem: `load_list_file`, `unilineal_diagram`, `mechanical_plans`
-- Edit mode usa `$submission->items->each->delete()` para disparar observer
-
-**Filament — `ViewSubmissionRequest` reescrito:**
-- Secciones: Identificación, Contacto y Proyecto (Proyecto + Contacto), Tableros (todos los campos completos), Documentación del Proyecto (adjuntos + observaciones), Notas Internas, Historial de Estados, Comentarios Internos
-- Todos los placeholder usan `'Sin registro.'`
-- `required_protections` y `preferred_brands` → `listWithLineBreaks()`
-- Adjuntos se muestran via `Attachment::withoutGlobalScopes()` en `formatStateUsing`
-- `CommentsEntry::make('filamentComments')` para comentarios
-- Header action `change_status` también crea `FilamentComment` cuando hay texto
-
-**Policy:**
-- `SubmissionRequestPolicy::comment()` eliminado (ya no se usa)
-
-**Tests:**
-- `TenantIsolationTest` — eliminado test de `FormTemplate`; añadido test de org B
-- **13/13 en verde**
-
-**Pint:** limpio
-
-**ADR:** `docs/adr/0004-adjuntos-polimorficos-comentarios-parallax.md`
-
-## Decisiones de diseño tomadas
-- Namespace correcto del trait parallax: `Parallax\FilamentComments\Models\Traits\HasFilamentComments`
-- Los adjuntos en la vista son solo nombres de archivo (no URLs clicables) porque el `AttachmentController` requiere autenticación; agregar links clicables es trabajo futuro
-- `SubmissionItem` ahora tiene `SoftDeletes` (necesario para el observer de cascade delete)
-- El cambio de estado con texto crea FilamentComment con prefijo `[Cambio de estado → X]`
-
-## Archivos modificados en esta sesión
-- `app/Models/SubmissionRequest.php`
-- `app/Models/SubmissionItem.php`
-- `app/Models/Attachment.php`
-- `app/Models/Organization.php`
-- `app/Models/Observers/SubmissionRequestObserver.php` ← nuevo
-- `app/Models/Observers/SubmissionItemObserver.php` ← nuevo
-- `app/Providers/AppServiceProvider.php`
-- `app/Providers/Filament/AdminPanelProvider.php`
-- `app/Livewire/PublicFormWizard.php`
-- `app/Filament/Resources/SubmissionRequestResource/Pages/ViewSubmissionRequest.php`
-- `app/Policies/SubmissionRequestPolicy.php`
-- `tests/Feature/Submissions/TenantIsolationTest.php`
-- `docs/adr/0004-adjuntos-polimorficos-comentarios-parallax.md` ← nuevo
-- `database/migrations/2026_06_19_000001_*` a `2026_06_19_000004_*` ← nuevas
-
-## Comandos para verificar
-```bash
-ddev exec ./vendor/bin/pest         # 13/13 verde
-ddev exec ./vendor/bin/pint --test  # limpio
-ddev launch                         # → axon.ddev.site/solicitud
-```
-
-## Decisiones pendientes / dudas abiertas
-- Los adjuntos en el back-office se muestran como texto (nombre del archivo). Para hacerlos clicables, se debe agregar un `Action` o `url()` que apunte a `route('attachments.download', $attachment->id)`. Esto se puede agregar en una mejora siguiente.
-- El `SoftDeletes` en `SubmissionItem` requiere migración `add_soft_deletes_to_submission_items` (si la columna no existe en la BD, los tests pasaron porque usan SQLite con RefreshDatabase — verificar en la BD real).
-- No hay tests para: observer de cascade delete, FilamentComments integración.
+- **#3** — Al editar una solicitud, ¿se reemplazan los adjuntos de solicitud (technical_specs, site_photos) o se acumulan? Actualmente se acumulan.
+- **#4** — `SubmissionRequestObserver::forceDeleting` llama `->delete()` (soft) en ítems, dejando filas huérfanas en soft-delete. ¿Cambiar a `->forceDelete()`?
+- **#7** — El bloque `change_status` + `FilamentComment::create()` en ViewSubmissionRequest no está en una transacción. `SubmissionStateMachine::transition()` sí tiene su propia transacción, pero el FilamentComment queda fuera. ¿Wrappear en `DB::transaction()`?
 
 ## Próximo paso concreto
-Verificar si `submission_items` ya tiene columna `deleted_at` en la BD de desarrollo:
-```bash
-ddev exec php artisan db:table submission_items
-```
-Si no existe, crear migración `add_soft_deletes_to_submission_items`.
-Luego hacer commit de todo.
+
+El usuario tiene pendiente decidir qué nuevo requerimiento atacar. Las opciones son:
+1. Continuar mejorando el módulo de solicitudes (resolver las dudas de /revisor arriba).
+2. Iniciar otro requerimiento del roadmap.
+
+Esperar instrucción del usuario antes de implementar.
 
 ---
 
 ## Historial de sesiones anteriores
+
+<details>
+<summary>2026-06-19 — Adjuntos polimórficos, comentarios Parallax, máquina de estados</summary>
+
+Migración de columnas de ruta a modelo Attachment polimórfico con tag. Instalación de
+parallax/filament-comments con fix de subject_id para ULIDs. Reescritura completa de
+ViewSubmissionRequest. Eliminación de dead code. Observers para cascade delete.
+Máquina de estados reforzada con ALLOWED_TRANSITIONS y bloqueo de mismo estado.
+13/13 tests en verde. Commit: 210ace1.
+
+</details>
 
 <details>
 <summary>2026-06-18 — Mejoras de formulario y back-office (notificaciones, dark mode, acciones)</summary>
