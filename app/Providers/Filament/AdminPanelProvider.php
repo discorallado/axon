@@ -32,6 +32,7 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             ->viteTheme('resources/css/filament/admin/theme.css')
             ->login()
+            ->favicon(asset('storage/images/favicon.ico'))
             ->brandLogo(asset('storage/images/logo_cse_nuevo.png'))
             ->colors([
                 'primary' => Color::Blue,
