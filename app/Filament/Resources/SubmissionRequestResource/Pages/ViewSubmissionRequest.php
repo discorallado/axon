@@ -9,6 +9,7 @@ use App\Models\SubmissionRequest;
 use App\Services\SubmissionStateMachine;
 use Filament\Actions\Action;
 use Filament\Forms\Components\CheckboxList;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Infolists\Components\RepeatableEntry;
@@ -543,6 +544,14 @@ class ViewSubmissionRequest extends ViewRecord
                         }
                     }
 
+                    if (empty($options)) {
+                        return [
+                            Placeholder::make('no_attachments')
+                                ->label('')
+                                ->content('Esta solicitud no tiene adjuntos.'),
+                        ];
+                    }
+
                     return [
                         CheckboxList::make('attachment_ids')
                             ->label('Selecciona los adjuntos a eliminar')
@@ -553,6 +562,10 @@ class ViewSubmissionRequest extends ViewRecord
                     ];
                 })
                 ->action(function (array $data): void {
+                    if (empty($data['attachment_ids'] ?? [])) {
+                        return;
+                    }
+
                     $allowedParentIds = array_merge(
                         [$this->record->id],
                         $this->record->items()->withTrashed()->pluck('id')->toArray()
