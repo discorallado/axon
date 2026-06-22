@@ -20,6 +20,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Filament\Forms\Components\ToggleButtons;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Notifications\Notification;
@@ -68,7 +69,7 @@ class PublicFormWizard extends Component implements HasActions, HasForms
                 'contact_phone' => $record->submitter_phone,
                 'client_company' => $record->submitter_company,
             ]);
-            $this->items = $record->items->map(fn (SubmissionItem $item) => [
+            $this->items = $record->items->map(fn(SubmissionItem $item) => [
                 'label' => $item->label,
                 'quantity' => $item->quantity,
                 'sort_order' => $item->sort_order,
@@ -143,23 +144,47 @@ class PublicFormWizard extends Component implements HasActions, HasForms
         return Step::make('Contacto y Proyecto')
             ->icon('heroicon-o-user')
             ->schema([
-                Fieldset::make('Datos del Proyecto')
+                Fieldset::make('Datos de Contacto')
+                    ->columns(3)
                     ->schema([
-                        Grid::make(2)->schema([
+                        // Grid::make(2)->schema([
+                        TextInput::make('contact_name')
+                            ->label('Nombre del Contacto')
+                            ->required()
+                            ->maxLength(255),
+
+                        TextInput::make('contact_email')
+                            ->label('Correo Electrónico')
+                            ->email()
+                            ->required()
+                            ->maxLength(255),
+
+                        TextInput::make('contact_phone')
+                            ->label('Teléfono de Contacto')
+                            ->prefix('+56')
+                            ->tel()
+                            ->maxLength(50),
+
+                    ]),
+                Fieldset::make('Datos del Proyecto')
+                    ->columns(1)
+                    ->schema([
+                        Grid::make(3)->schema([
                             TextInput::make('project_name')
-                                ->label('Nombre del Proyecto / Obra')
+                                ->label('Nombre del Proyecto/Obra')
                                 ->required()
                                 ->maxLength(255),
-
+                            TextInput::make('client_company')
+                                ->label('Empresa/Cliente')
+                                // ->required()
+                                ->maxLength(255),
                             TextInput::make('installation_location')
                                 ->label('Ubicación de la Instalación')
-                                ->required()
+                                // ->required()
                                 ->maxLength(255),
-                        ]),
-
-                        Grid::make(2)->schema([
                             TextInput::make('cost_center')
                                 ->label('Centro de Costo Asociado')
+                                ->placeholder('MO-12345')
                                 ->maxLength(100),
 
                             DatePicker::make('desired_delivery_date')
@@ -168,44 +193,24 @@ class PublicFormWizard extends Component implements HasActions, HasForms
                                 ->native(false),
                         ]),
 
-                        Radio::make('engineering_by')
+                        ToggleButtons::make('engineering_by')
                             ->label('Ingeniería básica — ¿quién la entrega?')
                             ->required()
+                            ->columnSpan(3)
                             ->options([
-                                'csenergia' => 'CSEnergy se encarga',
-                                'cliente' => 'La entrega el cliente',
-                                'conjunta' => 'Conjunta (CSEnergy + cliente)',
+                                'csenergia' => 'CSEnergy la provee',
+                                'cliente' => 'Por parte del cliente',
+                                'conjunta' => 'Conjunta (CSEnergy + Cliente)',
                             ])
-                            ->inline(true),
+                            ->colors([
+                                'csenergia' => 'primary',
+                                'cliente' => 'warning',
+                                'conjunta' => 'success',
+                            ])
+                            ->inline(),
                     ]),
 
-                Fieldset::make('Datos de Contacto')
-                    ->schema([
-                        Grid::make(2)->schema([
-                            TextInput::make('contact_name')
-                                ->label('Nombre del Contacto')
-                                ->required()
-                                ->maxLength(255),
 
-                            TextInput::make('client_company')
-                                ->label('Empresa / Cliente')
-                                ->required()
-                                ->maxLength(255),
-                        ]),
-
-                        Grid::make(2)->schema([
-                            TextInput::make('contact_email')
-                                ->label('Correo Electrónico')
-                                ->email()
-                                ->required()
-                                ->maxLength(255),
-
-                            TextInput::make('contact_phone')
-                                ->label('Teléfono de Contacto')
-                                ->tel()
-                                ->maxLength(50),
-                        ]),
-                    ]),
             ]);
     }
 
@@ -219,7 +224,7 @@ class PublicFormWizard extends Component implements HasActions, HasForms
             ->schema([
                 Placeholder::make('items_list')
                     ->label('Tableros en esta solicitud')
-                    ->content(fn () => $this->renderItemsHtml()),
+                    ->content(fn() => $this->renderItemsHtml()),
             ]);
     }
 
@@ -228,14 +233,14 @@ class PublicFormWizard extends Component implements HasActions, HasForms
         $html = '<div class="space-y-2">';
 
         foreach ($this->items as $i => $item) {
-            $label = e($item['label'] ?? 'Tablero '.($i + 1));
+            $label = e($item['label'] ?? 'Tablero ' . ($i + 1));
             $qty = (int) ($item['quantity'] ?? 1);
             $type = e($item['board_type'] ?? '');
 
             $typeLabels = [
-                'fuerza' => 'Fuerza / Potencia',
-                'alumbrado' => 'Alumbrado / Distribución',
-                'control' => 'Control / Automatización',
+                'fuerza' => 'Fuerza/Potencia',
+                'alumbrado' => 'Alumbrado/Distribución',
+                'control' => 'Control/Automatización',
                 'transfer' => 'Transferencia (ATS/MTS)',
                 'sincronizacion' => 'Sincronización Generadores',
                 'remoto' => 'Distribución Remoto',
@@ -243,7 +248,7 @@ class PublicFormWizard extends Component implements HasActions, HasForms
                 'medicion' => 'Medición',
                 'variadores' => 'Variadores de Frecuencia',
                 'arrancadores' => 'Arrancadores Suaves',
-                'ups' => 'UPS / Respaldo',
+                'ups' => 'UPS/Respaldo',
                 'otro' => e($item['other_board_type'] ?? 'Otro'),
             ];
             $typeLabel = $typeLabels[$type] ?? $type;
@@ -321,8 +326,8 @@ class PublicFormWizard extends Component implements HasActions, HasForms
                             ->live(),
 
                         FileUpload::make('technical_specs')
-                            ->label('Especificaciones técnicas / pliego de condiciones')
-                            ->visible(fn ($get) => (bool) $get('has_technical_specs'))
+                            ->label('Especificaciones técnicas/pliego de condiciones')
+                            ->visible(fn($get) => (bool) $get('has_technical_specs'))
                             ->acceptedFileTypes([
                                 'application/pdf',
                                 'application/msword',
@@ -338,7 +343,7 @@ class PublicFormWizard extends Component implements HasActions, HasForms
                 Fieldset::make('Material Gráfico')
                     ->schema([
                         FileUpload::make('site_photos')
-                            ->label('Fotografías del sitio / tablero existente')
+                            ->label('Fotografías del sitio/tablero existente')
                             ->hint('Adjunte fotos del lugar de instalación, espacio disponible u otro material gráfico relevante.')
                             ->multiple()
                             ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'application/pdf'])
@@ -360,12 +365,12 @@ class PublicFormWizard extends Component implements HasActions, HasForms
     }
 
     // -------------------------------------------------------------------------
-    // Acción modal: agregar / editar tablero
+    // Acción modal: agregar/editar tablero
     // -------------------------------------------------------------------------
     public function tableroAction(): Action
     {
         return Action::make('tablero')
-            ->modalHeading(fn () => $this->editingItemIndex !== null ? 'Editar Tablero' : 'Agregar Tablero')
+            ->modalHeading(fn() => $this->editingItemIndex !== null ? 'Editar Tablero' : 'Agregar Tablero')
             ->modalWidth('4xl')
             ->fillForm(function (): array {
                 if ($this->editingItemIndex !== null) {
@@ -389,7 +394,7 @@ class PublicFormWizard extends Component implements HasActions, HasForms
                     ->success()
                     ->send();
             })
-            ->modalCancelAction(fn (Action $action) => $action->action(function () {
+            ->modalCancelAction(fn(Action $action) => $action->action(function () {
                 $this->editingItemIndex = null;
             }));
     }
@@ -423,25 +428,25 @@ class PublicFormWizard extends Component implements HasActions, HasForms
                                 ->label('Tipo de tablero')
                                 ->required()
                                 ->options([
-                                    'fuerza' => 'Tablero de Fuerza / Potencia',
-                                    'alumbrado' => 'Tablero de Alumbrado / Distribución BT',
-                                    'control' => 'Tablero de Control / Automatización',
+                                    'fuerza' => 'Tablero de Fuerza/Potencia',
+                                    'alumbrado' => 'Tablero de Alumbrado/Distribución BT',
+                                    'control' => 'Tablero de Control/Automatización',
                                     'transfer' => 'Tablero de Transferencia (ATS/MTS)',
                                     'sincronizacion' => 'Tablero de Sincronización de Generadores',
                                     'remoto' => 'Tablero de Distribución Remoto',
-                                    'pfcs' => 'Panel de Factor de Potencia / Corrección de FP',
-                                    'medicion' => 'Tablero de Medición / Centro de Carga',
+                                    'pfcs' => 'Panel de Factor de Potencia/Corrección de FP',
+                                    'medicion' => 'Tablero de Medición/Centro de Carga',
                                     'variadores' => 'Tablero con Variadores de Frecuencia (VFD)',
                                     'arrancadores' => 'Tablero con Arrancadores Suaves (SS)',
-                                    'ups' => 'Tablero UPS / Respaldo',
+                                    'ups' => 'Tablero UPS/Respaldo',
                                     'otro' => 'Otro',
                                 ])
                                 ->live(),
 
                             TextInput::make('other_board_type')
                                 ->label('Especifique el tipo de tablero')
-                                ->required(fn ($get) => $get('board_type') === 'otro')
-                                ->visible(fn ($get) => $get('board_type') === 'otro')
+                                ->required(fn($get) => $get('board_type') === 'otro')
+                                ->visible(fn($get) => $get('board_type') === 'otro')
                                 ->maxLength(255),
                         ]),
 
@@ -452,8 +457,8 @@ class PublicFormWizard extends Component implements HasActions, HasForms
                                 ->required()
                                 ->options([
                                     'tablero' => 'Tablero completo',
-                                    'gabinete' => 'Solo gabinete / estructura',
-                                    'reparacion' => 'Reparación / modificación de tablero existente',
+                                    'gabinete' => 'Solo gabinete/estructura',
+                                    'reparacion' => 'Reparación/modificación de tablero existente',
                                 ])
                                 ->inline(false),
 
@@ -485,7 +490,7 @@ class PublicFormWizard extends Component implements HasActions, HasForms
                                     ->placeholder('Ej.: 5 motores de 15 kW, 20 circuitos de alumbrado...'),
 
                                 TextInput::make('number_of_circuits')
-                                    ->label('N.° estimado de salidas / circuitos')
+                                    ->label('N.° estimado de salidas/circuitos')
                                     ->numeric()
                                     ->minValue(1)
                                     ->maxValue(9999),
@@ -507,33 +512,33 @@ class PublicFormWizard extends Component implements HasActions, HasForms
                                 ])
                                 ->inline(true)
                                 ->live()
-                                ->afterStateUpdated(fn ($set) => $set('ip_rating', null)),
+                                ->afterStateUpdated(fn($set) => $set('ip_rating', null)),
 
                             Select::make('special_environment')
                                 ->label('Ambiente especial')
                                 ->multiple()
                                 ->options([
-                                    'marino' => 'Marino / salino',
-                                    'minero' => 'Minero / polvo fino',
-                                    'humedo' => 'Húmedo / condensación',
+                                    'marino' => 'Marino/salino',
+                                    'minero' => 'Minero/polvo fino',
+                                    'humedo' => 'Húmedo/condensación',
                                     'corrosivo' => 'Corrosivo (gases, ácidos)',
                                     'polvoriento' => 'Polvoriento (general)',
-                                    'explosivo' => 'Zona ATEX / explosivo',
+                                    'explosivo' => 'Zona ATEX/explosivo',
                                     'otro' => 'Otro',
                                 ])
                                 ->live(),
 
                             TextInput::make('other_special_environment')
                                 ->label('Ambiente especial — especifique')
-                                ->required(fn ($get) => in_array('otro', (array) ($get('special_environment') ?? [])))
-                                ->visible(fn ($get) => in_array('otro', (array) ($get('special_environment') ?? [])))
+                                ->required(fn($get) => in_array('otro', (array) ($get('special_environment') ?? [])))
+                                ->visible(fn($get) => in_array('otro', (array) ($get('special_environment') ?? [])))
                                 ->maxLength(255),
 
                             Grid::make(2)->schema([
                                 Select::make('ip_rating')
                                     ->label('Grado de protección IP')
                                     ->required()
-                                    ->options(fn ($get) => match ($get('location_type')) {
+                                    ->options(fn($get) => match ($get('location_type')) {
                                         'interior' => [
                                             'IP20' => 'IP20 — Protección básica',
                                             'IP31' => 'IP31 — Contra goteo vertical',
@@ -551,16 +556,22 @@ class PublicFormWizard extends Component implements HasActions, HasForms
                                             'IP68' => 'IP68 — Inmersión continua',
                                         ],
                                         default => [
-                                            'IP20' => 'IP20', 'IP31' => 'IP31', 'IP43' => 'IP43',
-                                            'IP54' => 'IP54', 'IP55' => 'IP55', 'IP65' => 'IP65',
-                                            'IP66' => 'IP66', 'IP67' => 'IP67', 'IP68' => 'IP68',
+                                            'IP20' => 'IP20',
+                                            'IP31' => 'IP31',
+                                            'IP43' => 'IP43',
+                                            'IP54' => 'IP54',
+                                            'IP55' => 'IP55',
+                                            'IP65' => 'IP65',
+                                            'IP66' => 'IP66',
+                                            'IP67' => 'IP67',
+                                            'IP68' => 'IP68',
                                         ],
                                     }),
 
                                 Select::make('ik_rating')
                                     ->label('Grado de protección IK')
                                     ->required()
-                                    ->options(fn ($get) => match ($get('location_type')) {
+                                    ->options(fn($get) => match ($get('location_type')) {
                                         'interior' => [
                                             'IK06' => 'IK06 — 1 J (uso oficina)',
                                             'IK07' => 'IK07 — 2 J (uso general)',
@@ -574,8 +585,11 @@ class PublicFormWizard extends Component implements HasActions, HasForms
                                             'IK10' => 'IK10 — 20 J (industrial pesado)',
                                         ],
                                         default => [
-                                            'IK06' => 'IK06', 'IK07' => 'IK07', 'IK08' => 'IK08',
-                                            'IK09' => 'IK09', 'IK10' => 'IK10',
+                                            'IK06' => 'IK06',
+                                            'IK07' => 'IK07',
+                                            'IK08' => 'IK08',
+                                            'IK09' => 'IK09',
+                                            'IK10' => 'IK10',
                                         ],
                                     }),
                             ]),
@@ -588,7 +602,7 @@ class PublicFormWizard extends Component implements HasActions, HasForms
                                 ->required()
                                 ->options([
                                     'autosoportado' => 'Autosoportado (piso)',
-                                    'mural' => 'Mural / adosado a pared',
+                                    'mural' => 'Mural/adosado a pared',
                                     'rack_19' => 'Rack 19"',
                                     'pedestal' => 'Pedestal',
                                     'otro' => 'Otro',
@@ -599,7 +613,7 @@ class PublicFormWizard extends Component implements HasActions, HasForms
                                 ->live(),
 
                             Fieldset::make('Dimensiones máximas permitidas')
-                                ->visible(fn ($get) => (bool) $get('has_dimension_restrictions'))
+                                ->visible(fn($get) => (bool) $get('has_dimension_restrictions'))
                                 ->schema([
                                     Grid::make(3)->schema([
                                         TextInput::make('max_height')->label('Alto máximo (mm)')->numeric()->minValue(1),
@@ -631,7 +645,7 @@ class PublicFormWizard extends Component implements HasActions, HasForms
                                         'otro' => 'Otro',
                                     ])
                                     ->live()
-                                    ->afterStateUpdated(fn ($get, $set) => static::recalculateCurrent($get, $set)),
+                                    ->afterStateUpdated(fn($get, $set) => static::recalculateCurrent($get, $set)),
 
                                 Select::make('electrical_system')
                                     ->label('Sistema eléctrico')
@@ -644,21 +658,21 @@ class PublicFormWizard extends Component implements HasActions, HasForms
                                         'otro' => 'Otro',
                                     ])
                                     ->live()
-                                    ->afterStateUpdated(fn ($get, $set) => static::recalculateCurrent($get, $set)),
+                                    ->afterStateUpdated(fn($get, $set) => static::recalculateCurrent($get, $set)),
                             ]),
 
                             Grid::make(2)->schema([
                                 TextInput::make('supply_voltage_other')
                                     ->label('Tensión — especifique (V)')
-                                    ->required(fn ($get) => $get('supply_voltage') === 'otro')
-                                    ->visible(fn ($get) => $get('supply_voltage') === 'otro')
+                                    ->required(fn($get) => $get('supply_voltage') === 'otro')
+                                    ->visible(fn($get) => $get('supply_voltage') === 'otro')
                                     ->numeric()
                                     ->maxLength(20),
 
                                 TextInput::make('electrical_system_other')
                                     ->label('Sistema eléctrico — especifique')
-                                    ->required(fn ($get) => $get('electrical_system') === 'otro')
-                                    ->visible(fn ($get) => $get('electrical_system') === 'otro')
+                                    ->required(fn($get) => $get('electrical_system') === 'otro')
+                                    ->visible(fn($get) => $get('electrical_system') === 'otro')
                                     ->maxLength(100),
                             ]),
 
@@ -669,15 +683,15 @@ class PublicFormWizard extends Component implements HasActions, HasForms
                                     ->numeric()
                                     ->minValue(0)
                                     ->live(debounce: 600)
-                                    ->afterStateUpdated(fn ($get, $set) => static::recalculateCurrent($get, $set))
-                                    ->suffix(fn ($get) => $get('power_unit') ?? 'kW'),
+                                    ->afterStateUpdated(fn($get, $set) => static::recalculateCurrent($get, $set))
+                                    ->suffix(fn($get) => $get('power_unit') ?? 'kW'),
 
                                 Select::make('power_unit')
                                     ->label('Unidad')
                                     ->options(['kW' => 'kW', 'kVA' => 'kVA'])
                                     ->default('kW')
                                     ->live()
-                                    ->afterStateUpdated(fn ($get, $set) => static::recalculateCurrent($get, $set)),
+                                    ->afterStateUpdated(fn($get, $set) => static::recalculateCurrent($get, $set)),
 
                                 TextInput::make('nominal_current')
                                     ->label('Corriente nominal (A)')
@@ -695,8 +709,8 @@ class PublicFormWizard extends Component implements HasActions, HasForms
 
                                 TextInput::make('other_frequency')
                                     ->label('Frecuencia — especifique (Hz)')
-                                    ->required(fn ($get) => $get('frequency') === 'otro')
-                                    ->visible(fn ($get) => $get('frequency') === 'otro')
+                                    ->required(fn($get) => $get('frequency') === 'otro')
+                                    ->visible(fn($get) => $get('frequency') === 'otro')
                                     ->numeric()
                                     ->maxLength(20),
                             ]),
@@ -730,7 +744,7 @@ class PublicFormWizard extends Component implements HasActions, HasForms
                                     'hager' => 'Hager',
                                     'weidmuller' => 'Weidmuller',
                                     'phoenix' => 'Phoenix Contact',
-                                    'otro' => 'Otro / Sin preferencia',
+                                    'otro' => 'Otro/Sin preferencia',
                                 ]),
                         ]),
 
@@ -743,8 +757,8 @@ class PublicFormWizard extends Component implements HasActions, HasForms
                                     'acero_pintado' => 'Acero pintado (estándar, económico)',
                                     'acero_galvanizado' => 'Acero galvanizado (mayor resistencia a corrosión)',
                                     'acero_inoxidable' => 'Acero inoxidable 304 (ambientes corrosivos)',
-                                    'acero_inox_316' => 'Acero inoxidable 316 (marino / alta corrosión)',
-                                    'fibra_vidrio' => 'Fibra de vidrio GRP (zonas ATEX / exterior extremo)',
+                                    'acero_inox_316' => 'Acero inoxidable 316 (marino/alta corrosión)',
+                                    'fibra_vidrio' => 'Fibra de vidrio GRP (zonas ATEX/exterior extremo)',
                                     'poliester' => 'Poliéster termoestable (alta resistencia UV)',
                                     'aluminio' => 'Aluminio (liviano, buena disipación térmica)',
                                 ]),
@@ -925,10 +939,10 @@ class PublicFormWizard extends Component implements HasActions, HasForms
             'raw_data' => ['outer' => $data, 'items' => $this->items],
         ];
 
-        $itemsData = collect($this->items)->map(fn ($itemData, int $index) => [
+        $itemsData = collect($this->items)->map(fn($itemData, int $index) => [
             'organization_id' => $organization->id,
             'sort_order' => $index,
-            'label' => $itemData['label'] ?? 'Tablero '.($index + 1),
+            'label' => $itemData['label'] ?? 'Tablero ' . ($index + 1),
             'quantity' => (int) ($itemData['quantity'] ?? 1),
             'delivery_type' => $itemData['delivery_type'] ?? null,
             'is_new_installation' => $itemData['is_new_installation'] ?? null,
@@ -979,7 +993,7 @@ class PublicFormWizard extends Component implements HasActions, HasForms
             }
             $this->attachSubmissionFiles($submission, $data, $organization->id);
         } else {
-            $referenceCode = 'SOL-'.strtoupper(Str::random(8));
+            $referenceCode = 'SOL-' . strtoupper(Str::random(8));
             $submission = SubmissionRequest::withoutGlobalScopes()->create(array_merge($submissionFields, [
                 'organization_id' => $organization->id,
                 'reference_code' => $referenceCode,
@@ -1004,9 +1018,9 @@ class PublicFormWizard extends Component implements HasActions, HasForms
 
             User::withoutGlobalScopes()
                 ->where('organization_id', $organization->id)
-                ->whereHas('roles', fn ($q) => $q->whereIn('name', ['super_admin', 'supervisor']))
+                ->whereHas('roles', fn($q) => $q->whereIn('name', ['super_admin', 'supervisor']))
                 ->get()
-                ->each(fn (User $user) => $user->notify(new NewSubmissionReceived($submission)));
+                ->each(fn(User $user) => $user->notify(new NewSubmissionReceived($submission)));
         }
 
         $this->referenceCode = $submission->reference_code;

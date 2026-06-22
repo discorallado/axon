@@ -33,11 +33,12 @@ class AdminPanelProvider extends PanelProvider
             ->viteTheme('resources/css/filament/admin/theme.css')
             ->login()
             ->favicon(asset('storage/images/favicon.ico'))
-            ->brandLogo(asset('storage/images/logo_cse_nuevo.png'))
+            ->brandLogo(asset('storage/images/logo_cse_blanco.png'))
             ->colors([
                 'primary' => Color::Blue,
             ])
-            ->darkMode(false)
+            ->font('Montserrat')
+            ->darkMode(true)
             ->maxContentWidth(Width::Full)
             ->sidebarWidth('14rem')
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')

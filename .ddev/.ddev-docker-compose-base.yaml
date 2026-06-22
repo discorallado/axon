@@ -8,14 +8,14 @@ services:
       context: './.dbimageBuild'
       args:
         BASE_IMAGE: $DDEV_DBIMAGE
-        username: 'sebas'
+        username: 'ubuntu'
         uid: '1000'
         gid: '1000'
     image: ${DDEV_DBIMAGE}-${DDEV_SITENAME}-built
     cap_add:
       - SYS_NICE
     stop_grace_period: 60s
-    working_dir: "/home/sebas"
+    working_dir: "/home/ubuntu"
     volumes:
       - type: "volume"
         source: "database"
@@ -69,7 +69,7 @@ services:
       - POSTGRES_USER=db
       - POSTGRES_DB=db
       - TZ=America/Santiago
-      - USER=sebas
+      - USER=ubuntu
     command: ${DDEV_DB_CONTAINER_COMMAND}
     healthcheck:
       test: "/healthcheck.sh"
@@ -86,7 +86,7 @@ services:
       context: './.webimageBuild'
       args:
         BASE_IMAGE: $DDEV_WEBIMAGE
-        username: 'sebas'
+        username: 'ubuntu'
         uid: '1000'
         gid: '1000'
         DDEV_PHP_VERSION: ${DDEV_PHP_VERSION}
@@ -184,7 +184,7 @@ services:
     - PHP_IDE_CONFIG=serverName=axon.${DDEV_TLD}
     - SSH_AUTH_SOCK=/home/.ssh-agent/socket
     - TZ=America/Santiago
-    - USER=sebas
+    - USER=ubuntu
     - VIRTUAL_HOST=${DDEV_HOSTNAME}
     # Web /start.sh timeout (default_container_timeout - 5s). Prevents startup scripts from
     # hitting container timeout limit, which would cause "ddev start" to fail completely.

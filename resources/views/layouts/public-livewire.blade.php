@@ -13,6 +13,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ $title ?? config('app.name') }}</title>
     <link rel="icon" type="image/x-icon" href="/storage/images/favicon.ico">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&display=swap" rel="stylesheet">
     <style>
         [x-cloak=''],
         [x-cloak='x-cloak'],
@@ -57,7 +60,7 @@
                 <!-- Izquierda: Logo -->
                 <div class="flex flex-shrink-0">
                     <img src="{{ asset('storage/images/logo_cse.png') }}" width="200px" alt="CS Energy"
-                        class="dark:brightness-0 dark:invert">
+                        class="brightness-0 invert dark:brightness-70 dark:invert-0">
                 </div>
 
                 <!-- Derecha: Texto y Botón juntos -->
