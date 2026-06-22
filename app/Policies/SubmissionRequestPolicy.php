@@ -41,4 +41,17 @@ class SubmissionRequestPolicy
         return $user->hasAnyRole(['super_admin'])
             && $user->organization_id === $submission->organization_id;
     }
+
+    public function deleteAttachment(User $user, SubmissionRequest $submission): bool
+    {
+        if ($user->organization_id !== $submission->organization_id) {
+            return false;
+        }
+
+        if ($user->hasAnyRole(['super_admin', 'ingeniero'])) {
+            return true;
+        }
+
+        return $user->hasRole('supervisor') && $submission->assigned_to === $user->id;
+    }
 }

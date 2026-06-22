@@ -14,8 +14,8 @@ class SubmissionRequestObserver
      */
     public function forceDeleting(SubmissionRequest $submission): void
     {
-        // Items primero (dispara SubmissionItemObserver::deleting via each->delete())
-        $submission->items()->withTrashed()->get()->each->delete();
+        // Items primero (dispara SubmissionItemObserver::deleting via each->forceDelete())
+        $submission->items()->withTrashed()->get()->each->forceDelete();
 
         // Adjuntos directos de la solicitud
         $submission->attachments()->each(function (Attachment $attachment) {
