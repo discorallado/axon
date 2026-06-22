@@ -1,4 +1,4 @@
-@import 'tailwindcss';
+@import "tailwindcss";
 
 @variant dark (&:where(.dark, .dark *));
 
@@ -7,18 +7,12 @@
 
 @theme {
     --font-sans:
-        'Instrument Sans',
-        ui-sans-serif,
-        system-ui,
-        sans-serif,
-        'Apple Color Emoji',
-        'Segoe UI Emoji',
-        'Segoe UI Symbol',
-        'Noto Color Emoji';
+        "Instrument Sans", ui-sans-serif, system-ui, sans-serif,
+        "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol",
+        "Noto Color Emoji";
 }
 
 @layer components {
-
     /* ==========================================================
        Layout
     ========================================================== */
@@ -27,12 +21,21 @@
         @apply min-h-screen bg-zinc-100 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 antialiased;
     }
 
-    .pf-header {
+    /* .pf-header {
         @apply border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900;
     }
 
     .pf-header-inner {
         @apply mx-auto max-w-5xl px-6 py-5 flex items-center gap-3;
+    } */
+
+    .pf-header {
+        /* Ajusta min-h a tu gusto (ej: 120px o 140px) para controlar la altura del fondo */
+        @apply w-full min-h-[130px] flex items-center border-b border-zinc-200 dark:border-zinc-800 bg-cover bg-center bg-no-repeat relative;
+    }
+
+    .pf-header-inner {
+        @apply mx-auto max-w-5xl w-full px-6 py-4 relative z-10;
     }
 
     .pf-header-icon {
@@ -74,7 +77,7 @@
     }
 
     .pf-form-description {
-        @apply mt-3 text-base text-zinc-500 dark:text-zinc-400 leading-relaxed;
+        @apply mt-3 text-base font-medium text-zinc-500 dark:text-zinc-400 leading-relaxed;
     }
 
     .pf-section-title {
@@ -92,7 +95,7 @@
     .fi-fo-field-label-required-mark {
         /* font-size: 1.25rem !important; */
         font-weight: bold !important;
-        content: 'asdasdasd' !important;
+        content: "asdasdasd" !important;
     }
 
     .pf-label-optional {
@@ -285,5 +288,4 @@
     .pf-spinner {
         @apply h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white;
     }
-
 }

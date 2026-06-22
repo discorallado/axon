@@ -143,9 +143,11 @@
 
     {{-- Formulario --}}
     <div class="mb-8">
-        <h1 class="pf-form-heading">Solicitud de Tableros Eléctricos</h1>
+        <h1 class="pf-form-heading">Solicitud de Equipamiento y Soluciones Eléctricas.
+
+</h1>
         <p class="pf-form-description">
-            Complete los datos del proyecto, agregue los tableros requeridos y adjunte la documentación disponible.
+        Complete los datos de su proyecto, configure los tableros o salas eléctricas requeridas y adjunte la documentación técnica disponible para nuestro equipo de ingeniería.
         </p>
     </div>
 
