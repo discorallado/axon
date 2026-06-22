@@ -21,6 +21,27 @@ AMARILLO='\033[1;33m'
 AZUL='\033[0;34m'
 SIN_COLOR='\033[0;0m' # Borra el color para volver al texto normal
 
+
+# --- NUEVO: REVISIÓN DE IDENTIDAD DE GIT ---
+# Comprobar si falta el correo o el nombre en Git
+GIT_EMAIL=$(git config user.email)
+GIT_NAME=$(git config user.name)
+
+if [ -z "$GIT_EMAIL" ] || [ -z "$GIT_NAME" ]; then
+    echo -e "${AMARILLO}[!] Git no te conoce en este equipo. Vamos a configurarlo rápido...${SIN_COLOR}"
+    
+    if [ -z "$GIT_EMAIL" ]; then
+        read -p "Introduce tu correo de GitHub: " NUEVO_EMAIL
+        git config --global user.email "$NUEVO_EMAIL"
+    fi
+    
+    if [ -z "$GIT_NAME" ]; then
+        read -p "Introduce tu nombre o usuario de GitHub: " NUEVO_NAME
+        git config --global user.name "$NUEVO_NAME"
+    fi
+    echo -e "${VERDE}¡Identidad configurada con éxito en este equipo! Configuración guardada.${SIN_COLOR}\n"
+fi
+
 # Función para pedir confirmación en base a la acción
 confirmar_accion() {
     local mensaje_accion=$1
