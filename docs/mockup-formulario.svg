@@ -1,0 +1,247 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="1300" viewBox="0 0 960 1300"
+     font-family="'Segoe UI','Helvetica Neue',Arial,sans-serif">
+  <defs>
+    <filter id="card-shadow">
+      <feDropShadow dx="0" dy="1" stdDeviation="3" flood-color="#00000016"/>
+    </filter>
+    <filter id="toast-shadow">
+      <feDropShadow dx="0" dy="4" stdDeviation="12" flood-color="#00000028"/>
+    </filter>
+  </defs>
+
+  <!-- ════════════════════════════════════════════
+       PAGE BACKGROUND
+  ════════════════════════════════════════════ -->
+  <rect width="960" height="1300" fill="#f4f4f5"/>
+
+  <!-- ════════════════════════════════════════════
+       HEADER  (y 0–130)
+  ════════════════════════════════════════════ -->
+  <!-- Dark bg -->
+  <rect width="960" height="130" fill="#1c1917"/>
+  <!-- Subtle grain overlay lines -->
+  <rect width="960" height="130" fill="rgba(0,0,0,0.30)"/>
+
+  <!-- Logo box -->
+  <g transform="translate(80,46)">
+    <rect width="164" height="38" rx="5" fill="rgba(255,255,255,0.93)"/>
+    <!-- CS en naranja -->
+    <text x="14" y="16" font-size="13" font-weight="800" fill="#ea580c" letter-spacing="0.3">CS</text>
+    <!-- ENERGY en gris oscuro -->
+    <text x="33" y="16" font-size="13" font-weight="800" fill="#1c1917" letter-spacing="0.3">ENERGY</text>
+    <!-- subtítulo -->
+    <text x="14" y="30" font-size="7.5" font-weight="500" fill="#57534e" letter-spacing="2">SOLUCIONES ELÉCTRICAS</text>
+  </g>
+
+  <!-- Divider -->
+  <rect x="606" y="51" width="1" height="28" fill="rgba(255,255,255,0.22)"/>
+
+  <!-- SOLUCIONES INDUSTRIALES label -->
+  <text x="621" y="70" font-size="11" font-weight="700" fill="rgba(255,255,255,0.9)" letter-spacing="2.4">SOLUCIONES INDUSTRIALES</text>
+
+  <!-- Moon icon -->
+  <g transform="translate(900,50)">
+    <rect width="30" height="30" rx="7" fill="rgba(255,255,255,0.10)"/>
+    <path d="M15,8 a8,8,0,0,0,0,14 a6,6,0,0,1,0,-14 z" fill="none" stroke="rgba(255,255,255,0.75)" stroke-width="1.4" stroke-linejoin="round"/>
+  </g>
+
+  <!-- Border bottom header -->
+  <rect y="129" width="960" height="1" fill="rgba(255,255,255,0.08)"/>
+
+  <!-- ════════════════════════════════════════════
+       TITLE SECTION  (y 130–278)
+  ════════════════════════════════════════════ -->
+  <text x="80" y="200" font-size="29" font-weight="700" fill="#18181b" letter-spacing="-0.5">
+    Solicitud de Equipamiento y Soluciones Eléctricas.
+  </text>
+  <text x="80" y="228" font-size="13.5" fill="#71717a">
+    Complete los datos de su proyecto, configure los tableros o salas eléctricas requeridas
+  </text>
+  <text x="80" y="247" font-size="13.5" fill="#71717a">
+    y adjunte la documentación técnica disponible para nuestro equipo de ingeniería.
+  </text>
+
+  <!-- ════════════════════════════════════════════
+       MAIN CARD  (y 278–1110)
+  ════════════════════════════════════════════ -->
+  <rect x="80" y="278" width="800" height="842" rx="16" fill="white" stroke="#e4e4e7" stroke-width="1" filter="url(#card-shadow)"/>
+
+  <!-- ── WIZARD NAV (y 278–342) ── -->
+  <!-- Nav area tint -->
+  <path d="M80,278 h800 a16,16,0,0,1,16,16 v30 h-832 v-30 a16,16,0,0,1,16,-16 z" fill="#fafafa"/>
+  <rect x="80" y="324" width="800" height="18" fill="#fafafa"/>
+  <!-- Bottom border nav -->
+  <rect x="80" y="341" width="800" height="1" fill="#e4e4e7"/>
+
+  <!-- Step 1 — ACTIVE -->
+  <!-- Blue underline -->
+  <rect x="80" y="339" width="267" height="3" fill="#2563eb" rx="1"/>
+  <!-- Dot -->
+  <circle cx="144" cy="308" r="14" fill="#2563eb"/>
+  <text x="144" y="313" font-size="12" font-weight="700" fill="white" text-anchor="middle">1</text>
+  <!-- Label -->
+  <text x="165" y="304" font-size="13" font-weight="600" fill="#2563eb">Contacto y Proyecto</text>
+  <!-- user icon hint -->
+  <text x="165" y="320" font-size="10.5" fill="#60a5fa">Paso actual</text>
+
+  <!-- Connector line 1→2 -->
+  <rect x="360" y="307" width="32" height="1" fill="#d4d4d8"/>
+
+  <!-- Step 2 -->
+  <circle cx="407" cy="308" r="14" fill="#e4e4e7"/>
+  <text x="407" y="313" font-size="12" font-weight="600" fill="#71717a" text-anchor="middle">2</text>
+  <text x="428" y="304" font-size="13" font-weight="500" fill="#71717a">Tableros</text>
+  <text x="428" y="320" font-size="10.5" fill="#a1a1aa">Tableros y equipos</text>
+
+  <!-- Connector line 2→3 -->
+  <rect x="570" y="307" width="32" height="1" fill="#d4d4d8"/>
+
+  <!-- Step 3 -->
+  <circle cx="617" cy="308" r="14" fill="#e4e4e7"/>
+  <text x="617" y="313" font-size="12" font-weight="600" fill="#71717a" text-anchor="middle">3</text>
+  <text x="638" y="304" font-size="13" font-weight="500" fill="#71717a">Documentación</text>
+  <text x="638" y="320" font-size="10.5" fill="#a1a1aa">Archivos y cierre</text>
+
+  <!-- ══ FORM BODY ══ -->
+
+  <!-- ── FIELDSET: Datos del Proyecto (y 358–640) ── -->
+  <rect x="112" y="358" width="736" height="278" rx="8" fill="transparent" stroke="#e4e4e7" stroke-width="1.2"/>
+  <!-- Legend background (cubre el borde) -->
+  <rect x="125" y="350" width="135" height="17" fill="white"/>
+  <text x="133" y="362" font-size="12" font-weight="600" fill="#3f3f46">Datos del Proyecto</text>
+
+  <!-- Label + input: Nombre del Proyecto -->
+  <text x="132" y="393" font-size="11.5" font-weight="500" fill="#3f3f46">Nombre del Proyecto / Obra <tspan fill="#ef4444" font-weight="600"> *</tspan></text>
+  <rect x="132" y="399" width="344" height="42" rx="10" fill="white" stroke="#d4d4d8" stroke-width="1.2"/>
+  <text x="147" y="425" font-size="12" fill="#a1a1aa">Ej.: Proyecto Data Center Norte</text>
+
+  <!-- Label + input: Ubicación -->
+  <text x="500" y="393" font-size="11.5" font-weight="500" fill="#3f3f46">Ubicación de la Instalación <tspan fill="#ef4444" font-weight="600"> *</tspan></text>
+  <rect x="500" y="399" width="336" height="42" rx="10" fill="white" stroke="#d4d4d8" stroke-width="1.2"/>
+  <text x="515" y="425" font-size="12" fill="#a1a1aa">Ej.: Lampa, Región Metropolitana</text>
+
+  <!-- Label + input: Centro de Costo -->
+  <text x="132" y="462" font-size="11.5" font-weight="500" fill="#3f3f46">Centro de Costo Asociado</text>
+  <rect x="132" y="468" width="344" height="42" rx="10" fill="white" stroke="#d4d4d8" stroke-width="1.2"/>
+  <text x="147" y="494" font-size="12" fill="#a1a1aa">Ej.: CC-2025-047</text>
+
+  <!-- Label + input: Fecha de Entrega Deseada -->
+  <text x="500" y="462" font-size="11.5" font-weight="500" fill="#3f3f46">Fecha de Entrega Deseada</text>
+  <rect x="500" y="468" width="336" height="42" rx="10" fill="white" stroke="#d4d4d8" stroke-width="1.2"/>
+  <text x="515" y="494" font-size="12" fill="#a1a1aa">dd/mm/aaaa</text>
+  <!-- Calendar icon -->
+  <g transform="translate(798,480)">
+    <rect width="20" height="18" rx="3" fill="none" stroke="#a1a1aa" stroke-width="1.3"/>
+    <line x1="6"  y1="0"  x2="6"  y2="-4" stroke="#a1a1aa" stroke-width="1.3"/>
+    <line x1="14" y1="0"  x2="14" y2="-4" stroke="#a1a1aa" stroke-width="1.3"/>
+    <line x1="0"  y1="6"  x2="20" y2="6"  stroke="#a1a1aa" stroke-width="1.1"/>
+  </g>
+
+  <!-- Label + radio: Ingeniería básica -->
+  <text x="132" y="534" font-size="11.5" font-weight="500" fill="#3f3f46">Ingeniería básica — ¿quién la entrega? <tspan fill="#ef4444" font-weight="600"> *</tspan></text>
+
+  <!-- Radio 1 — selected -->
+  <circle cx="143" cy="557" r="8" fill="white" stroke="#2563eb" stroke-width="1.8"/>
+  <circle cx="143" cy="557" r="4" fill="#2563eb"/>
+  <text x="157" y="562" font-size="12" fill="#18181b">CSEnergy se encarga</text>
+
+  <!-- Radio 2 -->
+  <circle cx="307" cy="557" r="8" fill="white" stroke="#d4d4d8" stroke-width="1.5"/>
+  <text x="321" y="562" font-size="12" fill="#3f3f46">La entrega el cliente</text>
+
+  <!-- Radio 3 -->
+  <circle cx="468" cy="557" r="8" fill="white" stroke="#d4d4d8" stroke-width="1.5"/>
+  <text x="482" y="562" font-size="12" fill="#3f3f46">Conjunta (CSEnergy + cliente)</text>
+
+  <!-- ── FIELDSET: Datos de Contacto (y 654–870) ── -->
+  <rect x="112" y="654" width="736" height="222" rx="8" fill="transparent" stroke="#e4e4e7" stroke-width="1.2"/>
+  <rect x="125" y="646" width="120" height="17" fill="white"/>
+  <text x="133" y="658" font-size="12" font-weight="600" fill="#3f3f46">Datos de Contacto</text>
+
+  <!-- Nombre del Contacto -->
+  <text x="132" y="688" font-size="11.5" font-weight="500" fill="#3f3f46">Nombre del Contacto <tspan fill="#ef4444" font-weight="600"> *</tspan></text>
+  <rect x="132" y="694" width="344" height="42" rx="10" fill="white" stroke="#d4d4d8" stroke-width="1.2"/>
+  <text x="147" y="720" font-size="12" fill="#a1a1aa">Ej.: Juan Pérez González</text>
+
+  <!-- Empresa / Cliente -->
+  <text x="500" y="688" font-size="11.5" font-weight="500" fill="#3f3f46">Empresa / Cliente <tspan fill="#ef4444" font-weight="600"> *</tspan></text>
+  <rect x="500" y="694" width="336" height="42" rx="10" fill="white" stroke="#d4d4d8" stroke-width="1.2"/>
+  <text x="515" y="720" font-size="12" fill="#a1a1aa">Ej.: Constructora ABC Ltda.</text>
+
+  <!-- Correo Electrónico -->
+  <text x="132" y="757" font-size="11.5" font-weight="500" fill="#3f3f46">Correo Electrónico <tspan fill="#ef4444" font-weight="600"> *</tspan></text>
+  <rect x="132" y="763" width="344" height="42" rx="10" fill="white" stroke="#d4d4d8" stroke-width="1.2"/>
+  <text x="147" y="789" font-size="12" fill="#a1a1aa">nombre@empresa.cl</text>
+
+  <!-- Teléfono -->
+  <text x="500" y="757" font-size="11.5" font-weight="500" fill="#3f3f46">Teléfono de Contacto</text>
+  <rect x="500" y="763" width="336" height="42" rx="10" fill="white" stroke="#d4d4d8" stroke-width="1.2"/>
+  <text x="515" y="789" font-size="12" fill="#a1a1aa">+56 9 XXXX XXXX</text>
+
+  <!-- ── NAV BUTTONS ── -->
+  <!-- Hint -->
+  <text x="132" y="916" font-size="11" fill="#a1a1aa">Puede navegar libremente entre pasos.</text>
+  <!-- SIGUIENTE button -->
+  <rect x="734" y="900" width="146" height="42" rx="10" fill="#2563eb"/>
+  <text x="757" y="926" font-size="13" font-weight="600" fill="white">Siguiente</text>
+  <!-- arrow -->
+  <polyline points="836,916 844,921 836,926" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+  <line x1="826" y1="921" x2="843" y2="921" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
+
+  <!-- Campos obligatorios note -->
+  <text x="80" y="1138" font-size="12" fill="#71717a"><tspan fill="#ef4444">*</tspan>  Campos obligatorios.</text>
+
+  <!-- ════════════════════════════════════════════
+       PASO 2 PREVIEW SECTION
+  ════════════════════════════════════════════ -->
+  <!-- Divider label -->
+  <rect x="80" y="1158" width="800" height="1" fill="#e4e4e7"/>
+  <rect x="370" y="1150" width="220" height="18" fill="#f4f4f5"/>
+  <text x="480" y="1163" font-size="11" fill="#a1a1aa" text-anchor="middle" letter-spacing="1">VISTA PASO 2 — TABLEROS</text>
+
+  <!-- Mini card tableros -->
+  <rect x="80" y="1178" width="800" height="100" rx="12" fill="white" stroke="#e4e4e7" stroke-width="1" filter="url(#card-shadow)"/>
+
+  <!-- Empty state dashed box -->
+  <rect x="112" y="1192" width="556" height="70" rx="8" fill="#fafafa" stroke="#d4d4d8" stroke-width="1.2" stroke-dasharray="6,4"/>
+  <!-- Plus circle SVG icon -->
+  <circle cx="390" cy="1220" r="11" fill="none" stroke="#a1a1aa" stroke-width="1.5"/>
+  <line x1="390" y1="1213" x2="390" y2="1227" stroke="#a1a1aa" stroke-width="1.5"/>
+  <line x1="383" y1="1220" x2="397" y2="1220" stroke="#a1a1aa" stroke-width="1.5"/>
+  <text x="409" y="1218" font-size="12" font-weight="500" fill="#52525b">Aún no hay tableros en esta solicitud.</text>
+  <text x="409" y="1233" font-size="11" fill="#a1a1aa">Haz clic en "Agregar tablero" para añadir el primero.</text>
+
+  <!-- Agregar tablero button -->
+  <rect x="682" y="1198" width="166" height="38" rx="9" fill="#2563eb"/>
+  <text x="693" y="1222" font-size="12.5" font-weight="600" fill="white">+ Agregar tablero</text>
+
+  <!-- ════════════════════════════════════════════
+       TOAST: BORRADOR GUARDADO
+       (flotando top-right en coordenadas globales)
+  ════════════════════════════════════════════ -->
+  <g transform="translate(656,144)">
+    <rect width="240" height="108" rx="12" fill="white" stroke="#e4e4e7" stroke-width="1" filter="url(#toast-shadow)"/>
+    <!-- Icon bg -->
+    <rect x="14" y="14" width="32" height="32" rx="8" fill="rgba(37,99,235,0.10)"/>
+    <!-- Document icon -->
+    <path d="M23,19 l0,0 l6,0 l0,3 l-3,0 l0,3 l3,0 l0,12 l-14,0 l0,-18 Z" fill="none" stroke="#2563eb" stroke-width="1.3" stroke-linejoin="round"/>
+    <path d="M23,19 l6,0 l0,3 l-3,0 l0,-3 Z" fill="rgba(37,99,235,0.3)" stroke="none"/>
+    <line x1="18" y1="27" x2="26" y2="27" stroke="#2563eb" stroke-width="1.1"/>
+    <line x1="18" y1="30" x2="26" y2="30" stroke="#2563eb" stroke-width="1.1"/>
+    <line x1="18" y1="33" x2="23" y2="33" stroke="#2563eb" stroke-width="1.1"/>
+    <!-- Text -->
+    <text x="53" y="27" font-size="12" font-weight="600" fill="#18181b">Borrador guardado</text>
+    <text x="53" y="41" font-size="10.5" fill="#a1a1aa">hoy, 10:42</text>
+    <!-- Buttons -->
+    <rect x="14" y="58" width="100" height="32" rx="8" fill="#2563eb"/>
+    <text x="63" y="79" font-size="12" font-weight="600" fill="white" text-anchor="middle">Restaurar</text>
+    <rect x="122" y="58" width="104" height="32" rx="8" fill="white" stroke="#e4e4e7" stroke-width="1"/>
+    <text x="174" y="79" font-size="12" font-weight="500" fill="#71717a" text-anchor="middle">Descartar</text>
+  </g>
+
+  <!-- ════════════════════════════════════════════
+       FOOTER
+  ════════════════════════════════════════════ -->
+  <text x="480" y="1290" font-size="12" fill="#a1a1aa" text-anchor="middle">© 2026 Axon</text>
+
+</svg>
