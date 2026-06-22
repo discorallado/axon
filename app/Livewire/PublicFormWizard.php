@@ -69,7 +69,7 @@ class PublicFormWizard extends Component implements HasActions, HasForms
                 'contact_phone' => $record->submitter_phone,
                 'client_company' => $record->submitter_company,
             ]);
-            $this->items = $record->items->map(fn(SubmissionItem $item) => [
+            $this->items = $record->items->map(fn (SubmissionItem $item) => [
                 'label' => $item->label,
                 'quantity' => $item->quantity,
                 'sort_order' => $item->sort_order,
@@ -210,7 +210,6 @@ class PublicFormWizard extends Component implements HasActions, HasForms
                             ->inline(),
                     ]),
 
-
             ]);
     }
 
@@ -224,7 +223,7 @@ class PublicFormWizard extends Component implements HasActions, HasForms
             ->schema([
                 Placeholder::make('items_list')
                     ->label('Tableros en esta solicitud')
-                    ->content(fn() => $this->renderItemsHtml()),
+                    ->content(fn () => $this->renderItemsHtml()),
             ]);
     }
 
@@ -233,7 +232,7 @@ class PublicFormWizard extends Component implements HasActions, HasForms
         $html = '<div class="space-y-2">';
 
         foreach ($this->items as $i => $item) {
-            $label = e($item['label'] ?? 'Tablero ' . ($i + 1));
+            $label = e($item['label'] ?? 'Tablero '.($i + 1));
             $qty = (int) ($item['quantity'] ?? 1);
             $type = e($item['board_type'] ?? '');
 
@@ -327,7 +326,7 @@ class PublicFormWizard extends Component implements HasActions, HasForms
 
                         FileUpload::make('technical_specs')
                             ->label('Especificaciones técnicas/pliego de condiciones')
-                            ->visible(fn($get) => (bool) $get('has_technical_specs'))
+                            ->visible(fn ($get) => (bool) $get('has_technical_specs'))
                             ->acceptedFileTypes([
                                 'application/pdf',
                                 'application/msword',
@@ -370,7 +369,7 @@ class PublicFormWizard extends Component implements HasActions, HasForms
     public function tableroAction(): Action
     {
         return Action::make('tablero')
-            ->modalHeading(fn() => $this->editingItemIndex !== null ? 'Editar Tablero' : 'Agregar Tablero')
+            ->modalHeading(fn () => $this->editingItemIndex !== null ? 'Editar Tablero' : 'Agregar Tablero')
             ->modalWidth('4xl')
             ->fillForm(function (): array {
                 if ($this->editingItemIndex !== null) {
@@ -394,7 +393,7 @@ class PublicFormWizard extends Component implements HasActions, HasForms
                     ->success()
                     ->send();
             })
-            ->modalCancelAction(fn(Action $action) => $action->action(function () {
+            ->modalCancelAction(fn (Action $action) => $action->action(function () {
                 $this->editingItemIndex = null;
             }));
     }
@@ -445,8 +444,8 @@ class PublicFormWizard extends Component implements HasActions, HasForms
 
                             TextInput::make('other_board_type')
                                 ->label('Especifique el tipo de tablero')
-                                ->required(fn($get) => $get('board_type') === 'otro')
-                                ->visible(fn($get) => $get('board_type') === 'otro')
+                                ->required(fn ($get) => $get('board_type') === 'otro')
+                                ->visible(fn ($get) => $get('board_type') === 'otro')
                                 ->maxLength(255),
                         ]),
 
@@ -512,7 +511,7 @@ class PublicFormWizard extends Component implements HasActions, HasForms
                                 ])
                                 ->inline(true)
                                 ->live()
-                                ->afterStateUpdated(fn($set) => $set('ip_rating', null)),
+                                ->afterStateUpdated(fn ($set) => $set('ip_rating', null)),
 
                             Select::make('special_environment')
                                 ->label('Ambiente especial')
@@ -530,15 +529,15 @@ class PublicFormWizard extends Component implements HasActions, HasForms
 
                             TextInput::make('other_special_environment')
                                 ->label('Ambiente especial — especifique')
-                                ->required(fn($get) => in_array('otro', (array) ($get('special_environment') ?? [])))
-                                ->visible(fn($get) => in_array('otro', (array) ($get('special_environment') ?? [])))
+                                ->required(fn ($get) => in_array('otro', (array) ($get('special_environment') ?? [])))
+                                ->visible(fn ($get) => in_array('otro', (array) ($get('special_environment') ?? [])))
                                 ->maxLength(255),
 
                             Grid::make(2)->schema([
                                 Select::make('ip_rating')
                                     ->label('Grado de protección IP')
                                     ->required()
-                                    ->options(fn($get) => match ($get('location_type')) {
+                                    ->options(fn ($get) => match ($get('location_type')) {
                                         'interior' => [
                                             'IP20' => 'IP20 — Protección básica',
                                             'IP31' => 'IP31 — Contra goteo vertical',
@@ -571,7 +570,7 @@ class PublicFormWizard extends Component implements HasActions, HasForms
                                 Select::make('ik_rating')
                                     ->label('Grado de protección IK')
                                     ->required()
-                                    ->options(fn($get) => match ($get('location_type')) {
+                                    ->options(fn ($get) => match ($get('location_type')) {
                                         'interior' => [
                                             'IK06' => 'IK06 — 1 J (uso oficina)',
                                             'IK07' => 'IK07 — 2 J (uso general)',
@@ -613,7 +612,7 @@ class PublicFormWizard extends Component implements HasActions, HasForms
                                 ->live(),
 
                             Fieldset::make('Dimensiones máximas permitidas')
-                                ->visible(fn($get) => (bool) $get('has_dimension_restrictions'))
+                                ->visible(fn ($get) => (bool) $get('has_dimension_restrictions'))
                                 ->schema([
                                     Grid::make(3)->schema([
                                         TextInput::make('max_height')->label('Alto máximo (mm)')->numeric()->minValue(1),
@@ -645,7 +644,7 @@ class PublicFormWizard extends Component implements HasActions, HasForms
                                         'otro' => 'Otro',
                                     ])
                                     ->live()
-                                    ->afterStateUpdated(fn($get, $set) => static::recalculateCurrent($get, $set)),
+                                    ->afterStateUpdated(fn ($get, $set) => static::recalculateCurrent($get, $set)),
 
                                 Select::make('electrical_system')
                                     ->label('Sistema eléctrico')
@@ -658,21 +657,21 @@ class PublicFormWizard extends Component implements HasActions, HasForms
                                         'otro' => 'Otro',
                                     ])
                                     ->live()
-                                    ->afterStateUpdated(fn($get, $set) => static::recalculateCurrent($get, $set)),
+                                    ->afterStateUpdated(fn ($get, $set) => static::recalculateCurrent($get, $set)),
                             ]),
 
                             Grid::make(2)->schema([
                                 TextInput::make('supply_voltage_other')
                                     ->label('Tensión — especifique (V)')
-                                    ->required(fn($get) => $get('supply_voltage') === 'otro')
-                                    ->visible(fn($get) => $get('supply_voltage') === 'otro')
+                                    ->required(fn ($get) => $get('supply_voltage') === 'otro')
+                                    ->visible(fn ($get) => $get('supply_voltage') === 'otro')
                                     ->numeric()
                                     ->maxLength(20),
 
                                 TextInput::make('electrical_system_other')
                                     ->label('Sistema eléctrico — especifique')
-                                    ->required(fn($get) => $get('electrical_system') === 'otro')
-                                    ->visible(fn($get) => $get('electrical_system') === 'otro')
+                                    ->required(fn ($get) => $get('electrical_system') === 'otro')
+                                    ->visible(fn ($get) => $get('electrical_system') === 'otro')
                                     ->maxLength(100),
                             ]),
 
@@ -683,15 +682,15 @@ class PublicFormWizard extends Component implements HasActions, HasForms
                                     ->numeric()
                                     ->minValue(0)
                                     ->live(debounce: 600)
-                                    ->afterStateUpdated(fn($get, $set) => static::recalculateCurrent($get, $set))
-                                    ->suffix(fn($get) => $get('power_unit') ?? 'kW'),
+                                    ->afterStateUpdated(fn ($get, $set) => static::recalculateCurrent($get, $set))
+                                    ->suffix(fn ($get) => $get('power_unit') ?? 'kW'),
 
                                 Select::make('power_unit')
                                     ->label('Unidad')
                                     ->options(['kW' => 'kW', 'kVA' => 'kVA'])
                                     ->default('kW')
                                     ->live()
-                                    ->afterStateUpdated(fn($get, $set) => static::recalculateCurrent($get, $set)),
+                                    ->afterStateUpdated(fn ($get, $set) => static::recalculateCurrent($get, $set)),
 
                                 TextInput::make('nominal_current')
                                     ->label('Corriente nominal (A)')
@@ -709,8 +708,8 @@ class PublicFormWizard extends Component implements HasActions, HasForms
 
                                 TextInput::make('other_frequency')
                                     ->label('Frecuencia — especifique (Hz)')
-                                    ->required(fn($get) => $get('frequency') === 'otro')
-                                    ->visible(fn($get) => $get('frequency') === 'otro')
+                                    ->required(fn ($get) => $get('frequency') === 'otro')
+                                    ->visible(fn ($get) => $get('frequency') === 'otro')
                                     ->numeric()
                                     ->maxLength(20),
                             ]),
@@ -939,10 +938,10 @@ class PublicFormWizard extends Component implements HasActions, HasForms
             'raw_data' => ['outer' => $data, 'items' => $this->items],
         ];
 
-        $itemsData = collect($this->items)->map(fn($itemData, int $index) => [
+        $itemsData = collect($this->items)->map(fn ($itemData, int $index) => [
             'organization_id' => $organization->id,
             'sort_order' => $index,
-            'label' => $itemData['label'] ?? 'Tablero ' . ($index + 1),
+            'label' => $itemData['label'] ?? 'Tablero '.($index + 1),
             'quantity' => (int) ($itemData['quantity'] ?? 1),
             'delivery_type' => $itemData['delivery_type'] ?? null,
             'is_new_installation' => $itemData['is_new_installation'] ?? null,
@@ -993,7 +992,7 @@ class PublicFormWizard extends Component implements HasActions, HasForms
             }
             $this->attachSubmissionFiles($submission, $data, $organization->id);
         } else {
-            $referenceCode = 'SOL-' . strtoupper(Str::random(8));
+            $referenceCode = 'SOL-'.strtoupper(Str::random(8));
             $submission = SubmissionRequest::withoutGlobalScopes()->create(array_merge($submissionFields, [
                 'organization_id' => $organization->id,
                 'reference_code' => $referenceCode,
@@ -1018,9 +1017,9 @@ class PublicFormWizard extends Component implements HasActions, HasForms
 
             User::withoutGlobalScopes()
                 ->where('organization_id', $organization->id)
-                ->whereHas('roles', fn($q) => $q->whereIn('name', ['super_admin', 'supervisor']))
+                ->whereHas('roles', fn ($q) => $q->whereIn('name', ['super_admin', 'supervisor']))
                 ->get()
-                ->each(fn(User $user) => $user->notify(new NewSubmissionReceived($submission)));
+                ->each(fn (User $user) => $user->notify(new NewSubmissionReceived($submission)));
         }
 
         $this->referenceCode = $submission->reference_code;
