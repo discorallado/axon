@@ -553,9 +553,15 @@ class ViewSubmissionRequest extends ViewRecord
                     ];
                 })
                 ->action(function (array $data): void {
+                    $allowedParentIds = array_merge(
+                        [$this->record->id],
+                        $this->record->items()->withTrashed()->pluck('id')->toArray()
+                    );
+
                     $toDelete = Attachment::withoutGlobalScopes()
                         ->whereIn('id', $data['attachment_ids'])
                         ->where('organization_id', $this->record->organization_id)
+                        ->whereIn('attachable_id', $allowedParentIds)
                         ->get();
 
                     foreach ($toDelete as $attachment) {
@@ -569,6 +575,8 @@ class ViewSubmissionRequest extends ViewRecord
                         ->title('Adjunto(s) eliminado(s).')
                         ->success()
                         ->send();
+
+                    $this->dispatch('$refresh');
                 })
                 ->visible(fn () => auth()->user()->can('deleteAttachment', $this->record)),
         ];
