@@ -7,39 +7,33 @@
 ---
 
 ## Última actualización
-2026-06-19
+2026-06-22
 
 ## Módulo / feature en curso
-Módulo de Solicitudes de Tableros Eléctricos — commit `210ace1` completo
+Módulo de Solicitudes de Tableros Eléctricos — fixes post-revisión, commit `f7c14d7`
 
 ## Estado actual
 
-### Completado ✅ (commit `210ace1`)
+### Completado ✅ (commits `f7c14d7`, `0f46b26`, `d4f1653`)
 
-- Adjuntos polimórficos (`Attachment` + `tag`) reemplazando columnas de ruta
-- `parallax/filament-comments` v3.0.0 instalado; `subject_id` corregido a `varchar(26)` para ULIDs
-- `ViewSubmissionRequest` reescrito: todos los campos en orden del formulario, placeholder `'Sin registro.'`, comentarios con `CommentsEntry`
-- `internal_notes` eliminado
-- Dead code eliminado: FormTemplate, Comment, SubmissionAnswer, backups, policies huérfanas
-- Observers para borrado en cascada de archivos en disco (SubmissionRequestObserver, SubmissionItemObserver)
-- Máquina de estados reforzada: `ALLOWED_TRANSITIONS` constante, bloqueo de mismo estado y transiciones inválidas
-- Select de cambio de estado muestra solo estados válidos vía `allowedNextStatuses()`
-- 13/13 tests Pest en verde, Pint limpio
-- ADR: `docs/adr/0004-adjuntos-polimorficos-comentarios-parallax.md`
+- **Fix #4:** `SubmissionRequestObserver::forceDeleting` cambiado a `->forceDelete()` en ítems
+- **Fix #7:** `DB::transaction()` wrappea `transition()` + `FilamentComment::create()`
+- **Fix #3:** Acción `delete_attachments` con `CheckboxList`; policy `deleteAttachment` con matriz de roles
+- **Fix A1 (revisor):** IDs de adjuntos acotados a la solicitud y sus ítems (`whereIn attachable_id`)
+- **Fix M2 (revisor):** `dispatch('$refresh')` tras eliminación para actualizar infolist
+- **Fix M1 (revisor):** `Placeholder` con "Esta solicitud no tiene adjuntos" cuando no hay opciones
+- 23/23 tests en verde, Pint limpio
+- ADR: `docs/adr/0005-fixes-cascade-transaccion-adjuntos.md`
 
-## Decisiones pendientes (de /revisor anterior — requieren decisión del usuario)
+## Decisiones pendientes
 
-- **#3** — Al editar una solicitud, ¿se reemplazan los adjuntos de solicitud (technical_specs, site_photos) o se acumulan? Actualmente se acumulan.
-- **#4** — `SubmissionRequestObserver::forceDeleting` llama `->delete()` (soft) en ítems, dejando filas huérfanas en soft-delete. ¿Cambiar a `->forceDelete()`?
-- **#7** — El bloque `change_status` + `FilamentComment::create()` en ViewSubmissionRequest no está en una transacción. `SubmissionStateMachine::transition()` sí tiene su propia transacción, pero el FilamentComment queda fuera. ¿Wrappear en `DB::transaction()`?
+Ninguna.
 
 ## Próximo paso concreto
 
-El usuario tiene pendiente decidir qué nuevo requerimiento atacar. Las opciones son:
-1. Continuar mejorando el módulo de solicitudes (resolver las dudas de /revisor arriba).
-2. Iniciar otro requerimiento del roadmap.
-
-Esperar instrucción del usuario antes de implementar.
+Esperar instrucción del usuario sobre qué nuevo requerimiento atacar:
+1. Iniciar un módulo del roadmap del PMIS (ver `docs/catalogo-y-mvp.md`).
+2. Continuar refinando el módulo de solicitudes..
 
 ---
 

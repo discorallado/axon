@@ -8,6 +8,8 @@ use App\Models\Attachment;
 use App\Models\SubmissionRequest;
 use App\Services\SubmissionStateMachine;
 use Filament\Actions\Action;
+use Filament\Forms\Components\CheckboxList;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Infolists\Components\RepeatableEntry;
@@ -18,6 +20,8 @@ use Filament\Schemas\Components\Fieldset;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Parallax\FilamentComments\Infolists\Components\CommentsEntry;
 use Parallax\FilamentComments\Models\FilamentComment;
 
@@ -490,17 +494,18 @@ class ViewSubmissionRequest extends ViewRecord
                     $machine = app(SubmissionStateMachine::class);
 
                     try {
-                        $machine->transition(auth()->user(), $this->record, $toStatus, $data['comment'] ?? null);
+                        DB::transaction(function () use ($machine, $toStatus, $data): void {
+                            $machine->transition(auth()->user(), $this->record, $toStatus, $data['comment'] ?? null);
 
-                        // Si se dejó un comentario, registrarlo también en FilamentComments
-                        if (! blank($data['comment'] ?? null)) {
-                            FilamentComment::create([
-                                'user_id' => auth()->id(),
-                                'subject_type' => SubmissionRequest::class,
-                                'subject_id' => $this->record->id,
-                                'comment' => '[Cambio de estado → '.($toStatus->getLabel() ?? $toStatus->value).'] '.$data['comment'],
-                            ]);
-                        }
+                            if (! blank($data['comment'] ?? null)) {
+                                FilamentComment::create([
+                                    'user_id' => auth()->id(),
+                                    'subject_type' => SubmissionRequest::class,
+                                    'subject_id' => $this->record->id,
+                                    'comment' => '[Cambio de estado → '.($toStatus->getLabel() ?? $toStatus->value).'] '.$data['comment'],
+                                ]);
+                            }
+                        });
 
                         $this->refreshFormData(['status']);
                         Notification::make()->title('Estado actualizado.')->success()->send();
@@ -509,6 +514,84 @@ class ViewSubmissionRequest extends ViewRecord
                     }
                 })
                 ->visible(fn () => auth()->user()->can('updateStatus', $this->record)),
+
+            Action::make('delete_attachments')
+                ->label('Eliminar adjuntos')
+                ->icon('heroicon-o-trash')
+                ->color('danger')
+                ->requiresConfirmation(false)
+                ->form(function (): array {
+                    $tagLabels = [
+                        'technical_specs' => 'Especificaciones técnicas',
+                        'site_photo' => 'Fotografía del sitio',
+                        'load_list' => 'Lista de cargas',
+                        'unilineal_diagram' => 'Diagrama unilineal',
+                        'mechanical_plans' => 'Planos mecánicos',
+                    ];
+
+                    $options = [];
+
+                    foreach ($this->record->attachments as $att) {
+                        $label = $tagLabels[$att->tag] ?? $att->tag;
+                        $options[$att->id] = "[Solicitud] {$label}: {$att->original_name}";
+                    }
+
+                    foreach ($this->record->items()->with('attachments')->get() as $item) {
+                        foreach ($item->attachments as $att) {
+                            $label = $tagLabels[$att->tag] ?? $att->tag;
+                            $itemLabel = $item->label ?? 'Tablero';
+                            $options[$att->id] = "[{$itemLabel}] {$label}: {$att->original_name}";
+                        }
+                    }
+
+                    if (empty($options)) {
+                        return [
+                            Placeholder::make('no_attachments')
+                                ->label('')
+                                ->content('Esta solicitud no tiene adjuntos.'),
+                        ];
+                    }
+
+                    return [
+                        CheckboxList::make('attachment_ids')
+                            ->label('Selecciona los adjuntos a eliminar')
+                            ->options($options)
+                            ->required()
+                            ->noSearchResultsMessage('No hay adjuntos.')
+                            ->searchable(count($options) > 5),
+                    ];
+                })
+                ->action(function (array $data): void {
+                    if (empty($data['attachment_ids'] ?? [])) {
+                        return;
+                    }
+
+                    $allowedParentIds = array_merge(
+                        [$this->record->id],
+                        $this->record->items()->withTrashed()->pluck('id')->toArray()
+                    );
+
+                    $toDelete = Attachment::withoutGlobalScopes()
+                        ->whereIn('id', $data['attachment_ids'])
+                        ->where('organization_id', $this->record->organization_id)
+                        ->whereIn('attachable_id', $allowedParentIds)
+                        ->get();
+
+                    foreach ($toDelete as $attachment) {
+                        if (Storage::disk($attachment->disk)->exists($attachment->path)) {
+                            Storage::disk($attachment->disk)->delete($attachment->path);
+                        }
+                        $attachment->delete();
+                    }
+
+                    Notification::make()
+                        ->title('Adjunto(s) eliminado(s).')
+                        ->success()
+                        ->send();
+
+                    $this->dispatch('$refresh');
+                })
+                ->visible(fn () => auth()->user()->can('deleteAttachment', $this->record)),
         ];
     }
 }
