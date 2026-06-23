@@ -12,6 +12,7 @@ use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -45,5 +46,7 @@ class AppServiceProvider extends ServiceProvider
                     ], 429);
                 });
         });
+        // URL::forceHttps(true); // O puedes usar $this->app->isLocal() si prefieres forzarlo solo en local
+
     }
 }

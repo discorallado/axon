@@ -6,6 +6,7 @@ use App\Enums\SubmissionStatus;
 use App\Filament\Resources\SubmissionRequestResource;
 use App\Models\Attachment;
 use App\Models\SubmissionRequest;
+use App\Models\User;
 use App\Services\SubmissionStateMachine;
 use Filament\Actions\Action;
 use Filament\Forms\Components\CheckboxList;
@@ -92,7 +93,7 @@ class ViewSubmissionRequest extends ViewRecord
                                     TextEntry::make('engineering_by')
                                         ->label('Ingeniería básica')
                                         ->formatStateUsing(fn ($state) => match ($state) {
-                                            'csenergia' => 'CSEnergy se encarga',
+                                            'csenergy' => 'CSEnergy se encarga',
                                             'cliente' => 'La entrega el cliente',
                                             'conjunta' => 'Conjunta (CSEnergy + cliente)',
                                             default => $state ?? 'Sin registro.',
@@ -379,6 +380,85 @@ class ViewSubmissionRequest extends ViewRecord
                 Section::make('Documentación del Proyecto')
                     ->icon('heroicon-o-paper-clip')
                     ->iconColor('success')
+                    ->headerActions([
+                        Action::make('delete_attachments')
+                            ->label('Eliminar adjuntos')
+                            ->icon('heroicon-o-trash')
+                            ->color('danger')
+                            ->requiresConfirmation(false)
+                            ->form(function (): array {
+                                $tagLabels = [
+                                    'technical_specs' => 'Especificaciones técnicas',
+                                    'site_photo' => 'Fotografía del sitio',
+                                    'load_list' => 'Lista de cargas',
+                                    'unilineal_diagram' => 'Diagrama unilineal',
+                                    'mechanical_plans' => 'Planos mecánicos',
+                                ];
+
+                                $options = [];
+
+                                foreach ($this->record->attachments as $att) {
+                                    $label = $tagLabels[$att->tag] ?? $att->tag;
+                                    $options[$att->id] = "[Solicitud] {$label}: {$att->original_name}";
+                                }
+
+                                foreach ($this->record->items()->with('attachments')->get() as $item) {
+                                    foreach ($item->attachments as $att) {
+                                        $label = $tagLabels[$att->tag] ?? $att->tag;
+                                        $itemLabel = $item->label ?? 'Tablero';
+                                        $options[$att->id] = "[{$itemLabel}] {$label}: {$att->original_name}";
+                                    }
+                                }
+
+                                if (empty($options)) {
+                                    return [
+                                        Placeholder::make('no_attachments')
+                                            ->label('')
+                                            ->content('Esta solicitud no tiene adjuntos.'),
+                                    ];
+                                }
+
+                                return [
+                                    CheckboxList::make('attachment_ids')
+                                        ->label('Selecciona los adjuntos a eliminar')
+                                        ->options($options)
+                                        ->required()
+                                        ->noSearchResultsMessage('No hay adjuntos.')
+                                        ->searchable(count($options) > 5),
+                                ];
+                            })
+                            ->action(function (array $data): void {
+                                if (empty($data['attachment_ids'] ?? [])) {
+                                    return;
+                                }
+
+                                $allowedParentIds = array_merge(
+                                    [$this->record->id],
+                                    $this->record->items()->withTrashed()->pluck('id')->toArray()
+                                );
+
+                                $toDelete = Attachment::withoutGlobalScopes()
+                                    ->whereIn('id', $data['attachment_ids'])
+                                    ->where('organization_id', $this->record->organization_id)
+                                    ->whereIn('attachable_id', $allowedParentIds)
+                                    ->get();
+
+                                foreach ($toDelete as $attachment) {
+                                    if (Storage::disk($attachment->disk)->exists($attachment->path)) {
+                                        Storage::disk($attachment->disk)->delete($attachment->path);
+                                    }
+                                    $attachment->delete();
+                                }
+
+                                Notification::make()
+                                    ->title('Adjunto(s) eliminado(s).')
+                                    ->success()
+                                    ->send();
+
+                                $this->dispatch('$refresh');
+                            })
+                            ->visible(fn () => auth()->user()->can('deleteAttachment', $this->record)),
+                    ])
                     ->schema([
                         TextEntry::make('id')
                             ->label('Especificaciones técnicas')
@@ -467,6 +547,32 @@ class ViewSubmissionRequest extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
+            Action::make('download_pdf')
+                ->label('Exportar PDF')
+                ->icon('heroicon-o-document-arrow-down')
+                ->color('gray')
+                ->url(fn () => route('submissions.pdf', $this->record))
+                ->openUrlInNewTab(),
+
+            Action::make('assign')
+                ->label('Asignar responsable')
+                ->icon('heroicon-o-user-plus')
+                ->color('gray')
+                ->form([
+                    Select::make('assigned_to')
+                        ->label('Responsable')
+                        ->options(fn () => User::where('organization_id', $this->record->organization_id)->pluck('name', 'id'))
+                        ->default(fn () => $this->record->assigned_to)
+                        ->nullable()
+                        ->placeholder('Sin asignar'),
+                ])
+                ->action(function (array $data): void {
+                    $this->record->update(['assigned_to' => $data['assigned_to']]);
+                    $this->refreshFormData(['assigned_to']);
+                    Notification::make()->title('Responsable actualizado.')->success()->send();
+                })
+                ->visible(fn () => auth()->user()->can('assign', $this->record)),
+
             Action::make('change_status')
                 ->label('Cambiar estado')
                 ->icon('heroicon-o-arrow-path')
@@ -515,83 +621,6 @@ class ViewSubmissionRequest extends ViewRecord
                 })
                 ->visible(fn () => auth()->user()->can('updateStatus', $this->record)),
 
-            Action::make('delete_attachments')
-                ->label('Eliminar adjuntos')
-                ->icon('heroicon-o-trash')
-                ->color('danger')
-                ->requiresConfirmation(false)
-                ->form(function (): array {
-                    $tagLabels = [
-                        'technical_specs' => 'Especificaciones técnicas',
-                        'site_photo' => 'Fotografía del sitio',
-                        'load_list' => 'Lista de cargas',
-                        'unilineal_diagram' => 'Diagrama unilineal',
-                        'mechanical_plans' => 'Planos mecánicos',
-                    ];
-
-                    $options = [];
-
-                    foreach ($this->record->attachments as $att) {
-                        $label = $tagLabels[$att->tag] ?? $att->tag;
-                        $options[$att->id] = "[Solicitud] {$label}: {$att->original_name}";
-                    }
-
-                    foreach ($this->record->items()->with('attachments')->get() as $item) {
-                        foreach ($item->attachments as $att) {
-                            $label = $tagLabels[$att->tag] ?? $att->tag;
-                            $itemLabel = $item->label ?? 'Tablero';
-                            $options[$att->id] = "[{$itemLabel}] {$label}: {$att->original_name}";
-                        }
-                    }
-
-                    if (empty($options)) {
-                        return [
-                            Placeholder::make('no_attachments')
-                                ->label('')
-                                ->content('Esta solicitud no tiene adjuntos.'),
-                        ];
-                    }
-
-                    return [
-                        CheckboxList::make('attachment_ids')
-                            ->label('Selecciona los adjuntos a eliminar')
-                            ->options($options)
-                            ->required()
-                            ->noSearchResultsMessage('No hay adjuntos.')
-                            ->searchable(count($options) > 5),
-                    ];
-                })
-                ->action(function (array $data): void {
-                    if (empty($data['attachment_ids'] ?? [])) {
-                        return;
-                    }
-
-                    $allowedParentIds = array_merge(
-                        [$this->record->id],
-                        $this->record->items()->withTrashed()->pluck('id')->toArray()
-                    );
-
-                    $toDelete = Attachment::withoutGlobalScopes()
-                        ->whereIn('id', $data['attachment_ids'])
-                        ->where('organization_id', $this->record->organization_id)
-                        ->whereIn('attachable_id', $allowedParentIds)
-                        ->get();
-
-                    foreach ($toDelete as $attachment) {
-                        if (Storage::disk($attachment->disk)->exists($attachment->path)) {
-                            Storage::disk($attachment->disk)->delete($attachment->path);
-                        }
-                        $attachment->delete();
-                    }
-
-                    Notification::make()
-                        ->title('Adjunto(s) eliminado(s).')
-                        ->success()
-                        ->send();
-
-                    $this->dispatch('$refresh');
-                })
-                ->visible(fn () => auth()->user()->can('deleteAttachment', $this->record)),
         ];
     }
 }

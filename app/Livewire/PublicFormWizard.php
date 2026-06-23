@@ -71,7 +71,7 @@ class PublicFormWizard extends Component implements HasActions, HasForms
                 'contact_phone' => $record->submitter_phone,
                 'client_company' => $record->submitter_company,
             ]);
-            $this->items = $record->items->map(fn (SubmissionItem $item) => [
+            $this->items = $record->items->map(fn(SubmissionItem $item) => [
                 'label' => $item->label,
                 'quantity' => $item->quantity,
                 'sort_order' => $item->sort_order,
@@ -196,12 +196,12 @@ class PublicFormWizard extends Component implements HasActions, HasForms
                             ->required()
                             ->columnSpan(3)
                             ->options([
-                                'csenergia' => 'CSEnergy la provee',
+                                'csenergy' => 'CSEnergy la provee',
                                 'cliente' => 'Por parte del cliente',
                                 'conjunta' => 'Conjunta (CSEnergy + Cliente)',
                             ])
                             ->colors([
-                                'csenergia' => 'primary',
+                                'csenergy' => 'primary',
                                 'cliente' => 'warning',
                                 'conjunta' => 'success',
                             ])
@@ -220,7 +220,7 @@ class PublicFormWizard extends Component implements HasActions, HasForms
             ->schema([
                 Placeholder::make('items_list')
                     ->label('Tableros en esta solicitud')
-                    ->content(fn () => $this->renderItemsHtml()),
+                    ->content(fn() => $this->renderItemsHtml()),
             ]);
     }
 
@@ -231,28 +231,28 @@ class PublicFormWizard extends Component implements HasActions, HasForms
         // Recovery banner for in-progress tablero
         if ($this->pendingItemData !== null) {
             $pendingLabel = e($this->pendingItemData['label'] ?? '');
-            $labelInfo = $pendingLabel ? " — <strong class=\"text-amber-900\">{$pendingLabel}</strong>" : '';
+            $labelInfo = $pendingLabel ? " — <strong class=\"text-amber-900 dark:text-amber-200\">{$pendingLabel}</strong>" : '';
 
             $html .= <<<HTML
-            <div class="flex items-center justify-between rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 mb-1">
+            <div class="flex items-center justify-between rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 mb-1 dark:border-amber-900/50 dark:bg-amber-950/30">
                 <div class="flex items-center gap-3 min-w-0">
-                    <svg class="h-5 w-5 shrink-0 text-amber-500" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <svg class="h-5 w-5 shrink-0 text-amber-500 dark:text-amber-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
                     </svg>
                     <div class="min-w-0">
-                        <p class="text-sm font-medium text-amber-800">Tablero en progreso sin agregar{$labelInfo}</p>
-                        <p class="text-xs text-amber-600">Tenías un tablero a medio completar. ¿Quieres recuperarlo?</p>
+                        <p class="text-sm font-medium text-amber-800 dark:text-amber-300">Tablero en progreso sin agregar{$labelInfo}</p>
+                        <p class="text-xs text-amber-600 dark:text-amber-400/80">Tenías un tablero a medio completar. ¿Quieres recuperarlo?</p>
                     </div>
                 </div>
                 <div class="flex shrink-0 items-center gap-2 ml-4">
                     <button type="button"
                         wire:click="mountAction('tablero')"
-                        class="text-xs font-semibold text-white bg-amber-500 hover:bg-amber-600 rounded-lg px-3 py-1.5 transition-colors">
+                        class="text-xs font-semibold text-white bg-amber-500 hover:bg-amber-600 rounded-lg px-3 py-1.5 transition-colors dark:bg-amber-600 dark:hover:bg-amber-500">
                         Recuperar
                     </button>
                     <button type="button"
                         wire:click="clearPendingItem()"
-                        class="text-xs font-medium text-amber-700 hover:text-amber-900">
+                        class="text-xs font-medium text-amber-700 hover:text-amber-900 dark:text-amber-400 dark:hover:text-amber-300">
                         Descartar
                     </button>
                 </div>
@@ -261,7 +261,7 @@ class PublicFormWizard extends Component implements HasActions, HasForms
         }
 
         foreach ($this->items as $i => $item) {
-            $label = e($item['label'] ?? 'Tablero '.($i + 1));
+            $label = e($item['label'] ?? 'Tablero ' . ($i + 1));
             $qty = (int) ($item['quantity'] ?? 1);
             $type = e($item['board_type'] ?? '');
 
@@ -282,24 +282,24 @@ class PublicFormWizard extends Component implements HasActions, HasForms
             $typeLabel = $typeLabels[$type] ?? $type;
 
             $html .= <<<HTML
-            <div class="flex items-center justify-between rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3">
+            <div class="flex items-center justify-between rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 dark:border-zinc-800 dark:bg-zinc-900/50">
                 <div class="min-w-0 flex-1">
-                    <span class="font-medium text-zinc-900">{$label}</span>
-                    <span class="ml-2 text-xs text-zinc-500">{$typeLabel}</span>
-                    <span class="ml-2 inline-flex items-center rounded-md bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-600">
+                    <span class="font-medium text-zinc-900 dark:text-zinc-100">{$label}</span>
+                    <span class="ml-2 text-xs text-zinc-500 dark:text-zinc-400">{$typeLabel}</span>
+                    <span class="ml-2 inline-flex items-center rounded-md bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
                         ×{$qty}
                     </span>
                 </div>
                 <div class="flex shrink-0 items-center gap-3 ml-4">
                     <button type="button"
                         wire:click="editItem({$i})"
-                        class="text-sm font-medium text-blue-600 hover:text-blue-800">
+                        class="text-sm font-medium text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300">
                         Editar
                     </button>
                     <button type="button"
                         wire:click="removeItem({$i})"
                         wire:confirm="¿Eliminar este tablero de la solicitud?"
-                        class="text-sm font-medium text-red-500 hover:text-red-700">
+                        class="text-sm font-medium text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300">
                         Eliminar
                     </button>
                 </div>
@@ -309,14 +309,14 @@ class PublicFormWizard extends Component implements HasActions, HasForms
 
         if (empty($this->items)) {
             $html .= <<<'HTML'
-            <div class="rounded-xl border border-dashed border-zinc-300 bg-zinc-50 px-6 py-8 text-center">
-                <svg class="mx-auto mb-3 h-8 w-8 text-zinc-400" fill="none" viewBox="0 0 24 24"
+            <div class="rounded-xl border border-dashed border-zinc-300 bg-zinc-50 px-6 py-8 text-center dark:border-zinc-700 dark:bg-zinc-900/30">
+                <svg class="mx-auto mb-3 h-8 w-8 text-zinc-400 dark:text-zinc-500" fill="none" viewBox="0 0 24 24"
                     stroke-width="1.5" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round"
                         d="M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
                 </svg>
-                <p class="text-sm font-medium text-zinc-600">Aún no hay tableros en esta solicitud.</p>
-                <p class="mt-1 text-xs text-zinc-400">Haz clic en "Agregar tablero" para añadir el primero.</p>
+                <p class="text-sm font-medium text-zinc-600 dark:text-zinc-400">Aún no hay tableros en esta solicitud.</p>
+                <p class="mt-1 text-xs text-zinc-400 dark:text-zinc-500">Haz clic en "Agregar tablero" para añadir el primero.</p>
             </div>
             HTML;
         }
@@ -325,7 +325,7 @@ class PublicFormWizard extends Component implements HasActions, HasForms
         <div class="mt-4 flex justify-end">
             <button type="button"
                 wire:click="addNewItem()"
-                class="inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-500 transition-colors">
+                class="inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-500 transition-colors dark:bg-blue-500 dark:hover:bg-blue-400">
                 <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                 </svg>
@@ -355,7 +355,7 @@ class PublicFormWizard extends Component implements HasActions, HasForms
 
                         FileUpload::make('technical_specs')
                             ->label('Especificaciones técnicas/pliego de condiciones')
-                            ->visible(fn ($get) => (bool) $get('has_technical_specs'))
+                            ->visible(fn($get) => (bool) $get('has_technical_specs'))
                             ->acceptedFileTypes([
                                 'application/pdf',
                                 'application/msword',
@@ -416,7 +416,7 @@ class PublicFormWizard extends Component implements HasActions, HasForms
     public function tableroAction(): Action
     {
         return Action::make('tablero')
-            ->modalHeading(fn () => $this->editingItemIndex !== null ? 'Editar Tablero' : 'Agregar Tablero')
+            ->modalHeading(fn() => $this->editingItemIndex !== null ? 'Editar Tablero' : 'Agregar Tablero')
             ->modalWidth('4xl')
             ->fillForm(function (): array {
                 if ($this->editingItemIndex !== null) {
@@ -449,7 +449,7 @@ class PublicFormWizard extends Component implements HasActions, HasForms
                     ->success()
                     ->send();
             })
-            ->modalCancelAction(fn (Action $action) => $action->action(function () {
+            ->modalCancelAction(fn(Action $action) => $action->action(function () {
                 $this->editingItemIndex = null;
                 $this->pendingItemData = null;
             }));
@@ -471,7 +471,8 @@ class PublicFormWizard extends Component implements HasActions, HasForms
                                     'tablero' => 'Tablero Eléctrico',
                                     'sala' => 'Sala Elécrica',
                                     'producto' => 'Producto Eléctrico',
-                                ]),
+                                ])
+                                ->afterStateUpdated(fn($set) => $set('board_type', null)),
 
                             Select::make('is_new_installation')
                                 ->label('¿Instalación nueva o reemplazo?')
@@ -502,9 +503,9 @@ class PublicFormWizard extends Component implements HasActions, HasForms
 
                             Select::make('board_type')
                                 ->label('Tipo de tablero')
-                                ->required(fn ($get) => $get('delivery_type') === 'tablero')
-                                ->hidden(fn ($get) => $get('delivery_type') !== 'tablero')
-                                ->dehydrated(fn ($get) => $get('delivery_type') === 'tablero')
+                                ->required(fn($get) => $get('delivery_type') === 'tablero')
+                                ->hidden(fn($get) => $get('delivery_type') !== 'tablero')
+                                ->dehydrated(fn($get) => $get('delivery_type') === 'tablero')
                                 ->nullable()
                                 ->columnSpan(2)
                                 ->options([
@@ -526,8 +527,8 @@ class PublicFormWizard extends Component implements HasActions, HasForms
                             TextInput::make('other_board_type')
                                 ->label('Especifique el tipo de tablero')
                                 ->columnSpan(2)
-                                ->required(fn ($get) => $get('board_type') === 'otro')
-                                ->visible(fn ($get) => $get('board_type') === 'otro')
+                                ->required(fn($get) => $get('board_type') === 'otro')
+                                ->visible(fn($get) => $get('board_type') === 'otro')
                                 ->maxLength(255),
                         ]),
 
@@ -536,9 +537,10 @@ class PublicFormWizard extends Component implements HasActions, HasForms
                             RichEditor::make('board_function')
                                 ->label('Función principal del tablero')
                                 ->columnSpanFull()
-                                ->required(fn ($get) => $get('delivery_type') !== 'tablero')
-                                ->hidden(fn ($get) => $get('delivery_type') === 'tablero')
-                                ->dehydrated(fn ($get) => $get('delivery_type') !== 'tablero')
+                                ->required(fn($get) => $get('delivery_type') !== 'tablero')
+                                ->visible(fn($get) => $get('delivery_type') === (!'tablero' || null))
+                                ->dehydrated(fn($get) => $get('delivery_type') !== 'tablero')
+                                ->live()
                                 ->placeholder('Ej.: Distribución principal del edificio, alimentación de motores, control de alumbrado...')
                                 ->toolbarButtons([
                                     ['bold', 'italic', 'underline', 'strike', 'subscript', 'superscript', 'link'],
@@ -581,7 +583,7 @@ class PublicFormWizard extends Component implements HasActions, HasForms
                                 ])
                                 ->inline(true)
                                 ->live()
-                                ->afterStateUpdated(fn ($set) => $set('ip_rating', null)),
+                                ->afterStateUpdated(fn($set) => $set('ip_rating', null)),
 
                             Select::make('special_environment')
                                 ->label('Ambiente especial')
@@ -600,15 +602,15 @@ class PublicFormWizard extends Component implements HasActions, HasForms
 
                             TextInput::make('other_special_environment')
                                 ->label('Ambiente especial — especifique')
-                                ->required(fn ($get) => in_array('otro', (array) ($get('special_environment') ?? [])))
-                                ->visible(fn ($get) => in_array('otro', (array) ($get('special_environment') ?? [])))
+                                ->required(fn($get) => in_array('otro', (array) ($get('special_environment') ?? [])))
+                                ->visible(fn($get) => in_array('otro', (array) ($get('special_environment') ?? [])))
                                 ->maxLength(255),
 
                             Grid::make(2)->schema([
                                 Select::make('ip_rating')
                                     ->label('Grado de protección IP')
                                     ->required()
-                                    ->options(fn ($get) => match ($get('location_type')) {
+                                    ->options(fn($get) => match ($get('location_type')) {
                                         'interior' => [
                                             'IP20' => 'IP20 — Protección básica',
                                             'IP31' => 'IP31 — Contra goteo vertical',
@@ -640,7 +642,7 @@ class PublicFormWizard extends Component implements HasActions, HasForms
 
                                 Select::make('ik_rating')
                                     ->label('Grado de protección IK')
-                                    ->options(fn ($get) => match ($get('location_type')) {
+                                    ->options(fn($get) => match ($get('location_type')) {
                                         'interior' => [
                                             'IK06' => 'IK06 — 1 J (uso oficina)',
                                             'IK07' => 'IK07 — 2 J (uso general)',
@@ -682,7 +684,7 @@ class PublicFormWizard extends Component implements HasActions, HasForms
                                 ->live(),
 
                             Fieldset::make('Dimensiones máximas permitidas')
-                                ->visible(fn ($get) => (bool) $get('has_dimension_restrictions'))
+                                ->visible(fn($get) => (bool) $get('has_dimension_restrictions'))
                                 ->schema([
                                     Grid::make(3)->schema([
                                         TextInput::make('max_height')->label('Alto máximo (mm)')->numeric()->minValue(1),
@@ -714,7 +716,7 @@ class PublicFormWizard extends Component implements HasActions, HasForms
                                         'otro' => 'Otro',
                                     ])
                                     ->live()
-                                    ->afterStateUpdated(fn ($get, $set) => static::recalculateCurrent($get, $set)),
+                                    ->afterStateUpdated(fn($get, $set) => static::recalculateCurrent($get, $set)),
 
                                 Select::make('electrical_system')
                                     ->label('Sistema eléctrico')
@@ -727,21 +729,21 @@ class PublicFormWizard extends Component implements HasActions, HasForms
                                         'otro' => 'Otro',
                                     ])
                                     ->live()
-                                    ->afterStateUpdated(fn ($get, $set) => static::recalculateCurrent($get, $set)),
+                                    ->afterStateUpdated(fn($get, $set) => static::recalculateCurrent($get, $set)),
                             ]),
 
                             Grid::make(2)->schema([
                                 TextInput::make('supply_voltage_other')
                                     ->label('Tensión — especifique (V)')
-                                    ->required(fn ($get) => $get('supply_voltage') === 'otro')
-                                    ->visible(fn ($get) => $get('supply_voltage') === 'otro')
+                                    ->required(fn($get) => $get('supply_voltage') === 'otro')
+                                    ->visible(fn($get) => $get('supply_voltage') === 'otro')
                                     ->numeric()
                                     ->maxLength(20),
 
                                 TextInput::make('electrical_system_other')
                                     ->label('Sistema eléctrico — especifique')
-                                    ->required(fn ($get) => $get('electrical_system') === 'otro')
-                                    ->visible(fn ($get) => $get('electrical_system') === 'otro')
+                                    ->required(fn($get) => $get('electrical_system') === 'otro')
+                                    ->visible(fn($get) => $get('electrical_system') === 'otro')
                                     ->maxLength(100),
                             ]),
 
@@ -752,15 +754,15 @@ class PublicFormWizard extends Component implements HasActions, HasForms
                                     ->numeric()
                                     ->minValue(0)
                                     ->live(debounce: 600)
-                                    ->afterStateUpdated(fn ($get, $set) => static::recalculateCurrent($get, $set))
-                                    ->suffix(fn ($get) => $get('power_unit') ?? 'kW'),
+                                    ->afterStateUpdated(fn($get, $set) => static::recalculateCurrent($get, $set))
+                                    ->suffix(fn($get) => $get('power_unit') ?? 'kW'),
 
                                 Select::make('power_unit')
                                     ->label('Unidad')
                                     ->options(['kW' => 'kW', 'kVA' => 'kVA'])
                                     ->default('kW')
                                     ->live()
-                                    ->afterStateUpdated(fn ($get, $set) => static::recalculateCurrent($get, $set)),
+                                    ->afterStateUpdated(fn($get, $set) => static::recalculateCurrent($get, $set)),
 
                                 TextInput::make('nominal_current')
                                     ->label('Corriente nominal (A)')
@@ -778,8 +780,8 @@ class PublicFormWizard extends Component implements HasActions, HasForms
 
                                 TextInput::make('other_frequency')
                                     ->label('Frecuencia — especifique (Hz)')
-                                    ->required(fn ($get) => $get('frequency') === 'otro')
-                                    ->visible(fn ($get) => $get('frequency') === 'otro')
+                                    ->required(fn($get) => $get('frequency') === 'otro')
+                                    ->visible(fn($get) => $get('frequency') === 'otro')
                                     ->numeric()
                                     ->maxLength(20),
                             ]),
@@ -1019,10 +1021,10 @@ class PublicFormWizard extends Component implements HasActions, HasForms
             'raw_data' => ['outer' => $data, 'items' => $this->items],
         ];
 
-        $itemsData = collect($this->items)->map(fn ($itemData, int $index) => [
+        $itemsData = collect($this->items)->map(fn($itemData, int $index) => [
             'organization_id' => $organization->id,
             'sort_order' => $index,
-            'label' => $itemData['label'] ?? 'Tablero '.($index + 1),
+            'label' => $itemData['label'] ?? 'Tablero ' . ($index + 1),
             'quantity' => (int) ($itemData['quantity'] ?? 1),
             'delivery_type' => $itemData['delivery_type'] ?? null,
             'is_new_installation' => $itemData['is_new_installation'] ?? null,
@@ -1073,7 +1075,7 @@ class PublicFormWizard extends Component implements HasActions, HasForms
             }
             $this->attachSubmissionFiles($submission, $data, $organization->id);
         } else {
-            $referenceCode = 'SOL-'.strtoupper(Str::random(8));
+            $referenceCode = 'SOL-' . strtoupper(Str::random(8));
             $submission = SubmissionRequest::withoutGlobalScopes()->create(array_merge($submissionFields, [
                 'organization_id' => $organization->id,
                 'reference_code' => $referenceCode,
@@ -1098,9 +1100,9 @@ class PublicFormWizard extends Component implements HasActions, HasForms
 
             User::withoutGlobalScopes()
                 ->where('organization_id', $organization->id)
-                ->whereHas('roles', fn ($q) => $q->whereIn('name', ['super_admin', 'supervisor']))
+                ->whereHas('roles', fn($q) => $q->whereIn('name', ['super_admin', 'supervisor']))
                 ->get()
-                ->each(fn (User $user) => $user->notify(new NewSubmissionReceived($submission)));
+                ->each(fn(User $user) => $user->notify(new NewSubmissionReceived($submission)));
         }
 
         $this->referenceCode = $submission->reference_code;

@@ -35,7 +35,7 @@
             --font-family: '{{ filament()->getFontFamily() }}';
             --default-theme-mode: light;
 
-            {{-- Variables de color primario para los pf-* helpers --}} @foreach (config('public-form.primary') as $shade => $rgb)
+            @foreach (config('public-form.primary') as $shade => $rgb)
                 --pf-{{ $shade }}: {{ $rgb }};
             @endforeach
         }
@@ -47,20 +47,18 @@
 
 <body class="pf-body">
 
-    <!-- Añadimos la imagen de fondo con la directiva asset de Blade -->
     <header class="pf-header" style="background-image: url('{{ asset('storage/images/bg.png') }}');">
 
         <div class="absolute inset-0 bg-black/40 dark:bg-black/70 pointer-events-none"></div>
 
         <div class="pf-header-inner">
 
-            <!-- Todo el contenido queda en esta única fila horizontal -->
             <div class="flex items-center justify-between w-full">
 
-                <!-- Izquierda: Logo -->
                 <div class="flex flex-shrink-0">
-                    <img src="{{ asset('storage/images/logo_cse.png') }}" width="200px" alt="CS Energy"
-                        class="brightness-0 invert dark:brightness-70 dark:invert-0">
+                <a href="{{ route('solicitud') }}" class="transition-opacity hover:opacity-80">
+                    <img src="{{ asset('storage/images/logo_cse_02.webp') }}" width="200px" alt="CS Energy"                         class="brightness-0 invert">
+                    </a>
                 </div>
 
                 <!-- Derecha: Texto y Botón juntos -->

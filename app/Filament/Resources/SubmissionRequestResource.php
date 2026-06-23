@@ -8,19 +8,23 @@ use App\Models\SubmissionRequest;
 use App\Models\User;
 use App\Services\SubmissionStateMachine;
 use Filament\Actions\Action;
-use Filament\Actions\ActionGroup as ActionsActionGroup;
-use Filament\Actions\DeleteAction as ActionsDeleteAction;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\DeleteAction;
 use Filament\Actions\ForceDeleteAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
+use Filament\Support\Enums\IconPosition;
+use Filament\Support\Enums\Size;
+use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\URL;
+use Filament\Support\Colors\Color;
 
 class SubmissionRequestResource extends Resource
 {
@@ -94,25 +98,8 @@ class SubmissionRequestResource extends Resource
                 TrashedFilter::make(),
             ])
             ->actions([
-                ForceDeleteAction::make()
-                    ->label('Eliminar')
-                    ->requiresConfirmation()
-                    ->modalHeading('Eliminar permanentemente')
-                    ->modalDescription('Esta acción eliminará la solicitud de forma permanente. No se podrá recuperar.')
-                    ->successNotificationTitle('Solicitud eliminada permanentemente.')
-                    ->visible(fn () => auth()->user()->hasRole(['super_admin'])),
-                ActionsActionGroup::make([
-                    Action::make('edit_external')
-                        ->label('Editar solicitud')
-                        ->icon('heroicon-o-pencil-square')
-                        ->color('info')
-                        ->url(fn (SubmissionRequest $record): string => URL::signedRoute(
-                            'solicitud.editar',
-                            ['submission' => $record->id],
-                            now()->addHours(4),
-                        ))
-                        ->openUrlInNewTab(),
 
+                ActionGroup::make([
                     Action::make('change_status')
                         ->label(__('submissions.actions.change_status'))
                         ->icon('heroicon-o-arrow-path')
@@ -140,7 +127,7 @@ class SubmissionRequestResource extends Resource
                                 Notification::make()->title($e->getMessage())->danger()->send();
                             }
                         })
-                        ->visible(fn (SubmissionRequest $record) => auth()->user()->can('updateStatus', $record)),
+                        ->visible(fn(SubmissionRequest $record) => auth()->user()->can('updateStatus', $record)),
 
                     Action::make('assign')
                         ->label(__('submissions.actions.assign'))
@@ -150,7 +137,7 @@ class SubmissionRequestResource extends Resource
                             Select::make('assigned_to')
                                 ->label(__('submissions.fields.assigned_to'))
                                 ->options(
-                                    fn (SubmissionRequest $record) => User::where('organization_id', $record->organization_id)
+                                    fn(SubmissionRequest $record) => User::where('organization_id', $record->organization_id)
                                         ->pluck('name', 'id')
                                 )
                                 ->nullable()
@@ -160,16 +147,42 @@ class SubmissionRequestResource extends Resource
                             $record->update(['assigned_to' => $data['assigned_to']]);
                             Notification::make()->title('Responsable actualizado.')->success()->send();
                         })
-                        ->visible(fn (SubmissionRequest $record) => auth()->user()->can('assign', $record)),
+                        ->visible(fn(SubmissionRequest $record) => auth()->user()->can('assign', $record)),
 
-                    ActionsDeleteAction::make()
+                    Action::make('edit_external')
+                        ->label('Editar solicitud')
+                        ->icon('heroicon-o-pencil-square')
+                        ->color('info')
+                        ->url(fn(SubmissionRequest $record): string => URL::signedRoute(
+                            'solicitud.editar',
+                            ['submission' => $record->id],
+                            now()->addHours(4),
+                        ))
+                        ->openUrlInNewTab(),
+
+                    DeleteAction::make()
                         ->label('Eliminar solicitud')
                         ->requiresConfirmation()
                         ->modalHeading('Eliminar solicitud')
                         ->modalDescription('La solicitud será eliminada y no aparecerá en la bandeja. Esta acción se puede revertir desde la base de datos.')
                         ->successNotificationTitle('Solicitud eliminada.')
-                        ->visible(fn () => auth()->user()->hasRole(['super_admin'])),
-                ]),
+                        ->visible(fn() => auth()->user()->hasRole(['super_admin'])),
+
+                    ForceDeleteAction::make()
+                        ->label('Eliminar permanentemente')
+                        ->icon(Heroicon::XMark)
+                        ->color(Color::Pink)
+                        ->requiresConfirmation()
+                        ->modalHeading('Eliminar permanentemente')
+                        ->modalDescription('Esta acción eliminará la solicitud de forma permanente. No se podrá recuperar.')
+                        ->successNotificationTitle('Solicitud eliminada permanentemente.')
+                        ->visible(fn() => auth()->user()->hasRole(['super_admin'])),
+                ])
+                    ->label('Opciones')
+                    ->icon(Heroicon::WrenchScrewdriver)
+                    ->iconPosition(IconPosition::After)
+                    ->button(),
+
             ]);
     }
 

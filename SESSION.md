@@ -7,54 +7,70 @@
 ---
 
 ## Última actualización
-2026-06-22
+2026-06-23
 
 ## Módulo / feature en curso
-Diseño arquitectónico del PMIS Core y módulos de gestión — rol `/arquitecto`
+REQ-0002-A — PMIS Core: Usuarios, Clientes, Proyectos, Actividades, Tareas
 
 ## Estado actual
 
 ### Completado ✅
-- Módulo de Solicitudes de Tableros (REQ-0001) terminado y cerrado (commits `f7c14d7`, `0f46b26`, `d4f1653`). 23/23 tests en verde.
+- REQ-0001 (Módulo de Solicitudes de Tableros) — cerrado, 23/23 tests en verde.
+- Diseño arquitectónico PMIS Core aprobado (sesión 2026-06-22 y 2026-06-23).
+- Documentos de requerimientos creados:
+  - `docs/requerimientos/0002-A-pmis-core.md`
+  - `docs/requerimientos/0002-B-kanban-gantt.md`
+  - `docs/requerimientos/0002-C-kpi-dashboard.md`
+  - `docs/requerimientos/0002-D-portal-externo.md`
+  - `docs/requerimientos/0003-finanzas.md`
+  - `docs/requerimientos/0004-control-cambios.md`
+- ADR registrado: `docs/adr/0006-arquitectura-pmis-core.md`
 
-### En curso — Propuesta arquitectónica presentada, pendiente de validación
+### Decisiones de diseño cerradas
+- **Enums Filament** para TaskStatus y TaskPriority (label + color + icono).
+- **mokhosh/filament-kanban** para Kanban drag-and-drop.
+- **frappe-gantt** para Gantt (open-source; regla primordial del proyecto).
+- **Códigos legibles de tarea:** formato `TAB-001-T042`.
+- **SR → Proyecto:** notificación + Action en lista de aprobadas; modal semi-automático.
+- **`program_id` nullable** en `projects`, módulo Programs diferido.
+- **OC:** monto total + descripción libre (sin líneas de ítem).
+- **Jerarquía:** Proyecto → Actividad → Tarea.
+- **Portal externo:** token + dashboard Livewire + Reverb tiempo real.
+- **KPIs** a nivel de proyecto: widgets en `ProjectDetailPage`.
+- **Solo open-source** — regla primordial del proyecto.
+- **FAT:** diferido a su propio REQ (por ahora sin diseño detallado).
 
-Se presentó al usuario una propuesta completa de arquitectura para 5 nuevos requerimientos:
-
-| REQ | Módulo |
-|-----|--------|
-| REQ-0002 | PMIS Core: Usuarios + Clientes + Proyectos + Actividades + Tareas + Gestión de usuarios super_admin |
-| REQ-0003 | Finanzas: Proveedores + OC + Facturas |
-| REQ-0004 | Control de Cambios |
-| REQ-0005 | FAT en Taller (Factory Acceptance Testing) |
-| REQ-0006 | Control de Calidad (checklists + no conformidades) |
-
-**Flujo central diseñado:** SubmissionRequest (aprobada) → [Acción] → Project, con `submission_request_id` como FK nullable en `projects`.
-
-### Tablas nuevas propuestas (sin implementar aún)
-`clients`, `projects`, `project_statuses`, `project_members`, `activities`, `tasks`, `task_statuses`, `task_user`, `suppliers`, `purchase_orders`, `invoices`, `change_requests`, `fat_protocols`, `fat_protocol_sections`, `fat_protocol_tests`, `fat_executions`, `fat_results`, `fat_observations`, `quality_templates`, `quality_template_sections`, `quality_template_items`, `quality_checklists`, `quality_checklist_results`, `non_conformances`
-
-## Decisiones pendientes — CRÍTICO, responder antes de implementar
-
-El usuario debe responder las siguientes preguntas de diseño (DQ) antes de usar `/ingeniero`:
-
-- **DQ-1**: Conversión SubmissionRequest → Project: ¿A (botón manual), B (modal semi-automático al aprobar) o C (automático)?
-- **DQ-2**: ¿Incluir tabla `programs` (Programa) desde el inicio como capa opcional entre Cliente y Proyecto, o diferirla?
-- **DQ-3**: FAT en taller: ¿protocolos editables por el usuario interno (como el form builder) o predefinidos en el sistema?
-- **DQ-4**: OC: ¿necesita líneas de ítem (producto/cantidad/precio unitario) o solo monto total + descripción?
-- **DQ-5**: Actividades: ¿capa Proyecto → Actividad → Tarea desde el inicio, o empezamos con Proyecto → Tarea directa?
-- **DQ-6**: Gestión de usuarios: ¿solo usuarios internos (empleados) o también tokens de portal para clientes externos?
+## Decisiones pendientes
+Ninguna — todo está aprobado, listo para implementar.
 
 ## Próximo paso concreto
+Usar `/ingeniero` para implementar **REQ-0002-A** (`docs/requerimientos/0002-A-pmis-core.md`).
 
-1. El usuario responde DQ-1 a DQ-6.
-2. Con las respuestas, crear `docs/requerimientos/0002-pmis-core.md` (y los siguientes) con alcance y criterios de aceptación.
-3. Registrar decisiones en `docs/adr/0006-arquitectura-pmis-core.md`.
-4. Usar `/ingeniero` para implementar REQ-0002 (núcleo del que dependen todos los demás).
+Orden de entregables dentro del PR de REQ-0002-A:
+1. Migraciones: `clients`, `project_statuses`, `projects`, `project_members`, `activities`, `tasks`, `task_user`
+2. Enums: `TaskStatus`, `TaskPriority`, `ProjectPriority`
+3. Modelos con relaciones, scopes de tenant (`organization_id`) y traits reutilizables
+4. Factories y seeders
+5. Recursos Filament: `UserResource`, `ClientResource`, `ProjectResource`, `ProjectStatusResource`, y relation managers para actividades y tareas
+6. Action `CreateProjectFromSubmission` + notificación al aprobar SubmissionRequest
+7. Policies por rol
+8. Tests Pest (criterios de aceptación del REQ)
+9. Pint + Larastan limpios
 
 ---
 
 ## Historial de sesiones anteriores
+
+<details>
+<summary>2026-06-22/23 — Diseño arquitectónico PMIS Core (roles /arquitecto)</summary>
+
+Propuesta y aprobación de arquitectura para REQ-0002-A/B/C/D, REQ-0003, REQ-0004.
+Decisiones clave: enum Filament para TaskStatus, mokhosh/filament-kanban, frappe-gantt (open-source),
+códigos legibles TAB-001-T042, conversión SR→Proyecto con modal semi-automático,
+program_id nullable diferido, portal externo con Reverb, KPIs a nivel proyecto, FAT diferido.
+ADR: docs/adr/0006-arquitectura-pmis-core.md. Sin código implementado aún.
+
+</details>
 
 <details>
 <summary>2026-06-22 — Fixes post-revisión REQ-0001 (cascade, transacción, adjuntos)</summary>

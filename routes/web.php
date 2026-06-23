@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return redirect()->route('solicitud.tableros');
-});
+})->name('solicitud');
 
 Route::get('/solicitud', PublicFormWizard::class)
     ->middleware(['throttle:public-form'])

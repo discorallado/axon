@@ -420,9 +420,9 @@
                 <td>
                     @php
                     $engLabels = [
-                    'csenergia' => 'CS Energía se encarga',
+                    'csenergy' => 'CS Energy se encarga',
                     'cliente' => 'La entrega el cliente',
-                    'conjunta' => 'Conjunta (CS Energía + cliente)',
+                    'conjunta' => 'Conjunta (CSEnergy + cliente)',
                     ];
                     @endphp
                     {{ $engLabels[$submission->engineering_by ?? ''] ?? ($submission->engineering_by ?? '') ?: '' }}

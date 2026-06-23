@@ -82,7 +82,7 @@ services:
       - mode: ingress
         host_ip: 127.0.0.1
         target: 3306
-        published: "32773"
+        published: "32780"
         protocol: tcp
     restart: "no"
     stop_grace_period: 1m0s
@@ -167,8 +167,8 @@ services:
       DOCROOT: public
       DRUSH_OPTIONS_URI: https://axon.ddev.site
       HOST_DOCKER_INTERNAL_IP: 172.17.144.1
-      HTTP_EXPOSE: 80:80,8025:8025
-      HTTPS_EXPOSE: 443:80,8026:8025
+      HTTP_EXPOSE: 80:80,8025:8025,5174:5173
+      HTTPS_EXPOSE: 443:80,8026:8025,5173:5173
       IS_DDEV_PROJECT: "true"
       LINES: "24"
       MYSQL_HISTFILE: /mnt/ddev-global-cache/mysqlhistory/axon-web/mysql_history
@@ -184,6 +184,8 @@ services:
       USER: ubuntu
       VIRTUAL_HOST: axon.ddev.site
       npm_config_cache: /mnt/ddev-global-cache/npm
+    expose:
+      - "5173"
     extra_hosts:
       - host.docker.internal=172.17.144.1
     hostname: axon-web
@@ -210,12 +212,14 @@ services:
       - mode: ingress
         host_ip: 127.0.0.1
         target: 80
-        published: "32770"
         protocol: tcp
       - mode: ingress
         host_ip: 127.0.0.1
         target: 443
-        published: "32771"
+        protocol: tcp
+      - mode: ingress
+        host_ip: 127.0.0.1
+        target: 5173
         protocol: tcp
       - mode: ingress
         host_ip: 127.0.0.1
