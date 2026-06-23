@@ -10,23 +10,19 @@
 2026-06-23
 
 ## Módulo / feature en curso
-REQ-0002-A — PMIS Core: Usuarios, Clientes, Proyectos, Actividades, Tareas
+REQ-0002-B — Kanban + Gantt + Export CSV
 
 ## Estado actual
 
 ### Completado ✅
 - REQ-0001 (Módulo de Solicitudes de Tableros) — cerrado, 23/23 tests en verde.
-- Diseño arquitectónico PMIS Core aprobado (sesión 2026-06-22 y 2026-06-23).
-- Documentos de requerimientos creados:
-  - `docs/requerimientos/0002-A-pmis-core.md`
-  - `docs/requerimientos/0002-B-kanban-gantt.md`
-  - `docs/requerimientos/0002-C-kpi-dashboard.md`
-  - `docs/requerimientos/0002-D-portal-externo.md`
-  - `docs/requerimientos/0003-finanzas.md`
-  - `docs/requerimientos/0004-control-cambios.md`
-- ADR registrado: `docs/adr/0006-arquitectura-pmis-core.md`
+- REQ-0002-A (PMIS Core) — **cerrado**, commit `a95aab8`, 33/33 tests en verde.
+  - 65 archivos: migraciones, modelos, enums, observers, resources Filament, policies, factories, seeders, tests.
+  - Bug fixes: `completionPercentage()` cualifica `tasks.status` en JOIN ambiguo.
+  - Constraint `projects.code` cambiada a `unique(['organization_id', 'code'])` (multi-tenant-ready).
+  - `db_test` creado y migrado; todos los tests usan `RefreshDatabase`.
 
-### Decisiones de diseño cerradas
+### Decisiones de diseño cerradas (vigentes)
 - **Enums Filament** para TaskStatus y TaskPriority (label + color + icono).
 - **mokhosh/filament-kanban** para Kanban drag-and-drop.
 - **frappe-gantt** para Gantt (open-source; regla primordial del proyecto).
@@ -35,34 +31,38 @@ REQ-0002-A — PMIS Core: Usuarios, Clientes, Proyectos, Actividades, Tareas
 - **`program_id` nullable** en `projects`, módulo Programs diferido.
 - **OC:** monto total + descripción libre (sin líneas de ítem).
 - **Jerarquía:** Proyecto → Actividad → Tarea.
-- **Portal externo:** token + dashboard Livewire + Reverb tiempo real.
-- **KPIs** a nivel de proyecto: widgets en `ProjectDetailPage`.
+- **Portal externo:** token + dashboard Livewire + Reverb tiempo real (REQ-0002-D, diferido).
+- **KPIs** a nivel de proyecto: widgets en `ViewProject` (REQ-0002-C, diferido).
 - **Solo open-source** — regla primordial del proyecto.
-- **FAT:** diferido a su propio REQ (por ahora sin diseño detallado).
+- **FAT:** diferido a su propio REQ.
 
 ## Decisiones pendientes
-Ninguna — todo está aprobado, listo para implementar.
+Ninguna — REQ-0002-A cerrado, esperando instrucción para REQ-0002-B.
 
 ## Próximo paso concreto
-Usar `/ingeniero` para implementar **REQ-0002-A** (`docs/requerimientos/0002-A-pmis-core.md`).
-
-Orden de entregables dentro del PR de REQ-0002-A:
-1. Migraciones: `clients`, `project_statuses`, `projects`, `project_members`, `activities`, `tasks`, `task_user`
-2. Enums: `TaskStatus`, `TaskPriority`, `ProjectPriority`
-3. Modelos con relaciones, scopes de tenant (`organization_id`) y traits reutilizables
-4. Factories y seeders
-5. Recursos Filament: `UserResource`, `ClientResource`, `ProjectResource`, `ProjectStatusResource`, y relation managers para actividades y tareas
-6. Action `CreateProjectFromSubmission` + notificación al aprobar SubmissionRequest
-7. Policies por rol
-8. Tests Pest (criterios de aceptación del REQ)
-9. Pint + Larastan limpios
+Implementar **REQ-0002-B** (`docs/requerimientos/0002-B-kanban-gantt.md`):
+1. Instalar `mokhosh/filament-kanban` via composer.
+2. Crear `KanbanBoard` como página Filament custom en `ProjectResource` (vista de tareas por estado).
+3. Integrar `frappe-gantt` como widget JS dentro de un Custom Filament Widget (o página).
+4. Botón de export CSV de tareas con `maatwebsite/excel`.
+5. Tests: al menos un feature test de que el Kanban devuelve tareas en el estado correcto.
 
 ---
 
 ## Historial de sesiones anteriores
 
 <details>
-<summary>2026-06-22/23 — Diseño arquitectónico PMIS Core (roles /arquitecto)</summary>
+<summary>2026-06-23 — Implementación REQ-0002-A PMIS Core (/ingeniero)</summary>
+
+Implementación completa del núcleo PMIS: clientes, proyectos, actividades, tareas.
+65 archivos en commit a95aab8. 33/33 tests en verde. Pint limpio.
+Fix: ambigüedad SQL en completionPercentage (tasks.status). Fix: unique constraint
+projects.code cambiada a (organization_id, code). db_test creado para tests.
+
+</details>
+
+<details>
+<summary>2026-06-22/23 — Diseño arquitectónico PMIS Core (rol /arquitecto)</summary>
 
 Propuesta y aprobación de arquitectura para REQ-0002-A/B/C/D, REQ-0003, REQ-0004.
 Decisiones clave: enum Filament para TaskStatus, mokhosh/filament-kanban, frappe-gantt (open-source),
