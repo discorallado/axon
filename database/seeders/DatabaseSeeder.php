@@ -51,11 +51,11 @@ class DatabaseSeeder extends Seeder
         // 6. Asignar el rol de super_admin al usuario (ahora garantizado que existe)
         $user->assignRole($superAdminName);
 
-        // 7. Llamar a otros seeders existentes
-        // $this->call([
-        //     // Otros seeders que quieras ejecutar
-        // ]);
-        
+        // 7. Llamar a otros seeders
+        $this->call([
+            ProjectStatusSeeder::class,
+        ]);
+
         $this->command->info('¡Base de datos sembrada, roles creados y Super Admin asignado con éxito!');
     }
 }
