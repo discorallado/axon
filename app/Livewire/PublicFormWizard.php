@@ -535,8 +535,10 @@ class PublicFormWizard extends Component implements HasActions, HasForms
                         ->schema([
                             RichEditor::make('board_function')
                                 ->label('Función principal del tablero')
-                                ->required()
                                 ->columnSpanFull()
+                                ->required(fn ($get) => $get('delivery_type') !== 'tablero')
+                                ->hidden(fn ($get) => $get('delivery_type') === 'tablero')
+                                ->dehydrated(fn ($get) => $get('delivery_type') !== 'tablero')
                                 ->placeholder('Ej.: Distribución principal del edificio, alimentación de motores, control de alumbrado...')
                                 ->toolbarButtons([
                                     ['bold', 'italic', 'underline', 'strike', 'subscript', 'superscript', 'link'],

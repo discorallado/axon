@@ -26,20 +26,12 @@
                 clearTimeout(this.saveTimer)
                 this.saveTimer = setTimeout(() => this.saveDraft(), 2000)
             }, { deep: true })
-            // Watch in-progress tablero modal data (synced after each step navigation)
-            this.$watch('$wire.mountedActionsData', (value) => {
+            // Watch mountedActions (Filament v5 stores form data as mountedActions[0].data)
+            this.$watch('$wire.mountedActions', (value) => {
                 if (this.$wire.submitted) return
                 clearTimeout(this.saveTimer)
                 this.saveTimer = setTimeout(() => this.saveDraft(), 1500)
             }, { deep: true })
-            // When the modal closes, re-save without pendingItem
-            this.$watch('$wire.mountedActions', (value) => {
-                if (this.$wire.submitted) return
-                if (!value || value.length === 0) {
-                    clearTimeout(this.saveTimer)
-                    this.saveTimer = setTimeout(() => this.saveDraft(), 500)
-                }
-            })
         },
 
         saveDraft() {
@@ -54,12 +46,11 @@
 
             const draft = { data: cleanData, items: cleanItems, savedAt: new Date().toISOString() }
 
-            // Persist in-progress tablero data while the modal is open
-            const actionName = (this.$wire.mountedActions || [])[0]
-            const actionData = (this.$wire.mountedActionsData || [])[0]
-            if (actionName === 'tablero' && actionData) {
+            // In Filament v5, in-progress action data is in mountedActions[0].data
+            const mountedAction = (this.$wire.mountedActions || [])[0]
+            if (mountedAction?.name === 'tablero' && mountedAction?.data) {
                 const cleanActionData = Object.fromEntries(
-                    Object.entries(actionData).filter(([k]) => !itemFileFields.includes(k))
+                    Object.entries(mountedAction.data).filter(([k]) => !itemFileFields.includes(k))
                 )
                 if (Object.values(cleanActionData).some(v => v !== null && v !== undefined && v !== '' && v !== false)) {
                     draft.pendingItem = cleanActionData
