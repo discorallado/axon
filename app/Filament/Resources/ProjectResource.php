@@ -276,6 +276,8 @@ class ProjectResource extends Resource
             'create' => Pages\CreateProject::route('/create'),
             'edit' => Pages\EditProject::route('/{record}/edit'),
             'view' => Pages\ViewProject::route('/{record}'),
+            'kanban' => Pages\KanbanBoard::route('/{record}/kanban'),
+            'gantt' => Pages\GanttChart::route('/{record}/gantt'),
         ];
     }
 }

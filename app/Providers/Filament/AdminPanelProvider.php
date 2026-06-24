@@ -21,6 +21,7 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Parallax\FilamentComments\FilamentCommentsPlugin;
+use Relaticle\Flowforge\FlowforgePlugin;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -54,6 +55,7 @@ class AdminPanelProvider extends PanelProvider
             ->plugins([
                 FilamentShieldPlugin::make(),
                 FilamentCommentsPlugin::make(),
+                FlowforgePlugin::make(),
             ])
             ->middleware([
                 EncryptCookies::class,
