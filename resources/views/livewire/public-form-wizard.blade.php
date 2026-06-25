@@ -26,6 +26,12 @@
                 clearTimeout(this.saveTimer)
                 this.saveTimer = setTimeout(() => this.saveDraft(), 2000)
             }, { deep: true })
+            // Watch mountedActions (Filament v5 stores form data as mountedActions[0].data)
+            this.$watch('$wire.mountedActions', (value) => {
+                if (this.$wire.submitted) return
+                clearTimeout(this.saveTimer)
+                this.saveTimer = setTimeout(() => this.saveDraft(), 1500)
+            }, { deep: true })
         },
 
         saveDraft() {
@@ -38,23 +44,35 @@
                 return Object.fromEntries(Object.entries(item).filter(([k]) => !itemFileFields.includes(k)))
             })
 
-            localStorage.setItem(this.draftKey, JSON.stringify({
-                data: cleanData,
-                items: cleanItems,
-                savedAt: new Date().toISOString()
-            }))
+            const draft = { data: cleanData, items: cleanItems, savedAt: new Date().toISOString() }
+
+            // In Filament v5, in-progress action data is in mountedActions[0].data
+            const mountedAction = (this.$wire.mountedActions || [])[0]
+            if (mountedAction?.name === 'tablero' && mountedAction?.data) {
+                const cleanActionData = Object.fromEntries(
+                    Object.entries(mountedAction.data).filter(([k]) => !itemFileFields.includes(k))
+                )
+                if (Object.values(cleanActionData).some(v => v !== null && v !== undefined && v !== '' && v !== false)) {
+                    draft.pendingItem = cleanActionData
+                }
+            }
+
+            localStorage.setItem(this.draftKey, JSON.stringify(draft))
         },
 
-        restoreDraft() {
+        async restoreDraft() {
             const saved = localStorage.getItem(this.draftKey)
             if (!saved) return
             try {
                 const parsed = JSON.parse(saved)
                 if (parsed.data) {
-                    this.$wire.set('data', { ...this.$wire.data, ...parsed.data })
+                    await this.$wire.set('data', { ...this.$wire.data, ...parsed.data })
                 }
                 if (Array.isArray(parsed.items)) {
-                    this.$wire.set('items', parsed.items)
+                    await this.$wire.set('items', parsed.items)
+                }
+                if (parsed.pendingItem && Object.values(parsed.pendingItem).some(v => v !== null && v !== undefined && v !== '' && v !== false)) {
+                    await this.$wire.set('pendingItemData', parsed.pendingItem)
                 }
                 this.hasDraft = false
             } catch (e) {}
@@ -111,31 +129,31 @@
         x-transition:leave="transition ease-in duration-200"
         x-transition:leave-start="opacity-100 translate-x-0"
         x-transition:leave-end="opacity-0 translate-x-4"
-        class="fixed top-4 right-4 z-50 w-80 rounded-xl bg-white border border-zinc-200 shadow-xl p-4">
+        class="fixed top-4 right-4 z-50 w-80 rounded-xl p-4 bg-emerald-50 border border-emerald-200 shadow-2xl dark:bg-zinc-800 dark:border-zinc-700 dark:shadow-zinc-950/80">
+
         <div class="flex items-start gap-3 mb-3">
-            <div class="shrink-0 mt-0.5 w-8 h-8 rounded-lg flex items-center justify-center"
-                style="background-color: rgb(var(--pf-600) / 0.1)">
-                <svg class="w-4 h-4" style="color: rgb(var(--pf-600))" fill="none" viewBox="0 0 24 24"
+            <div class="shrink-0 mt-0.5 w-8 h-8 rounded-lg flex items-center justify-center bg-emerald-500/10 dark:bg-emerald-500/20">
+                <svg class="w-4 h-4 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24"
                     stroke-width="1.5" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round"
                         d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
                 </svg>
             </div>
             <div class="flex-1 min-w-0">
-                <p class="text-sm font-semibold text-zinc-800">Borrador guardado</p>
-                <p class="text-xs text-zinc-400 mt-0.5">
+                <p class="text-sm font-semibold text-emerald-950 dark:text-zinc-100">Borrador guardado</p>
+                <p class="text-sm font-semibold text-emerald-700 mt-0.5 dark:text-zinc-400">
                     <span x-text="draftDate ? formatDate(draftDate) : ''"></span>
                 </p>
             </div>
         </div>
+
         <div class="flex gap-2">
             <button type="button" @click="restoreDraft()"
-                class="flex-1 py-1.5 rounded-lg text-xs font-semibold transition-colors text-white border-0"
-                style="background-color: rgb(var(--pf-600))">
+                class="flex-1 py-1.5 rounded-lg text-xs font-semibold transition-colors text-white border-0 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 dark:bg-[rgb(var(--pf-600))] dark:hover:opacity-90 dark:active:opacity-100 shadow-sm">
                 Restaurar
             </button>
             <button type="button" @click="clearDraft()"
-                class="flex-1 py-1.5 rounded-lg text-xs font-medium transition-colors bg-zinc-100 text-zinc-500 border border-zinc-200 hover:text-zinc-700 hover:bg-zinc-200">
+                class="flex-1 py-1.5 rounded-lg text-xs font-medium transition-colors bg-white text-emerald-800 border border-emerald-200 hover:bg-emerald-100/50 dark:bg-zinc-700 dark:text-zinc-300 dark:border-zinc-600 dark:hover:bg-zinc-600 dark:hover:text-zinc-100">
                 Descartar
             </button>
         </div>
@@ -145,9 +163,9 @@
     <div class="mb-8">
         <h1 class="pf-form-heading">Solicitud de Equipamiento y Soluciones Eléctricas.
 
-</h1>
+        </h1>
         <p class="pf-form-description">
-        Complete los datos de su proyecto, configure los tableros o salas eléctricas requeridas y adjunte la documentación técnica disponible para nuestro equipo de ingeniería.
+            Complete los datos de su proyecto, configure los tableros o salas eléctricas requeridas y adjunte la documentación técnica disponible para nuestro equipo de ingeniería.
         </p>
     </div>
 

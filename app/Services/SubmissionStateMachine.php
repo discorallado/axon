@@ -6,6 +6,7 @@ use App\Enums\SubmissionStatus;
 use App\Models\SubmissionRequest;
 use App\Models\SubmissionStatusHistory;
 use App\Models\User;
+use App\Notifications\SubmissionApprovedNotification;
 use Illuminate\Support\Facades\DB;
 
 class SubmissionStateMachine
@@ -78,6 +79,17 @@ class SubmissionStateMachine
                 'comment' => $comment,
                 'created_at' => now(),
             ]);
+
+            if ($toStatus === SubmissionStatus::Aprobada) {
+                $recipients = User::whereHas('roles', fn ($q) => $q->whereIn('name', ['super_admin', 'ingeniero']))
+                    ->where('organization_id', $request->organization_id)
+                    ->where('is_active', true)
+                    ->get();
+
+                foreach ($recipients as $recipient) {
+                    $recipient->notify(new SubmissionApprovedNotification($request));
+                }
+            }
         });
     }
 

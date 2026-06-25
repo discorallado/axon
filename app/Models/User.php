@@ -23,6 +23,10 @@ class User extends Authenticatable implements FilamentUser
         'email',
         'password',
         'organization_id',
+        'phone',
+        'position',
+        'is_active',
+        'avatar_url',
     ];
 
     protected $hidden = [
@@ -35,6 +39,7 @@ class User extends Authenticatable implements FilamentUser
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_active' => 'boolean',
         ];
     }
 

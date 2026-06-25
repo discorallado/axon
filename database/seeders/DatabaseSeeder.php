@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
+use Spatie\Permission\Models\Role;
 
 class DatabaseSeeder extends Seeder
 {
@@ -14,6 +15,7 @@ class DatabaseSeeder extends Seeder
 
     public function run(): void
     {
+        // 1. Crear u obtener la organización
         $org = Organization::updateOrCreate(
             ['slug' => 'cse-soluciones-industriales'],
             [
@@ -23,7 +25,21 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-        User::updateOrCreate(
+        // 2. Forzar la creación del rol super_admin para evitar el error de Spatie
+        $superAdminName = config('filament-shield.super_admin.name', 'super_admin');
+        Role::firstOrCreate(['name' => $superAdminName, 'guard_name' => 'web']);
+
+        // 3. Crear el resto de tus roles personalizados
+        $roles = ['ingeniero', 'supervisor', 'calidad', 'tecnico'];
+        foreach ($roles as $roleName) {
+            Role::firstOrCreate(['name' => $roleName, 'guard_name' => 'web']);
+        }
+
+        // 4. Ejecutar comandos de Filament Shield para generar las políticas y permisos de tus recursos
+        $this->command->call('shield:generate', ['--option' => 'no-interaction']);
+
+        // 5. Crear el usuario administrador
+        $user = User::updateOrCreate(
             ['email' => 'sebastian.alvarez@csenergy.cl'],
             [
                 'name' => 'Sebastián Álvarez Cabezas',
@@ -32,8 +48,14 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
+        // 6. Asignar el rol de super_admin al usuario (ahora garantizado que existe)
+        $user->assignRole($superAdminName);
+
+        // 7. Llamar a otros seeders
         $this->call([
-            FormTemplateSeeder::class,
+            ProjectStatusSeeder::class,
         ]);
+
+        $this->command->info('¡Base de datos sembrada, roles creados y Super Admin asignado con éxito!');
     }
 }

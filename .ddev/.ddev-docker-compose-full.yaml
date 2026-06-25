@@ -184,6 +184,8 @@ services:
       USER: sebas
       VIRTUAL_HOST: axon.ddev.site
       npm_config_cache: /mnt/ddev-global-cache/npm
+    expose:
+      - "5173"
     extra_hosts:
       - host.docker.internal=172.31.240.1
     hostname: axon-web

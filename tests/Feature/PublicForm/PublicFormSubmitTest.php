@@ -21,7 +21,7 @@ function projectFormData(): array
         'client_company' => 'Empresa Test SA',
         'contact_email' => 'juan@example.com',
         'contact_phone' => '+56911111111',
-        'engineering_by' => 'csenergia',
+        'engineering_by' => 'csenergy',
     ];
 }
 
@@ -131,6 +131,6 @@ it('stores project-level fields on submission_requests', function () {
 
     $submission = SubmissionRequest::withoutGlobalScopes()->first();
     expect($submission->cost_center)->toBe('CC-001')
-        ->and($submission->engineering_by)->toBe('csenergia')
+        ->and($submission->engineering_by)->toBe('csenergy')
         ->and($submission->installation_location)->toBe('Santiago');
 });
