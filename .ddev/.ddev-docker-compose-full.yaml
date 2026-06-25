@@ -2,16 +2,16 @@ name: ddev-axon
 services:
   db:
     build:
-      context: /home/ubuntu/axon/.ddev/.dbimageBuild
+      context: /home/sebas/axon/.ddev/.dbimageBuild
       dockerfile: Dockerfile
       args:
         BASE_IMAGE: ddev/ddev-dbserver-mariadb-11.8:v1.25.2
         gid: "1000"
         uid: "1000"
-        username: ubuntu
+        username: sebas
       labels:
         com.ddev.app-type: laravel
-        com.ddev.approot: /home/ubuntu/axon
+        com.ddev.approot: /home/sebas/axon
         com.ddev.platform: ddev
         com.ddev.site-name: axon
         com.ddev.webtag: v1.25.2
@@ -40,10 +40,10 @@ services:
       DDEV_SITENAME: axon
       DDEV_TLD: ddev.site
       DDEV_UID: "1000"
-      DDEV_USER: ubuntu
+      DDEV_USER: sebas
       DDEV_VERSION: v1.25.2
       DOCKER_IP: 127.0.0.1
-      HOST_DOCKER_INTERNAL_IP: 172.17.144.1
+      HOST_DOCKER_INTERNAL_IP: 172.31.240.1
       IS_DDEV_PROJECT: "true"
       LINES: "24"
       MYSQL_HISTFILE: /mnt/ddev-global-cache/mysqlhistory/axon-db/mysql_history
@@ -55,9 +55,9 @@ services:
       POSTGRES_PASSWORD: db
       POSTGRES_USER: db
       TZ: America/Santiago
-      USER: ubuntu
+      USER: sebas
     extra_hosts:
-      - host.docker.internal=172.17.144.1
+      - host.docker.internal=172.31.240.1
     hostname: axon-db
     healthcheck:
       test:
@@ -71,7 +71,7 @@ services:
     image: ddev/ddev-dbserver-mariadb-11.8:v1.25.2-axon-built
     labels:
       com.ddev.app-type: laravel
-      com.ddev.approot: /home/ubuntu/axon
+      com.ddev.approot: /home/sebas/axon
       com.ddev.platform: ddev
       com.ddev.site-name: axon
       com.ddev.webtag: v1.25.2
@@ -82,7 +82,7 @@ services:
       - mode: ingress
         host_ip: 127.0.0.1
         target: 3306
-        published: "32773"
+        published: "32771"
         protocol: tcp
     restart: "no"
     stop_grace_period: 1m0s
@@ -94,21 +94,21 @@ services:
         volume:
           nocopy: true
       - type: bind
-        source: /home/ubuntu/axon/.ddev
+        source: /home/sebas/axon/.ddev
         target: /mnt/ddev_config
         bind: {}
       - type: bind
-        source: /home/ubuntu/axon/.ddev/db_snapshots
+        source: /home/sebas/axon/.ddev/db_snapshots
         target: /mnt/snapshots
         bind: {}
       - type: volume
         source: ddev-global-cache
         target: /mnt/ddev-global-cache
         volume: {}
-    working_dir: /home/ubuntu
+    working_dir: /home/sebas
   web:
     build:
-      context: /home/ubuntu/axon/.ddev/.webimageBuild
+      context: /home/sebas/axon/.ddev/.webimageBuild
       dockerfile: Dockerfile
       args:
         BASE_IMAGE: ddev/ddev-webserver:v1.25.2
@@ -116,10 +116,10 @@ services:
         DDEV_PHP_VERSION: "8.3"
         gid: "1000"
         uid: "1000"
-        username: ubuntu
+        username: sebas
       labels:
         com.ddev.app-type: laravel
-        com.ddev.approot: /home/ubuntu/axon
+        com.ddev.approot: /home/sebas/axon
         com.ddev.platform: ddev
         com.ddev.site-name: axon
         com.ddev.webtag: v1.25.2
@@ -156,7 +156,7 @@ services:
       DDEV_SITENAME: axon
       DDEV_TLD: ddev.site
       DDEV_UID: "1000"
-      DDEV_USER: ubuntu
+      DDEV_USER: sebas
       DDEV_VERSION: v1.25.2
       DDEV_WEB_ENTRYPOINT: /mnt/ddev_config/web-entrypoint.d
       DDEV_WEBSERVER_TYPE: nginx-fpm
@@ -166,7 +166,7 @@ services:
       DOCKER_IP: 127.0.0.1
       DOCROOT: public
       DRUSH_OPTIONS_URI: https://axon.ddev.site
-      HOST_DOCKER_INTERNAL_IP: 172.17.144.1
+      HOST_DOCKER_INTERNAL_IP: 172.31.240.1
       HTTP_EXPOSE: 80:80,8025:8025
       HTTPS_EXPOSE: 443:80,8026:8025
       IS_DDEV_PROJECT: "true"
@@ -181,11 +181,11 @@ services:
       SSH_AUTH_SOCK: /home/.ssh-agent/socket
       START_SCRIPT_TIMEOUT: "115"
       TZ: America/Santiago
-      USER: ubuntu
+      USER: sebas
       VIRTUAL_HOST: axon.ddev.site
       npm_config_cache: /mnt/ddev-global-cache/npm
     extra_hosts:
-      - host.docker.internal=172.17.144.1
+      - host.docker.internal=172.31.240.1
     hostname: axon-web
     healthcheck:
       test:
@@ -199,7 +199,7 @@ services:
     image: ddev/ddev-webserver:v1.25.2-axon-built
     labels:
       com.ddev.app-type: laravel
-      com.ddev.approot: /home/ubuntu/axon
+      com.ddev.approot: /home/sebas/axon
       com.ddev.platform: ddev
       com.ddev.site-name: axon
       com.ddev.webtag: v1.25.2
@@ -210,12 +210,12 @@ services:
       - mode: ingress
         host_ip: 127.0.0.1
         target: 80
-        published: "32770"
+        published: "32768"
         protocol: tcp
       - mode: ingress
         host_ip: 127.0.0.1
         target: 443
-        published: "32771"
+        published: "32769"
         protocol: tcp
       - mode: ingress
         host_ip: 127.0.0.1
@@ -225,11 +225,11 @@ services:
     user: 1000:1000
     volumes:
       - type: bind
-        source: /home/ubuntu/axon
+        source: /home/sebas/axon
         target: /var/www/html
         consistency: cached
       - type: bind
-        source: /home/ubuntu/axon/.ddev
+        source: /home/sebas/axon/.ddev
         target: /mnt/ddev_config
         read_only: true
         bind: {}
@@ -252,7 +252,7 @@ services:
         required: true
     environment:
       DDEV_DATABASE_FAMILY: mysql
-      HOST_DOCKER_INTERNAL_IP: 172.17.144.1
+      HOST_DOCKER_INTERNAL_IP: 172.31.240.1
       HTTP_EXPOSE: 8143:80
       HTTPS_EXPOSE: 8142:80
       TZ: America/Santiago
@@ -261,7 +261,7 @@ services:
       XHGUI_PDO_USER: db
       XHGUI_SAVE_HANDLER: pdo
     extra_hosts:
-      - host.docker.internal=172.17.144.1
+      - host.docker.internal=172.31.240.1
     healthcheck:
       test:
         - CMD-SHELL
@@ -274,7 +274,7 @@ services:
     image: ddev/ddev-xhgui:v1.25.2
     labels:
       com.ddev.app-type: laravel
-      com.ddev.approot: /home/ubuntu/axon
+      com.ddev.approot: /home/sebas/axon
       com.ddev.platform: ddev
       com.ddev.site-name: axon
       com.ddev.webtag: v1.25.2
@@ -292,7 +292,7 @@ networks:
     name: ddev-axon_default
     labels:
       com.ddev.app-type: laravel
-      com.ddev.approot: /home/ubuntu/axon
+      com.ddev.approot: /home/sebas/axon
       com.ddev.platform: ddev
       com.ddev.site-name: axon
       com.ddev.webtag: v1.25.2
