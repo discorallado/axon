@@ -20,6 +20,13 @@ return [
         'parent_task' => 'Tarea padre',
     ],
 
+    'actions' => [
+        'create' => 'Nueva tarea',
+        'create_for' => 'Nueva tarea en: :activity',
+    ],
+
+    'empty' => 'Sin tareas aún.',
+
     'activities' => [
         'singular' => 'Actividad',
         'plural' => 'Actividades',
@@ -30,6 +37,9 @@ return [
             'status' => 'Estado',
             'start_date' => 'Fecha de inicio',
             'end_date' => 'Fecha de término',
+        ],
+        'actions' => [
+            'create' => 'Nueva actividad',
         ],
     ],
 ];

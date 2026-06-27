@@ -21,7 +21,7 @@ services:
     container_name: ddev-axon-db
     environment:
       BITNAMI_VOLUME_DIR: ""
-      COLUMNS: "80"
+      COLUMNS: "93"
       DDEV_DATABASE: mariadb:11.8
       DDEV_DATABASE_FAMILY: mysql
       DDEV_GID: "1000"
@@ -82,7 +82,6 @@ services:
       - mode: ingress
         host_ip: 127.0.0.1
         target: 3306
-        published: "32771"
         protocol: tcp
     restart: "no"
     stop_grace_period: 1m0s
@@ -129,7 +128,7 @@ services:
       - /pre-start.sh
     container_name: ddev-axon-web
     environment:
-      COLUMNS: "80"
+      COLUMNS: "93"
       COREPACK_ENABLE_DOWNLOAD_PROMPT: "0"
       COREPACK_HOME: /mnt/ddev-global-cache/corepack
       DDEV_APPROOT: /var/www/html
@@ -167,8 +166,8 @@ services:
       DOCROOT: public
       DRUSH_OPTIONS_URI: https://axon.ddev.site
       HOST_DOCKER_INTERNAL_IP: 172.31.240.1
-      HTTP_EXPOSE: 80:80,8025:8025
-      HTTPS_EXPOSE: 443:80,8026:8025
+      HTTP_EXPOSE: 80:80,8025:8025,5174:5173
+      HTTPS_EXPOSE: 443:80,8026:8025,5173:5173
       IS_DDEV_PROJECT: "true"
       LINES: "24"
       MYSQL_HISTFILE: /mnt/ddev-global-cache/mysqlhistory/axon-web/mysql_history
@@ -212,12 +211,14 @@ services:
       - mode: ingress
         host_ip: 127.0.0.1
         target: 80
-        published: "32768"
         protocol: tcp
       - mode: ingress
         host_ip: 127.0.0.1
         target: 443
-        published: "32769"
+        protocol: tcp
+      - mode: ingress
+        host_ip: 127.0.0.1
+        target: 5173
         protocol: tcp
       - mode: ingress
         host_ip: 127.0.0.1

@@ -10,42 +10,59 @@
 2026-06-23
 
 ## Módulo / feature en curso
-REQ-0002-B — Kanban + Gantt + Export CSV
+REQ-0002-B — Kanban + Gantt + Export — **cerrado**
 
 ## Estado actual
 
 ### Completado ✅
 - REQ-0001 (Módulo de Solicitudes de Tableros) — cerrado, 23/23 tests en verde.
-- REQ-0002-A (PMIS Core) — **cerrado**, commit `a95aab8`, 33/33 tests en verde.
+- REQ-0002-A (PMIS Core) — cerrado, commit `a95aab8`, 33/33 tests en verde.
+- REQ-0002-B (Kanban + Gantt + Export) — **cerrado**, 42/42 tests en verde.
+  - `KanbanBoard` page: Livewire + SortableJS CDN, filtros por actividad/prioridad, `#[Renderless]` en updateTaskStatus.
+  - `GanttChart` page: frappe-gantt CDN + Alpine `wire:ignore`, zoom día/semana/mes.
+  - `TasksExport`: maatwebsite/excel, xlsx + csv desde ViewProject.
+  - `mokhosh/filament-kanban` descartado (incompatible con Filament 5) → Kanban custom.
+  - `pestphp/pest-plugin-livewire` instalado como dev-dependency.
+  - ADR: `docs/adr/0007-kanban-gantt-export.md`.
   - 65 archivos: migraciones, modelos, enums, observers, resources Filament, policies, factories, seeders, tests.
   - Bug fixes: `completionPercentage()` cualifica `tasks.status` en JOIN ambiguo.
   - Constraint `projects.code` cambiada a `unique(['organization_id', 'code'])` (multi-tenant-ready).
   - `db_test` creado y migrado; todos los tests usan `RefreshDatabase`.
 
+### Diseñados — pendientes de implementar (orden sugerido)
+1. **REQ-0002-B** — Kanban + Gantt + Export CSV (`docs/requerimientos/0002-B-kanban-gantt.md`)
+2. **REQ-0003** — Finanzas básicas: Proveedores, OC, Facturas (`docs/requerimientos/0003-finanzas.md`)
+3. **REQ-0005** — Estados de Pago / EPs a subcontratistas (`docs/requerimientos/0005-estados-de-pago.md`) ← **nuevo, diseñado en esta sesión**
+4. **REQ-0002-C** — KPI Dashboard (`docs/requerimientos/0002-C-kpi-dashboard.md`)
+5. **REQ-0002-D** — Portal externo (`docs/requerimientos/0002-D-portal-externo.md`)
+6. **REQ-0004** — Control de Cambios (`docs/requerimientos/0004-control-cambios.md`)
+
+> ⚠️ REQ-0005 depende de REQ-0003 (necesita `suppliers` e `invoices`).
+
 ### Decisiones de diseño cerradas (vigentes)
 - **Enums Filament** para TaskStatus y TaskPriority (label + color + icono).
 - **mokhosh/filament-kanban** para Kanban drag-and-drop.
 - **frappe-gantt** para Gantt (open-source; regla primordial del proyecto).
+- **Solo open-source** — regla primordial del proyecto.
 - **Códigos legibles de tarea:** formato `TAB-001-T042`.
 - **SR → Proyecto:** notificación + Action en lista de aprobadas; modal semi-automático.
 - **`program_id` nullable** en `projects`, módulo Programs diferido.
 - **OC:** monto total + descripción libre (sin líneas de ítem).
-- **Jerarquía:** Proyecto → Actividad → Tarea.
+- **Jerarquía PM:** Proyecto → Actividad → Tarea.
+- **Phases (fases de obra):** concepto distinto de Activities; anclan tramos de pago al subcontratista (REQ-0005).
+- **EPs:** monto fijo por tramo; partidas descriptivas; PDF via Blade + `barryvdh/laravel-dompdf`.
 - **Portal externo:** token + dashboard Livewire + Reverb tiempo real (REQ-0002-D, diferido).
 - **KPIs** a nivel de proyecto: widgets en `ViewProject` (REQ-0002-C, diferido).
-- **Solo open-source** — regla primordial del proyecto.
 - **FAT:** diferido a su propio REQ.
 
 ## Decisiones pendientes
-Ninguna — REQ-0002-A cerrado, esperando instrucción para REQ-0002-B.
+Ninguna.
 
 ## Próximo paso concreto
-Implementar **REQ-0002-B** (`docs/requerimientos/0002-B-kanban-gantt.md`):
-1. Instalar `mokhosh/filament-kanban` via composer.
-2. Crear `KanbanBoard` como página Filament custom en `ProjectResource` (vista de tareas por estado).
-3. Integrar `frappe-gantt` como widget JS dentro de un Custom Filament Widget (o página).
-4. Botón de export CSV de tareas con `maatwebsite/excel`.
-5. Tests: al menos un feature test de que el Kanban devuelve tareas en el estado correcto.
+Esperar instrucción del usuario. Opciones según backlog:
+- **REQ-0003** (Finanzas: Proveedores + OC + Facturas) — prerrequisito obligatorio de REQ-0005.
+- **REQ-0002-C** (KPI Dashboard) — widgets de estadísticas en ViewProject.
+- **REQ-0005** (Estados de Pago / EPs) — requiere REQ-0003 implementado primero.
 
 ---
 

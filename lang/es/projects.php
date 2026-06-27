@@ -59,6 +59,32 @@ return [
         ],
     ],
 
+    'views' => [
+        'kanban' => 'Kanban',
+        'gantt' => 'Gantt',
+    ],
+
+    'export' => [
+        'xlsx' => 'Exportar Excel',
+        'csv' => 'Exportar CSV',
+    ],
+
+    'kanban' => [
+        'title' => 'Tablero Kanban',
+        'all_activities' => 'Todas las actividades',
+        'all_priorities' => 'Todas las prioridades',
+        'empty_column' => 'Sin tareas',
+    ],
+
+    'gantt' => [
+        'title' => 'Diagrama Gantt',
+        'zoom' => 'Zoom',
+        'day' => 'Día',
+        'week' => 'Semana',
+        'month' => 'Mes',
+        'no_tasks' => 'No hay tareas con fechas definidas para mostrar en el Gantt.',
+    ],
+
     'members' => [
         'singular' => 'Miembro',
         'plural' => 'Equipo del Proyecto',

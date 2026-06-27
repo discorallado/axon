@@ -6,6 +6,7 @@ use App\Enums\ProjectPriority;
 use App\Filament\Resources\ProjectResource\Pages;
 use App\Filament\Resources\ProjectResource\RelationManagers\ActivitiesRelationManager;
 use App\Filament\Resources\ProjectResource\RelationManagers\ProjectMembersRelationManager;
+use App\Filament\Resources\ProjectResource\RelationManagers\TasksRelationManager;
 use App\Models\Client;
 use App\Models\Project;
 use App\Models\ProjectStatus;
@@ -193,11 +194,11 @@ class ProjectResource extends Resource
                     ->searchable()
                     ->preload(),
             ])
-            ->actions([
+            ->recordActions([
                 ViewAction::make(),
                 EditAction::make(),
             ])
-            ->bulkActions([
+            ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
                 ]),
@@ -265,6 +266,7 @@ class ProjectResource extends Resource
     {
         return [
             ActivitiesRelationManager::class,
+            TasksRelationManager::class,
             ProjectMembersRelationManager::class,
         ];
     }
@@ -276,6 +278,8 @@ class ProjectResource extends Resource
             'create' => Pages\CreateProject::route('/create'),
             'edit' => Pages\EditProject::route('/{record}/edit'),
             'view' => Pages\ViewProject::route('/{record}'),
+            'kanban' => Pages\KanbanBoard::route('/{record}/kanban'),
+            'gantt' => Pages\GanttChart::route('/{record}/gantt'),
         ];
     }
 }

@@ -91,10 +91,10 @@ class ProjectStatusResource extends Resource
                     ->counts('projects')
                     ->badge(),
             ])
-            ->actions([
+            ->recordActions([
                 EditAction::make(),
             ])
-            ->bulkActions([
+            ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
                 ]),

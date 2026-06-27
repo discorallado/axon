@@ -538,7 +538,9 @@ class PublicFormWizard extends Component implements HasActions, HasForms
                                 ->label('Función principal del tablero')
                                 ->columnSpanFull()
                                 ->required(fn($get) => $get('delivery_type') !== 'tablero')
-                                ->visible(fn($get) => $get('delivery_type') === )
+                                ->visible(function ($get) {
+                                    return $get('delivery_type') !== 'tablero' ? true:false;
+                                })
                                 ->dehydrated(fn($get) => $get('delivery_type') !== 'tablero')
                                 ->live()
                                 ->placeholder('Ej.: Distribución principal del edificio, alimentación de motores, control de alumbrado...')

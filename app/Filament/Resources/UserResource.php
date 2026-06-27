@@ -130,10 +130,10 @@ class UserResource extends Resource
                     ->trueLabel('Solo activos')
                     ->falseLabel('Solo inactivos'),
             ])
-            ->actions([
+            ->recordActions([
                 EditAction::make(),
             ])
-            ->bulkActions([
+            ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
                 ]),
