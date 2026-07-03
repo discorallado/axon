@@ -31,6 +31,7 @@ return [
     ],
 
     'actions' => [
+        'view' => 'Ver proyecto',
         'create_from_submission' => 'Crear Proyecto',
         'create_from_submission_label' => 'Crear proyecto desde solicitud',
     ],
@@ -62,6 +63,7 @@ return [
     'views' => [
         'kanban' => 'Kanban',
         'gantt' => 'Gantt',
+        'back_to_project' => 'Volver al proyecto',
     ],
 
     'export' => [
@@ -77,12 +79,23 @@ return [
     ],
 
     'gantt' => [
-        'title' => 'Diagrama Gantt',
-        'zoom' => 'Zoom',
-        'day' => 'Día',
-        'week' => 'Semana',
-        'month' => 'Mes',
-        'no_tasks' => 'No hay tareas con fechas definidas para mostrar en el Gantt.',
+        'title'          => 'Diagrama Gantt',
+        'no_tasks'       => 'No hay actividades con tareas y fechas definidas para mostrar en el Gantt.',
+        'col_name'       => 'Nombre',
+        'col_duration'   => 'Duración',
+        'col_start'      => 'Inicio',
+        'col_finish'     => 'Término',
+        'overdue'        => 'Vencida',
+        'scale_day'      => 'Día',
+        'scale_week'     => 'Semana',
+        'scale_month'    => 'Mes',
+        'scale_quarter'  => 'Trimestre',
+        'scale_year'     => 'Año',
+        'fit'            => 'Ajustar al proyecto',
+        'refresh'        => 'Actualizar',
+        'modal_edit'     => 'Editar tarea',
+        'modal_save'     => 'Guardar',
+        'modal_cancel'   => 'Cancelar',
     ],
 
     'members' => [

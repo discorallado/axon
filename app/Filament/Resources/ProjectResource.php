@@ -4,9 +4,8 @@ namespace App\Filament\Resources;
 
 use App\Enums\ProjectPriority;
 use App\Filament\Resources\ProjectResource\Pages;
-use App\Filament\Resources\ProjectResource\RelationManagers\ActivitiesRelationManager;
 use App\Filament\Resources\ProjectResource\RelationManagers\ProjectMembersRelationManager;
-use App\Filament\Resources\ProjectResource\RelationManagers\TasksRelationManager;
+use App\Livewire\ActivityAccordion;
 use App\Models\Client;
 use App\Models\Project;
 use App\Models\ProjectStatus;
@@ -23,6 +22,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Livewire;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Support\Colors\Color;
@@ -195,7 +195,8 @@ class ProjectResource extends Resource
                     ->preload(),
             ])
             ->recordActions([
-                ViewAction::make(),
+                ViewAction::make()
+                    ->label(__('projects.actions.view')),
                 EditAction::make(),
             ])
             ->toolbarActions([
@@ -259,14 +260,17 @@ class ProjectResource extends Resource
                         ->badge()
                         ->color('primary'),
                 ]),
+
+            Livewire::make(ActivityAccordion::class)
+                ->data(fn ($record) => ['projectId' => $record->id])
+                ->key('activity-accordion')
+                ->columnSpanFull(),
         ]);
     }
 
     public static function getRelationManagers(): array
     {
         return [
-            ActivitiesRelationManager::class,
-            TasksRelationManager::class,
             ProjectMembersRelationManager::class,
         ];
     }
@@ -280,6 +284,7 @@ class ProjectResource extends Resource
             'view' => Pages\ViewProject::route('/{record}'),
             'kanban' => Pages\KanbanBoard::route('/{record}/kanban'),
             'gantt' => Pages\GanttChart::route('/{record}/gantt'),
+            'view-activity' => Pages\ViewActivity::route('/{record}/activities/{activity}'),
         ];
     }
 }

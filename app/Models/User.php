@@ -8,6 +8,7 @@ use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -27,6 +28,7 @@ class User extends Authenticatable implements FilamentUser
         'position',
         'is_active',
         'avatar_url',
+        'timezone',
     ];
 
     protected $hidden = [
@@ -56,5 +58,10 @@ class User extends Authenticatable implements FilamentUser
     public function assignedSubmissions(): HasMany
     {
         return $this->hasMany(SubmissionRequest::class, 'assigned_to');
+    }
+
+    public function assignedTasks(): BelongsToMany
+    {
+        return $this->belongsToMany(Task::class, 'task_user');
     }
 }

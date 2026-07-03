@@ -54,6 +54,7 @@ class DatabaseSeeder extends Seeder
         // 7. Llamar a otros seeders
         $this->call([
             ProjectStatusSeeder::class,
+            ShieldSeeder::class,
         ]);
 
         $this->command->info('¡Base de datos sembrada, roles creados y Super Admin asignado con éxito!');

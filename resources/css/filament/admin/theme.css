@@ -2,6 +2,7 @@
 
 @source '../../../../app/Filament/**/*';
 @source '../../../../resources/views/filament/**/*';
+@source '../../../../resources/views/livewire/**/*';
 
 
 /* Animación general */
@@ -15,6 +16,69 @@
         box-shadow .2s ease,
         transform .2s ease;
 }
+
+/* ── ActivityAccordion ─────────────────────────────────────────────────── */
+
+.axon-activities-list {
+    @apply flex flex-col gap-3;
+}
+
+.axon-activity-card {
+    @apply bg-white dark:bg-zinc-900;
+}
+
+.axon-activity-header {
+    @apply flex items-center gap-3 overflow-hidden p-3 cursor-pointer select-none
+           transition-colors duration-150
+           hover:bg-slate-50 dark:hover:bg-white/[6%];
+}
+
+.axon-activity-name {
+    @apply flex-1 min-w-0 truncate text-lg font-medium text-gray-950 dark:text-white;
+}
+
+.axon-activity-actions {
+    @apply ms-auto flex items-center gap-1;
+}
+
+.axon-tasks-body {
+    @apply border-t border-gray-50 dark:border-zinc-800;
+}
+
+.axon-tasks-list {
+    @apply flex flex-col gap-3;
+}
+
+.axon-task-row {
+    @apply flex items-center gap-3 rounded-lg px-3 py-2.5 bg-slate-50 dark:bg-zinc-900/55 hover:bg-slate-50 dark:hover:bg-white/[6%];
+}
+
+.axon-task-actions {
+    @apply ms-auto flex shrink-0 items-center gap-3;
+}
+
+.axon-add-task-trigger {
+    @apply border-t border-slate-200 dark:border-zinc-800 p-3;
+}
+
+.axon-add-activity-trigger {
+    @apply mt-3;
+}
+
+.axon-ring {
+    @apply ring-slate-950/5 dark:ring-white/10;
+}
+
+.axon-grip {
+    @apply inline-flex items-center justify-center p-1 rounded-md shrink-0
+           cursor-grab select-none touch-none
+           text-gray-800 transition-colors duration-150
+           hover:text-gray-500
+           dark:text-gray-500 dark:hover:text-gray-400
+           active:cursor-grabbing;
+}
+
+/* ── Fin ActivityAccordion ──────────────────────────────────────────────── */
 
 /* Fondo tipo TailwindUI */
 .fi-simple-layout {
