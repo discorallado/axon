@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(php artisan *)",
+      "Bash(composer *)",
+      "Bash(./vendor/bin/pint *)",
+      "Bash(./vendor/bin/pest *)",
+      "Bash(./vendor/bin/phpstan *)",
+      "Bash(npm run *)",
+      "Bash(git status)",
+      "Bash(git diff *)",
+      "Bash(git log *)"
+    ]
+  }
+}
