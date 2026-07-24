@@ -21,6 +21,8 @@ return [
         'actual_hours' => 'Horas reales',
         'activity' => 'Actividad',
         'parent_task' => 'Tarea padre',
+        'predecessors' => 'Tareas predecesoras',
+        'predecessors_help' => 'Esta tarea depende de que las predecesoras seleccionadas finalicen antes.',
     ],
 
     'actions' => [
@@ -42,6 +44,7 @@ return [
         'updated' => 'Tarea actualizada',
         'deleted' => 'Tarea eliminada',
         'dates_updated' => 'Fechas actualizadas',
+        'dependency_cycle_skipped' => 'Una o más dependencias se omitieron porque generaban un ciclo entre tareas.',
     ],
 
     'empty' => 'Sin tareas aún.',

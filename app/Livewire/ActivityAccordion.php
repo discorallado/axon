@@ -8,6 +8,7 @@ use App\Models\Activity;
 use App\Models\Project;
 use App\Models\Task;
 use App\Models\User;
+use App\Services\TaskDependencyService;
 use Filament\Actions\Action;
 use Filament\Actions\Concerns\InteractsWithActions;
 use Filament\Actions\Contracts\HasActions;
@@ -156,7 +157,8 @@ class ActivityAccordion extends Component implements HasActions, HasForms
             ->action(function (array $data, array $arguments): void {
                 $activity = Activity::findOrFail($arguments['activityId']);
                 $assignees = $data['assignees'] ?? [];
-                unset($data['assignees']);
+                $predecessors = $data['predecessors'] ?? [];
+                unset($data['assignees'], $data['predecessors']);
 
                 $task = Task::create([
                     'organization_id' => $activity->organization_id,
@@ -168,6 +170,8 @@ class ActivityAccordion extends Component implements HasActions, HasForms
                 if ($assignees) {
                     $task->assignees()->sync($assignees);
                 }
+
+                $this->syncPredecessorsAndNotify($task, $activity->project_id, $predecessors);
 
                 Notification::make()
                     ->title(__('tasks.notifications.created'))
@@ -202,7 +206,8 @@ class ActivityAccordion extends Component implements HasActions, HasForms
                     ->increment('order');
 
                 $assignees = $data['assignees'] ?? [];
-                unset($data['assignees']);
+                $predecessors = $data['predecessors'] ?? [];
+                unset($data['assignees'], $data['predecessors']);
 
                 $task = Task::create([
                     'organization_id' => $refTask->organization_id,
@@ -214,6 +219,8 @@ class ActivityAccordion extends Component implements HasActions, HasForms
                 if ($assignees) {
                     $task->assignees()->sync($assignees);
                 }
+
+                $this->syncPredecessorsAndNotify($task, $refTask->activity->project_id, $predecessors);
 
                 Notification::make()
                     ->title(__('tasks.notifications.created'))
@@ -299,9 +306,9 @@ class ActivityAccordion extends Component implements HasActions, HasForms
             ->color('gray')
             ->tooltip(__('tasks.actions.edit'))
             ->modalHeading(__('tasks.actions.edit'))
-            ->schema($this->taskFormSchema())
+            ->schema(fn (array $arguments): array => $this->taskFormSchema($arguments['taskId'] ?? null))
             ->fillForm(function (array $arguments): array {
-                $task = Task::with('assignees')->findOrFail($arguments['taskId']);
+                $task = Task::with(['assignees', 'predecessors'])->findOrFail($arguments['taskId']);
 
                 return [
                     'name' => $task->name,
@@ -312,14 +319,17 @@ class ActivityAccordion extends Component implements HasActions, HasForms
                     'due_date' => $task->due_date?->format('Y-m-d'),
                     'estimated_hours' => $task->estimated_hours,
                     'assignees' => $task->assignees->pluck('id')->toArray(),
+                    'predecessors' => $task->predecessors->pluck('id')->toArray(),
                 ];
             })
             ->action(function (array $data, array $arguments): void {
                 $task = Task::findOrFail($arguments['taskId']);
                 $assignees = $data['assignees'] ?? [];
-                unset($data['assignees']);
+                $predecessors = $data['predecessors'] ?? [];
+                unset($data['assignees'], $data['predecessors']);
                 $task->update($data);
                 $task->assignees()->sync($assignees);
+                $this->syncPredecessorsAndNotify($task, $task->activity->project_id, $predecessors);
                 Notification::make()
                     ->title(__('tasks.notifications.updated'))
                     ->success()
@@ -382,7 +392,7 @@ class ActivityAccordion extends Component implements HasActions, HasForms
         ];
     }
 
-    private function taskFormSchema(): array
+    private function taskFormSchema(?string $excludeTaskId = null): array
     {
         $project = Project::findOrFail($this->projectId);
 
@@ -440,7 +450,37 @@ class ActivityAccordion extends Component implements HasActions, HasForms
                 ->searchable()
                 ->preload()
                 ->columnSpanFull(),
+
+            Select::make('predecessors')
+                ->label(__('tasks.fields.predecessors'))
+                ->helperText(__('tasks.fields.predecessors_help'))
+                ->multiple()
+                ->options(
+                    $project->tasks()
+                        ->with('activity')
+                        ->when($excludeTaskId, fn ($q) => $q->where('tasks.id', '!=', $excludeTaskId))
+                        ->orderBy('tasks.order')
+                        ->get()
+                        ->mapWithKeys(fn (Task $t) => [
+                            $t->id => ($t->activity?->name ? $t->activity->name.' — ' : '').$t->name,
+                        ])
+                )
+                ->searchable()
+                ->preload()
+                ->columnSpanFull(),
         ];
+    }
+
+    private function syncPredecessorsAndNotify(Task $task, string $projectId, array $predecessors): void
+    {
+        $skipped = TaskDependencyService::syncPredecessors($task, $projectId, $predecessors);
+
+        if ($skipped !== []) {
+            Notification::make()
+                ->title(__('tasks.notifications.dependency_cycle_skipped'))
+                ->warning()
+                ->send();
+        }
     }
 
     // -------------------------------------------------------------------------

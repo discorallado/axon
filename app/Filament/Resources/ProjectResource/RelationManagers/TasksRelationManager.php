@@ -6,6 +6,7 @@ use App\Enums\TaskPriority;
 use App\Enums\TaskStatus;
 use App\Models\Task;
 use App\Models\User;
+use App\Services\TaskDependencyService;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
@@ -13,6 +14,7 @@ use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Notifications\Notification;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
@@ -90,13 +92,30 @@ class TasksRelationManager extends RelationManager
                 ->searchable()
                 ->preload()
                 ->columnSpanFull(),
+
+            Select::make('predecessors')
+                ->label(__('tasks.fields.predecessors'))
+                ->helperText(__('tasks.fields.predecessors_help'))
+                ->multiple()
+                ->options(fn (?Task $record) => $project->tasks()
+                    ->with('activity')
+                    ->when($record, fn ($q) => $q->where('tasks.id', '!=', $record->id))
+                    ->orderBy('tasks.order')
+                    ->get()
+                    ->mapWithKeys(fn (Task $t) => [
+                        $t->id => ($t->activity?->name ? $t->activity->name.' — ' : '').$t->name,
+                    ]))
+                ->searchable()
+                ->preload()
+                ->columnSpanFull(),
         ]);
     }
 
     protected function handleRecordCreation(array $data): Model
     {
         $assignees = $data['assignees'] ?? [];
-        unset($data['assignees']);
+        $predecessors = $data['predecessors'] ?? [];
+        unset($data['assignees'], $data['predecessors']);
 
         $task = Task::create([
             'organization_id' => $this->getOwnerRecord()->organization_id,
@@ -107,19 +126,36 @@ class TasksRelationManager extends RelationManager
             $task->assignees()->sync($assignees);
         }
 
+        $this->syncPredecessorsAndNotify($task, $predecessors);
+
         return $task;
     }
 
     protected function handleRecordUpdate(Model $record, array $data): Model
     {
         $assignees = $data['assignees'] ?? [];
-        unset($data['assignees']);
+        $predecessors = $data['predecessors'] ?? [];
+        unset($data['assignees'], $data['predecessors']);
 
         $record->update($data);
 
         $record->assignees()->sync($assignees);
 
+        $this->syncPredecessorsAndNotify($record, $predecessors);
+
         return $record;
+    }
+
+    private function syncPredecessorsAndNotify(Task $task, array $predecessors): void
+    {
+        $skipped = TaskDependencyService::syncPredecessors($task, $this->getOwnerRecord()->id, $predecessors);
+
+        if ($skipped !== []) {
+            Notification::make()
+                ->title(__('tasks.notifications.dependency_cycle_skipped'))
+                ->warning()
+                ->send();
+        }
     }
 
     public function table(Table $table): Table
@@ -187,6 +223,7 @@ class TasksRelationManager extends RelationManager
                 EditAction::make()
                     ->mutateRecordDataUsing(function (array $data, Task $record): array {
                         $data['assignees'] = $record->assignees()->pluck('users.id')->toArray();
+                        $data['predecessors'] = $record->predecessors()->pluck('tasks.id')->toArray();
 
                         return $data;
                     }),

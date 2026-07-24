@@ -71,6 +71,18 @@ class Task extends Model
             ->withTimestamps();
     }
 
+    public function predecessors(): BelongsToMany
+    {
+        return $this->belongsToMany(Task::class, 'task_links', 'target_id', 'source_id')
+            ->withPivot('id', 'type');
+    }
+
+    public function successors(): BelongsToMany
+    {
+        return $this->belongsToMany(Task::class, 'task_links', 'source_id', 'target_id')
+            ->withPivot('id', 'type');
+    }
+
     public function isOverdue(): bool
     {
         return $this->due_date !== null
