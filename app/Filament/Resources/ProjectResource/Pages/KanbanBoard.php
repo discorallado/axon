@@ -42,7 +42,8 @@ class KanbanBoard extends Page
     {
         $query = Task::query()
             ->whereHas('activity', fn ($q) => $q->where('project_id', $this->record->id))
-            ->with(['activity', 'assignees']);
+            ->with(['activity', 'assignees'])
+            ->orderBy('order');
 
         if ($this->filterActivity) {
             $query->where('activity_id', $this->filterActivity);

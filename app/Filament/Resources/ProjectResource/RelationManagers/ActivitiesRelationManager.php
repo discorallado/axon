@@ -2,7 +2,6 @@
 
 namespace App\Filament\Resources\ProjectResource\RelationManagers;
 
-use App\Enums\ActivityStatus;
 use App\Enums\TaskPriority;
 use App\Enums\TaskStatus;
 use App\Models\Activity;
@@ -55,12 +54,6 @@ class ActivitiesRelationManager extends RelationManager
                     ->default(fn () => ($this->getOwnerRecord()->activities()->max('order') ?? 0) + 1)
                     ->required(),
 
-                Select::make('status')
-                    ->label(__('tasks.activities.fields.status'))
-                    ->options(ActivityStatus::class)
-                    ->default(ActivityStatus::Pendiente)
-                    ->required(),
-
                 DatePicker::make('start_date')
                     ->label(__('tasks.activities.fields.start_date'))
                     ->displayFormat('d/m/Y'),
@@ -84,6 +77,7 @@ class ActivitiesRelationManager extends RelationManager
     {
         return $table
             ->recordTitleAttribute('name')
+            ->modifyQueryUsing(fn ($query) => $query->with('tasks'))
             ->columns([
                 TextColumn::make('order')
                     ->label('#')

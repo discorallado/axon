@@ -24,7 +24,7 @@ enum ActivityStatus: string implements HasColor, HasIcon, HasLabel
     public function getColor(): string|array|null
     {
         return match ($this) {
-            self::Pendiente => 'gray',
+            self::Pendiente => 'warning',
             self::EnProgreso => 'info',
             self::Completada => 'success',
         };

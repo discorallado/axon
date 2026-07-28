@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AttachmentController;
+use App\Http\Controllers\MentionSuggestionsController;
 use App\Http\Controllers\SubmissionPdfController;
 use App\Livewire\PublicFormWizard;
 use Illuminate\Support\Facades\Route;
@@ -20,6 +21,10 @@ Route::get('/solicitud/editar/{submission}', PublicFormWizard::class)
 Route::get('/attachments/{attachment}/download', [AttachmentController::class, 'download'])
     ->middleware(['auth'])
     ->name('attachments.download');
+
+Route::get('/admin/api/mention-suggestions', MentionSuggestionsController::class)
+    ->middleware(['auth'])
+    ->name('admin.mention-suggestions');
 
 Route::get('/solicitudes/{submission}/pdf', [SubmissionPdfController::class, 'download'])
     ->middleware(['auth'])

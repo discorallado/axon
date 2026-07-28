@@ -21,7 +21,7 @@ services:
     container_name: ddev-axon-db
     environment:
       BITNAMI_VOLUME_DIR: ""
-      COLUMNS: "93"
+      COLUMNS: "80"
       DDEV_DATABASE: mariadb:11.8
       DDEV_DATABASE_FAMILY: mysql
       DDEV_GID: "1000"
@@ -105,6 +105,47 @@ services:
         target: /mnt/ddev-global-cache
         volume: {}
     working_dir: /home/sebas
+  phpmyadmin:
+    container_name: ddev-axon-phpmyadmin
+    depends_on:
+      db:
+        condition: service_healthy
+        required: true
+    environment:
+      HOST_DOCKER_INTERNAL_IP: 172.31.240.1
+      HTTP_EXPOSE: 8036:80
+      HTTPS_EXPOSE: 8037:80
+      PMA_HOST: db
+      PMA_PASSWORD: root
+      PMA_PORT: "3306"
+      PMA_USER: root
+      UPLOAD_LIMIT: 4000M
+      VIRTUAL_HOST: axon.ddev.site
+    expose:
+      - "80"
+    extra_hosts:
+      - host.docker.internal=172.31.240.1
+    image: phpmyadmin:5
+    labels:
+      com.ddev.app-type: laravel
+      com.ddev.approot: /home/sebas/axon
+      com.ddev.platform: ddev
+      com.ddev.site-name: axon
+      com.ddev.webtag: v1.25.2
+    networks:
+      ddev_default: null
+      default: null
+    restart: "no"
+    volumes:
+      - type: bind
+        source: /home/sebas/axon/.ddev
+        target: /mnt/ddev_config
+        bind: {}
+      - type: volume
+        source: ddev-global-cache
+        target: /mnt/ddev-global-cache
+        volume: {}
+    working_dir: /root
   web:
     build:
       context: /home/sebas/axon/.ddev/.webimageBuild
@@ -128,7 +169,7 @@ services:
       - /pre-start.sh
     container_name: ddev-axon-web
     environment:
-      COLUMNS: "93"
+      COLUMNS: "80"
       COREPACK_ENABLE_DOWNLOAD_PROMPT: "0"
       COREPACK_HOME: /mnt/ddev-global-cache/corepack
       DDEV_APPROOT: /var/www/html

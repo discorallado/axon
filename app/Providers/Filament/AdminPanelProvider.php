@@ -2,8 +2,12 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Widgets\MonthlyTaskCreationWidget;
+use App\Filament\Widgets\ProjectProgressWidget;
 use App\Filament\Widgets\ProjectStatsWidget;
 use App\Filament\Widgets\RecentProjectsWidget;
+use App\Filament\Widgets\TasksByStatusWidget;
+use App\Filament\Widgets\TeamContributionWidget;
 use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
@@ -53,6 +57,10 @@ class AdminPanelProvider extends PanelProvider
                 AccountWidget::class,
                 ProjectStatsWidget::class,
                 RecentProjectsWidget::class,
+                TasksByStatusWidget::class,
+                MonthlyTaskCreationWidget::class,
+                ProjectProgressWidget::class,
+                TeamContributionWidget::class,
             ])
             ->plugins([
                 FilamentShieldPlugin::make(),

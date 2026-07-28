@@ -4,9 +4,7 @@ namespace App\Filament\Resources\ProjectResource\Pages;
 
 use App\Exports\TasksExport;
 use App\Filament\Resources\ProjectResource;
-use App\Filament\Resources\ProjectResource\RelationManagers\ActivitiesRelationManager;
 use App\Filament\Resources\ProjectResource\RelationManagers\ProjectMembersRelationManager;
-use App\Filament\Resources\ProjectResource\RelationManagers\TasksRelationManager;
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
 use Filament\Resources\Pages\ViewRecord;
@@ -58,8 +56,6 @@ class ViewProject extends ViewRecord
     public function getRelationManagers(): array
     {
         return [
-            ActivitiesRelationManager::class,
-            TasksRelationManager::class,
             ProjectMembersRelationManager::class,
         ];
     }

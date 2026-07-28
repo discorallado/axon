@@ -7,66 +7,104 @@
 ---
 
 ## Última actualización
-2026-06-23
+2026-07-03
 
 ## Módulo / feature en curso
-REQ-0002-B — Kanban + Gantt + Export — **cerrado**
+Ninguno — REQ-0002-E completamente cerrado y pusheado a rama `feat/req-0002-e`
 
 ## Estado actual
 
 ### Completado ✅
 - REQ-0001 (Módulo de Solicitudes de Tableros) — cerrado, 23/23 tests en verde.
 - REQ-0002-A (PMIS Core) — cerrado, commit `a95aab8`, 33/33 tests en verde.
-- REQ-0002-B (Kanban + Gantt + Export) — **cerrado**, 42/42 tests en verde.
-  - `KanbanBoard` page: Livewire + SortableJS CDN, filtros por actividad/prioridad, `#[Renderless]` en updateTaskStatus.
-  - `GanttChart` page: frappe-gantt CDN + Alpine `wire:ignore`, zoom día/semana/mes.
-  - `TasksExport`: maatwebsite/excel, xlsx + csv desde ViewProject.
-  - `mokhosh/filament-kanban` descartado (incompatible con Filament 5) → Kanban custom.
-  - `pestphp/pest-plugin-livewire` instalado como dev-dependency.
-  - ADR: `docs/adr/0007-kanban-gantt-export.md`.
-  - 65 archivos: migraciones, modelos, enums, observers, resources Filament, policies, factories, seeders, tests.
-  - Bug fixes: `completionPercentage()` cualifica `tasks.status` en JOIN ambiguo.
-  - Constraint `projects.code` cambiada a `unique(['organization_id', 'code'])` (multi-tenant-ready).
-  - `db_test` creado y migrado; todos los tests usan `RefreshDatabase`.
+- REQ-0002-B (Kanban + Gantt + Export) — cerrado, 42/42 tests en verde.
+- **UX ActivityAccordion v3** — cerrado, 54/54 tests en verde.
+- **REQ-0002-E (UX Gantt + Kanban + Widgets)** — ✅ CERRADO. Commit `19e933e` en rama `feat/req-0002-e`.
+
+#### Resumen REQ-0002-E (finalizado en esta sesión):
+**Diagrama Gantt con DHTMLX Community:**
+- Reemplaza frappe-gantt → DHTMLX Gantt (MS Project-style, nativo en Community)
+- Dark mode completo (25+ selectores `.dark .gantt_*`)
+- Zoom via `gantt.ext.zoom` (Ctrl+rueda + botones +/-) sin auto-fit al arrastrar/editar
+- Escalas: Día → Semana → Mes → Año (removido Trimestre)
+- Columnas redimensionables (`grid_resize: true`, `resize: true` en schema)
+- Modal edición tarea (título, descripción, inicio/término); estilo Filament light/dark; sin botón delete
+- Barra progreso visible y NO-editable (`drag_progress: false`; weighted by task days + Kanban status)
+- Fechas actividad auto-calculadas: `min(start_date de tareas)` / `max(due_date de tareas)`
+- Dependencias persistidas en `TaskLink` (nueva migración + modelo)
+- `ActivityStatus` convertido a accessor computado (se elimina columna de DB)
+- N+1 prevenido: `modifyQueryUsing(fn($q) => $q->with('tasks'))` en ActivitiesRelationManager
+- Tests Pest actualizados para ActivityStatus computado
+
+**Archivos nuevos/modificados:**
+- `app/Filament/Resources/ProjectResource/Pages/GanttChart.php` — `updateTaskDetails()` + auto-calc fechas actividad
+- `resources/views/filament/.../gantt-chart.blade.php` — modal + zoom + escalas + CSS dark mode
+- `app/Models/TaskLink.php` — modelo de dependencias (new)
+- `database/migrations/2026_07_02_000001_create_task_links_table.php`
+- `database/migrations/2026_07_02_000002_drop_status_from_activities_table.php`
+- `app/Models/Activity.php` — accessor `getStatusAttribute()` + relación eager loading
+- `app/Filament/Resources/ProjectResource/RelationManagers/ActivitiesRelationManager.php` — N+1 fix
+- `database/factories/ActivityFactory.php` — removida columna status
+- `tests/Feature/Projects/ActivityAccordionTest.php` — 3 tests nuevos para status computado
+- `lang/es/projects.php` — claves: `scale_day`, `scale_year`, `modal_edit`, `modal_save`, `modal_cancel`
+
+**Todo hecho, Pint limpio, branch pusheada. Usuario creará PR manualmente.**
 
 ### Diseñados — pendientes de implementar (orden sugerido)
-1. **REQ-0002-B** — Kanban + Gantt + Export CSV (`docs/requerimientos/0002-B-kanban-gantt.md`)
-2. **REQ-0003** — Finanzas básicas: Proveedores, OC, Facturas (`docs/requerimientos/0003-finanzas.md`)
-3. **REQ-0005** — Estados de Pago / EPs a subcontratistas (`docs/requerimientos/0005-estados-de-pago.md`) ← **nuevo, diseñado en esta sesión**
-4. **REQ-0002-C** — KPI Dashboard (`docs/requerimientos/0002-C-kpi-dashboard.md`)
-5. **REQ-0002-D** — Portal externo (`docs/requerimientos/0002-D-portal-externo.md`)
-6. **REQ-0004** — Control de Cambios (`docs/requerimientos/0004-control-cambios.md`)
-
-> ⚠️ REQ-0005 depende de REQ-0003 (necesita `suppliers` e `invoices`).
+1. **REQ-0003** — Finanzas básicas: Proveedores, OC, Facturas
+2. **REQ-0005** — Estados de Pago / EPs (requiere REQ-0003)
+3. **REQ-0002-C** — KPI Dashboard (widgets en ViewProject)
+4. **REQ-0002-D** — Portal externo (token + Livewire + Reverb)
+5. **REQ-0004** — Control de Cambios
 
 ### Decisiones de diseño cerradas (vigentes)
+- **frappe-gantt** (MIT) reemplaza Alpine/CSS custom — flechas de dependencia nativas para el roadmap.
+- **`user_settings` table** para preferencias por usuario (sin `organization_id`).
+- **`FileUpload` + `users.avatar_url`** para avatar; medialibrary diferido.
+- **`Filament::serving()`** en AppServiceProvider para aplicar color dinámico por usuario.
+- **ChartWidget** nativo de Filament (Chart.js) para todos los widgets nuevos — sin paquetes extra.
 - **Enums Filament** para TaskStatus y TaskPriority (label + color + icono).
-- **mokhosh/filament-kanban** para Kanban drag-and-drop.
-- **frappe-gantt** para Gantt (open-source; regla primordial del proyecto).
 - **Solo open-source** — regla primordial del proyecto.
-- **Códigos legibles de tarea:** formato `TAB-001-T042`.
-- **SR → Proyecto:** notificación + Action en lista de aprobadas; modal semi-automático.
-- **`program_id` nullable** en `projects`, módulo Programs diferido.
-- **OC:** monto total + descripción libre (sin líneas de ítem).
 - **Jerarquía PM:** Proyecto → Actividad → Tarea.
-- **Phases (fases de obra):** concepto distinto de Activities; anclan tramos de pago al subcontratista (REQ-0005).
-- **EPs:** monto fijo por tramo; partidas descriptivas; PDF via Blade + `barryvdh/laravel-dompdf`.
-- **Portal externo:** token + dashboard Livewire + Reverb tiempo real (REQ-0002-D, diferido).
-- **KPIs** a nivel de proyecto: widgets en `ViewProject` (REQ-0002-C, diferido).
-- **FAT:** diferido a su propio REQ.
+- **Códigos legibles:** formato `TAB-001-T042`.
 
 ## Decisiones pendientes
 Ninguna.
 
 ## Próximo paso concreto
-Esperar instrucción del usuario. Opciones según backlog:
-- **REQ-0003** (Finanzas: Proveedores + OC + Facturas) — prerrequisito obligatorio de REQ-0005.
-- **REQ-0002-C** (KPI Dashboard) — widgets de estadísticas en ViewProject.
-- **REQ-0005** (Estados de Pago / EPs) — requiere REQ-0003 implementado primero.
+Levantar el servidor local (`composer run dev`) y verificar en navegador:
+1. Dashboard con los 4 widgets nuevos.
+2. `/admin/settings` — paleta de colores y toggles de notificación.
+3. Gantt: zoom (Día / Semana / Mes / Trimestre) cambia sin re-render Livewire; toggle Solo lectura desactiva drag; barras frappe-gantt visibles sin errores de consola.
+4. Kanban con badge de prioridad y avatares múltiples.
+
+Luego elegir el siguiente REQ del backlog (REQ-0003 Finanzas es prerrequisito de REQ-0005).
 
 ---
 
 ## Historial de sesiones anteriores
+
+<details>
+<summary>2026-06-28 — UX ActivityAccordion v3: drag-drop + refresh + notificaciones</summary>
+
+Fix refresh DOM: propiedad `$refreshCount` incrementada en cada mutación; blade observa
+con `$wire.$watch('refreshCount', ...)` y re-inicializa SortableJS vía `$nextTick`.
+Notificaciones Filament en todas las acciones CRUD. Drag-drop de actividades (handle en
+header de section, filter botones) y tareas (columna grip + Group con data-tasks-container).
+Migration `tasks.order`. SortableJS CDN via @assets. 54/54 tests en verde.
+
+</details>
+
+<details>
+<summary>2026-06-28 — UX ActivityAccordion v2: refactor a Filament builder components</summary>
+
+ActivityAccordion reescrito sin Blade manual: Section collapsible nativo de Filament 5,
+TextEntry para filas de tarea, SchemaActions para botones inline. Patrón clave:
+acciones como métodos InteractsWithActions + `(clone $this->action)->arguments([...])` en
+headerActions para pre-enlazar contexto. Blade reducido a 4 líneas. Tests: 54/54 en verde.
+Widgets dashboard (StatsOverview + TableWidget) y perfil via `->profile()` también cerrados.
+
+</details>
 
 <details>
 <summary>2026-06-23 — Implementación REQ-0002-A PMIS Core (/ingeniero)</summary>

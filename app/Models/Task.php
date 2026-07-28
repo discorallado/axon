@@ -28,6 +28,7 @@ class Task extends Model
         'description',
         'status',
         'priority',
+        'order',
         'start_date',
         'due_date',
         'completed_at',
@@ -68,6 +69,18 @@ class Task extends Model
         return $this->belongsToMany(User::class, 'task_user')
             ->withPivot('role')
             ->withTimestamps();
+    }
+
+    public function predecessors(): BelongsToMany
+    {
+        return $this->belongsToMany(Task::class, 'task_links', 'target_id', 'source_id')
+            ->withPivot('id', 'type');
+    }
+
+    public function successors(): BelongsToMany
+    {
+        return $this->belongsToMany(Task::class, 'task_links', 'source_id', 'target_id')
+            ->withPivot('id', 'type');
     }
 
     public function isOverdue(): bool
