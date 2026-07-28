@@ -2,44 +2,41 @@
 
 namespace App\Exports;
 
+use App\Models\Project;
 use App\Models\Task;
-use Illuminate\Database\Eloquent\Builder;
 use Maatwebsite\Excel\Concerns\FromQuery;
-use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
-use Maatwebsite\Excel\Concerns\WithTitle;
+use Maatwebsite\Excel\Concerns\WithStyles;
+use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class TasksExport implements FromQuery, ShouldAutoSize, WithHeadings, WithMapping, WithTitle
+class TasksExport implements FromQuery, WithHeadings, WithMapping, WithStyles
 {
-    public function __construct(private readonly string $projectId) {}
+    public function __construct(
+        private readonly Project $project
+    ) {}
 
-    public function query(): Builder
+    public function query()
     {
         return Task::query()
-            ->whereHas('activity', fn (Builder $q) => $q->where('project_id', $this->projectId))
-            ->with(['activity:id,name', 'assignees:id,name'])
-            ->orderBy('tasks.created_at');
-    }
-
-    public function title(): string
-    {
-        return 'Tareas';
+            ->whereHas('activity', fn ($q) => $q->where('project_id', $this->project->id))
+            ->with(['activity', 'assignees'])
+            ->orderBy('created_at');
     }
 
     public function headings(): array
     {
         return [
-            'Código',
-            'Nombre',
-            'Actividad',
-            'Estado',
-            'Prioridad',
-            'Responsables',
-            'Fecha inicio',
-            'Fecha límite',
-            'Horas estimadas',
-            'Horas reales',
+            __('tasks.fields.code'),
+            __('tasks.fields.name'),
+            __('tasks.fields.activity'),
+            __('tasks.fields.status'),
+            __('tasks.fields.priority'),
+            __('tasks.fields.assignees'),
+            __('tasks.fields.start_date'),
+            __('tasks.fields.due_date'),
+            __('tasks.fields.estimated_hours'),
+            __('tasks.fields.actual_hours'),
         ];
     }
 
@@ -48,14 +45,21 @@ class TasksExport implements FromQuery, ShouldAutoSize, WithHeadings, WithMappin
         return [
             $task->code,
             $task->name,
-            $task->activity?->name ?? '—',
+            $task->activity->name,
             $task->status->getLabel(),
             $task->priority->getLabel(),
-            $task->assignees->pluck('name')->join(', ') ?: '—',
-            $task->start_date?->format('d/m/Y') ?? '—',
-            $task->due_date?->format('d/m/Y') ?? '—',
+            $task->assignees->pluck('name')->implode(', '),
+            $task->start_date?->format('d/m/Y'),
+            $task->due_date?->format('d/m/Y'),
             $task->estimated_hours,
             $task->actual_hours,
+        ];
+    }
+
+    public function styles(Worksheet $sheet): array
+    {
+        return [
+            1 => ['font' => ['bold' => true]],
         ];
     }
 }

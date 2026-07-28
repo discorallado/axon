@@ -2,65 +2,87 @@
 
 namespace App\Filament\Resources\ProjectResource\Pages;
 
+use App\Enums\TaskPriority;
 use App\Enums\TaskStatus;
 use App\Filament\Resources\ProjectResource;
 use App\Models\Task;
-use Filament\Actions\Action;
-use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\Pages\Concerns\InteractsWithRecord;
-use Filament\Schemas\Schema;
-use Illuminate\Database\Eloquent\Builder;
-use Relaticle\Flowforge\Board;
-use Relaticle\Flowforge\BoardResourcePage;
-use Relaticle\Flowforge\Column;
+use Filament\Resources\Pages\Page;
+use Livewire\Attributes\Renderless;
 
-class KanbanBoard extends BoardResourcePage
+class KanbanBoard extends Page
 {
     use InteractsWithRecord;
 
     protected static string $resource = ProjectResource::class;
 
-    protected static ?string $title = 'Tablero Kanban';
+    protected string $view = 'filament.resources.project-resource.pages.kanban-board';
 
-    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-squares-2x2';
+    public ?string $filterActivity = null;
 
-    public function board(Board $board): Board
+    public ?string $filterPriority = null;
+
+    public function mount(int|string $record): void
     {
-        return $board
-            ->query(fn (): Builder => Task::query()
-                ->whereHas('activity', fn (Builder $q) => $q->where('project_id', $this->record->getKey()))
-                ->with(['assignees:id,name', 'activity:id,name,order'])
-                ->orderBy('position')
-            )
-            ->columnIdentifier('status')
-            ->positionIdentifier('position')
-            ->columns(array_map(
-                fn (TaskStatus $status) => Column::enum($status),
-                TaskStatus::cases()
-            ))
-            ->recordTitleAttribute('name')
-            ->cardSchema(fn (Schema $schema): Schema => $schema->schema([
-                TextEntry::make('code')
-                    ->hiddenLabel()
-                    ->badge()
-                    ->color('gray'),
-                TextEntry::make('name')
-                    ->hiddenLabel()
-                    ->weight('semibold'),
-                TextEntry::make('priority')
-                    ->hiddenLabel()
-                    ->badge(),
-                TextEntry::make('activity.name')
-                    ->hiddenLabel()
-                    ->color('gray')
-                    ->size('sm'),
-            ]))
-            ->headerActions([
-                Action::make('back_to_project')
-                    ->label('Volver al proyecto')
-                    ->icon('heroicon-o-arrow-left')
-                    ->color('gray')
-                    ->url(fn () => ProjectResource::getUrl('view', ['record' => $this->record])),
-            ]);
+        $this->record = $this->resolveRecord($record);
+        $this->authorizeAccess();
+    }
+
+    protected function authorizeAccess(): void
+    {
+        $this->authorize('view', $this->record);
+    }
+
+    public function getTitle(): string
+    {
+        return __('projects.kanban.title');
+    }
+
+    public function getColumns(): array
+    {
+        $query = Task::query()
+            ->whereHas('activity', fn ($q) => $q->where('project_id', $this->record->id))
+            ->with(['activity', 'assignees'])
+            ->orderBy('order');
+
+        if ($this->filterActivity) {
+            $query->where('activity_id', $this->filterActivity);
+        }
+
+        if ($this->filterPriority) {
+            $query->where('priority', $this->filterPriority);
+        }
+
+        $grouped = $query->get()->groupBy(fn ($task) => $task->status->value);
+
+        return collect(TaskStatus::cases())->map(fn ($status) => [
+            'status' => $status,
+            'tasks' => $grouped->get($status->value, collect()),
+        ])->all();
+    }
+
+    public function getActivitiesForFilter(): array
+    {
+        return $this->record->activities()
+            ->orderBy('order')
+            ->pluck('name', 'id')
+            ->all();
+    }
+
+    public function getPrioritiesForFilter(): array
+    {
+        return collect(TaskPriority::cases())
+            ->mapWithKeys(fn ($p) => [$p->value => $p->getLabel()])
+            ->all();
+    }
+
+    #[Renderless]
+    public function updateTaskStatus(string $taskId, string $status): void
+    {
+        $task = Task::findOrFail($taskId);
+
+        $this->authorize('update', $task);
+
+        $task->update(['status' => TaskStatus::from($status)]);
     }
 }

@@ -35,12 +35,12 @@ class ProjectPolicy
             && $project->organization_id === $user->organization_id;
     }
 
-    public function restore(User $user, Project $project): bool
+    public function restore(User $user, Project $_project): bool
     {
         return $user->hasRole('super_admin');
     }
 
-    public function forceDelete(User $user, Project $project): bool
+    public function forceDelete(User $user, Project $_project): bool
     {
         return $user->hasRole('super_admin');
     }

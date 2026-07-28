@@ -1,102 +1,471 @@
 <x-filament-panels::page>
-    @if (empty($ganttTasks))
-        <x-filament::section>
-            <div class="py-12 text-center text-gray-500 dark:text-gray-400">
-                <x-filament::icon icon="heroicon-o-chart-bar" class="mx-auto mb-4 h-12 w-12 opacity-40" />
-                <p class="text-sm">No hay tareas con fechas de inicio y término asignadas.</p>
-                <p class="mt-1 text-xs opacity-70">Asigna fechas a las tareas del proyecto para visualizarlas aquí.</p>
-            </div>
-        </x-filament::section>
+@php $ganttData = $this->getGanttData(); @endphp
+
+<div class="flex flex-col gap-4">
+
+    @if (empty($ganttData['data']))
+        <div class="flex flex-col items-center justify-center py-16 text-gray-400 dark:text-gray-600">
+            <x-filament::icon icon="heroicon-o-calendar-days" class="mb-3 h-12 w-12 opacity-40" />
+            <p class="text-sm">{{ __('projects.gantt.no_tasks') }}</p>
+        </div>
     @else
-        <x-filament::section>
-            <div
-                x-data="{
-                    gantt: null,
-                    viewMode: 'Week',
-                    init() {
-                        this.loadFrappeGantt();
-                    },
-                    loadFrappeGantt() {
-                        if (!document.querySelector('[data-frappe-gantt-css]')) {
-                            const link = document.createElement('link');
-                            link.rel = 'stylesheet';
-                            link.href = 'https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.css';
-                            link.setAttribute('data-frappe-gantt-css', '');
-                            document.head.appendChild(link);
-                        }
 
-                        if (typeof Gantt !== 'undefined') {
-                            this.initGantt();
-                            return;
-                        }
+        {{-- Toolbar --}}
+        <div class="flex flex-wrap items-center gap-2">
 
-                        const script = document.createElement('script');
-                        script.src = 'https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.umd.js';
-                        script.onload = () => this.initGantt();
-                        document.body.appendChild(script);
-                    },
-                    initGantt() {
-                        const tasks = @js($ganttTasks);
-                        if (!tasks.length) return;
-
-                        this.gantt = new Gantt(this.$refs.ganttContainer, tasks, {
-                            view_mode: this.viewMode,
-                            language: 'es',
-                            popup: {
-                                contents: (task) => `
-                                    <div class='gantt-popup-wrapper'>
-                                        <strong>${task.name}</strong><br>
-                                        <span class='text-xs text-gray-500'>${task.group}</span><br>
-                                        <span>${task.start} → ${task.end}</span>
-                                    </div>
-                                `,
-                            },
-                        });
-                    },
-                    changeView(mode) {
-                        this.viewMode = mode;
-                        if (this.gantt) {
-                            this.gantt.change_view_mode(mode);
-                        }
-                    },
-                }"
-            >
-                {{-- Controles de zoom --}}
-                <div class="mb-4 flex items-center gap-2">
-                    <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Vista:</span>
-                    <template x-for="mode in ['Day', 'Week', 'Month', 'Quarter Day', 'Half Day']" :key="mode">
-                        <button
-                            @click="changeView(mode)"
-                            :class="viewMode === mode
-                                ? 'bg-primary-600 text-white'
-                                : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'"
-                            class="rounded-lg border border-gray-300 px-3 py-1 text-xs font-medium transition dark:border-gray-600"
-                            x-text="mode"
-                        ></button>
-                    </template>
-
-                    <div class="ml-auto">
-                        <x-filament::button
-                            wire:click="loadGanttData"
-                            color="gray"
-                            size="sm"
-                            icon="heroicon-o-arrow-path"
-                        >
-                            Actualizar
-                        </x-filament::button>
-                    </div>
-                </div>
-
-                {{-- Contenedor Gantt --}}
-                <div class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
-                    <div x-ref="ganttContainer"></div>
-                </div>
-
-                <p class="mt-2 text-xs text-gray-400">
-                    Mostrando {{ count($ganttTasks) }} tarea(s) con fechas asignadas.
-                    Las tareas sin fechas no aparecen en esta vista.
-                </p>
+            {{-- Escalas predefinidas --}}
+            <div class="flex items-center gap-1 rounded-lg border border-gray-200 bg-white p-1 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+                @foreach ([
+                    'day'   => __('projects.gantt.scale_day'),
+                    'week'  => __('projects.gantt.scale_week'),
+                    'month' => __('projects.gantt.scale_month'),
+                    'year'  => __('projects.gantt.scale_year'),
+                ] as $scale => $label)
+                    <button
+                        onclick="axonGanttSetScale('{{ $scale }}')"
+                        id="gantt-btn-{{ $scale }}"
+                        class="rounded px-3 py-1 text-xs font-medium transition-colors
+                               text-gray-600 hover:bg-gray-100
+                               dark:text-gray-300 dark:hover:bg-gray-700"
+                    >{{ $label }}</button>
+                @endforeach
             </div>
-        </x-filament::section>
+
+            {{-- Zoom +/- y ajustar --}}
+            <div class="flex items-center gap-1 rounded-lg border border-gray-200 bg-white p-1 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+                <button onclick="axonGanttZoom('in')"
+                        class="rounded px-2 py-1 text-sm font-bold text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700">＋</button>
+                <button onclick="axonGanttZoom('out')"
+                        class="rounded px-2 py-1 text-sm font-bold text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700">－</button>
+                <button onclick="axonGanttFit()" title="{{ __('projects.gantt.fit') }}"
+                        class="rounded px-2 py-1 text-xs text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700">◉</button>
+            </div>
+
+            {{-- Actualizar --}}
+            <button
+                onclick="axonGanttRefresh()"
+                class="flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-600 shadow-sm hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+            >
+                <x-heroicon-o-arrow-path class="h-3.5 w-3.5" />
+                {{ __('projects.gantt.refresh') }}
+            </button>
+
+        </div>
+
+        {{-- Contenedor DHTMLX --}}
+        <div
+            id="dhx-gantt"
+            class="overflow-hidden rounded-md border border-gray-200 shadow-sm dark:border-gray-700"
+            style="width:100%; height:580px"
+        ></div>
+
     @endif
+
+</div>
+
+{{-- Modal de edición de tarea (siempre en el DOM, oculto por defecto) --}}
+<div id="gantt-modal"
+     class="fixed inset-0 z-[9999] hidden items-center justify-center p-4"
+     role="dialog" aria-modal="true">
+
+    {{-- Overlay --}}
+    <div id="gantt-modal-overlay"
+         class="absolute inset-0 bg-gray-950/75 backdrop-blur-sm"
+         onclick="axonGanttCloseModal()"></div>
+
+    {{-- Tarjeta --}}
+    <div class="relative z-10 w-full max-w-md rounded-xl bg-white shadow-2xl ring-1 ring-gray-950/5
+                dark:bg-gray-900 dark:ring-white/10">
+
+        {{-- Cabecera --}}
+        <div class="flex items-center justify-between border-b border-gray-200 px-6 py-4 dark:border-white/10">
+            <h2 class="text-base font-semibold text-gray-950 dark:text-white">
+                {{ __('projects.gantt.modal_edit') }}
+            </h2>
+            <button onclick="axonGanttCloseModal()" type="button"
+                    class="rounded-lg p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600
+                           dark:text-gray-500 dark:hover:bg-white/10 dark:hover:text-gray-300">
+                <x-heroicon-m-x-mark class="h-5 w-5" />
+            </button>
+        </div>
+
+        {{-- Cuerpo --}}
+        <div class="space-y-4 px-6 py-5">
+            <input type="hidden" id="gantt-modal-id">
+
+            {{-- Nombre --}}
+            <div>
+                <label for="gantt-modal-title"
+                       class="mb-1.5 block text-sm font-medium text-gray-950 dark:text-white">
+                    {{ __('tasks.fields.name') }}
+                </label>
+                <input type="text" id="gantt-modal-title" required
+                       class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm
+                              text-gray-900 shadow-sm transition duration-75
+                              placeholder:text-gray-400
+                              focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500
+                              dark:border-white/10 dark:bg-white/5 dark:text-white dark:placeholder:text-gray-500">
+            </div>
+
+            {{-- Descripción --}}
+            <div>
+                <label for="gantt-modal-desc"
+                       class="mb-1.5 block text-sm font-medium text-gray-950 dark:text-white">
+                    {{ __('tasks.fields.description') }}
+                </label>
+                <textarea id="gantt-modal-desc" rows="2"
+                          class="block w-full resize-none rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm
+                                 text-gray-900 shadow-sm transition duration-75
+                                 placeholder:text-gray-400
+                                 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500
+                                 dark:border-white/10 dark:bg-white/5 dark:text-white dark:placeholder:text-gray-500"></textarea>
+            </div>
+
+            {{-- Fechas --}}
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label for="gantt-modal-start"
+                           class="mb-1.5 block text-sm font-medium text-gray-950 dark:text-white">
+                        {{ __('tasks.fields.start_date') }}
+                    </label>
+                    <input type="date" id="gantt-modal-start"
+                           class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm
+                                  text-gray-900 shadow-sm
+                                  focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500
+                                  dark:border-white/10 dark:bg-white/5 dark:text-white dark:[color-scheme:dark]">
+                </div>
+                <div>
+                    <label for="gantt-modal-end"
+                           class="mb-1.5 block text-sm font-medium text-gray-950 dark:text-white">
+                        {{ __('tasks.fields.due_date') }}
+                    </label>
+                    <input type="date" id="gantt-modal-end"
+                           class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm
+                                  text-gray-900 shadow-sm
+                                  focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500
+                                  dark:border-white/10 dark:bg-white/5 dark:text-white dark:[color-scheme:dark]">
+                </div>
+            </div>
+        </div>
+
+        {{-- Pie --}}
+        <div class="flex justify-end gap-3 border-t border-gray-200 px-6 py-4 dark:border-white/10">
+            <button onclick="axonGanttCloseModal()" type="button"
+                    class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700
+                           shadow-sm transition-colors hover:bg-gray-50
+                           dark:border-white/10 dark:text-gray-300 dark:hover:bg-white/5">
+                {{ __('projects.gantt.modal_cancel') }}
+            </button>
+            <button onclick="axonGanttSaveModal()" type="button"
+                    class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white
+                           shadow-sm transition-colors hover:bg-primary-500
+                           focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2
+                           dark:bg-primary-500 dark:hover:bg-primary-400">
+                {{ __('projects.gantt.modal_save') }}
+            </button>
+        </div>
+
+    </div>
+</div>
+
+@assets
+<link  rel="stylesheet" href="https://cdn.dhtmlx.com/gantt/edge/dhtmlxgantt.css">
+<script src="https://cdn.dhtmlx.com/gantt/edge/dhtmlxgantt.js"></script>
+<style>
+/* ── Progreso: barra más visible y NO editable ────────────────────────────── */
+.gantt_task_progress {
+    background: rgba(255, 255, 255, 0.48);
+    border-right: 2px solid rgba(255, 255, 255, 0.85);
+}
+.gantt_task_progress_drag { display: none !important; }
+
+/* ── Filas de actividad (type=project) ────────────────────────────────────── */
+.gantt_task_line.gantt_project { background: #475569; border-color: #334155; }
+.gantt_task_line.gantt_project .gantt_task_progress {
+    background: rgba(255, 255, 255, 0.35);
+    border-right: 2px solid rgba(255, 255, 255, 0.6);
+}
+
+/* ── Botón de escala activo ───────────────────────────────────────────────── */
+.gantt-scale-active {
+    background: rgb(var(--primary-500, 59 130 246)) !important;
+    color: #fff !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   DARK MODE
+   ══════════════════════════════════════════════════════════════════════════ */
+.dark .gantt_container,
+.dark #dhx-gantt {
+    background: #0f172a;
+    border-color: #1e293b;
+    color: #e2e8f0;
+}
+.dark .gantt_grid_scale,
+.dark .gantt_task_scale { background: #1e293b; border-color: #334155; }
+.dark .gantt_scale_cell,
+.dark .gantt_grid_head_cell { color: #94a3b8; border-color: #334155; }
+.dark .gantt_grid_data { background: #0f172a; }
+.dark .gantt_cell { color: #cbd5e1; border-color: #1e293b; }
+.dark .gantt_row,
+.dark .gantt_row.odd { background: #0f172a; border-color: #1e293b; }
+.dark .gantt_row:hover,
+.dark .gantt_row.gantt_selected,
+.dark .gantt_task_row.gantt_selected { background: #172033 !important; }
+.dark .gantt_task { background: #0f172a; }
+.dark .gantt_task_row,
+.dark .gantt_task_row.odd { background: #0f172a; border-color: #1e293b; }
+.dark .gantt_task_row:hover { background: #172033; }
+.dark .gantt_task_cell { border-color: #1e293b; }
+.dark .gantt_task_cell.week_end { background: #131f31; }
+.dark .gantt_grid_column_resize_wrap { background: #334155; }
+.dark .gantt_line_wrapper div { background: #64748b; }
+.dark .gantt_link_arrow { border-color: transparent #64748b transparent transparent; }
+.dark .gantt_tooltip { background: #1e293b; color: #e2e8f0; border: 1px solid #475569; }
+.dark .gantt_ver_scroll,
+.dark .gantt_hor_scroll { background: #1e293b; }
+.dark .gantt_drag_marker { background: rgba(59,130,246,0.15); border: 1px dashed #3b82f6; }
+.dark .gantt_tree_content { color: #e2e8f0; }
+.dark .gantt_tree_icon.gantt_open,
+.dark .gantt_tree_icon.gantt_close { filter: invert(0.7); }
+</style>
+@endassets
+
+@script
+<script>
+var _ganttData = @json($ganttData);
+
+/* ── Nombres de niveles (índice = orden en zoom.levels) ──────────────────── */
+var LEVEL_NAMES = ['day', 'week', 'month', 'year'];
+var _levelName  = 'week';
+
+function syncButtons(name) {
+    document.querySelectorAll('[id^="gantt-btn-"]').forEach(function (b) {
+        b.classList.remove('gantt-scale-active');
+    });
+    var btn = document.getElementById('gantt-btn-' + name);
+    if (btn) btn.classList.add('gantt-scale-active');
+}
+
+/* ── API pública ─────────────────────────────────────────────────────────── */
+window.axonGanttSetScale = function (name) { gantt.ext.zoom.setLevel(name); };
+window.axonGanttZoom     = function (dir)  {
+    if (dir === 'in') gantt.ext.zoom.zoomIn();
+    else              gantt.ext.zoom.zoomOut();
+};
+window.axonGanttRefresh  = function () { $wire.refreshData(); };
+window.axonGanttFit      = function () {
+    delete gantt.config.start_date;
+    delete gantt.config.end_date;
+    gantt.render();
+    gantt.scrollTo(0, null);
+};
+
+/* ── Modal de edición de tarea ───────────────────────────────────────────── */
+var _ganttModalId = null;
+
+var _fmtDate = function (d) {
+    if (!d) return '';
+    var p = function (n) { return String(n).padStart(2, '0'); };
+    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
+};
+
+window.axonGanttOpenModal = function (id) {
+    var task = gantt.getTask(id);
+    _ganttModalId = id;
+    document.getElementById('gantt-modal-id').value    = id;
+    document.getElementById('gantt-modal-title').value = task.text        || '';
+    document.getElementById('gantt-modal-desc').value  = task.description || '';
+    document.getElementById('gantt-modal-start').value = _fmtDate(task.start_date);
+    document.getElementById('gantt-modal-end').value   = _fmtDate(task.end_date);
+    var el = document.getElementById('gantt-modal');
+    el.classList.remove('hidden');
+    el.classList.add('flex');
+};
+
+window.axonGanttCloseModal = function () {
+    var el = document.getElementById('gantt-modal');
+    el.classList.add('hidden');
+    el.classList.remove('flex');
+    _ganttModalId = null;
+};
+
+window.axonGanttSaveModal = function () {
+    var id = _ganttModalId;
+    if (!id) return;
+
+    var title = document.getElementById('gantt-modal-title').value.trim();
+    var desc  = document.getElementById('gantt-modal-desc').value;
+    var start = document.getElementById('gantt-modal-start').value;
+    var end   = document.getElementById('gantt-modal-end').value;
+
+    if (!title) {
+        document.getElementById('gantt-modal-title').focus();
+        return;
+    }
+
+    /* Actualizar el gantt localmente para respuesta inmediata */
+    var task = gantt.getTask(id);
+    task.text        = title;
+    task.description = desc;
+    if (start) task.start_date = new Date(start + 'T00:00:00');
+    if (end)   task.end_date   = new Date(end   + 'T00:00:00');
+    gantt.updateTask(id);
+
+    /* Persistir en el servidor */
+    $wire.updateTaskDetails(String(id), title, desc, start, end);
+
+    axonGanttCloseModal();
+};
+
+/* Cerrar con Escape */
+document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && _ganttModalId) axonGanttCloseModal();
+});
+
+/* Interceptar el lightbox nativo y mostrar el modal personalizado */
+gantt.attachEvent('onBeforeLightbox', function (id) {
+    var task = gantt.getTask(id);
+    if (task.type === gantt.config.types.project) return false;
+    axonGanttOpenModal(id);
+    return false;
+});
+
+/* ── Zoom (gantt.ext.zoom) ───────────────────────────────────────────────── */
+gantt.ext.zoom.init({
+    levels: [
+        {
+            name: 'day',
+            scale_height: 50,
+            min_column_width: 60,
+            scales: [
+                { unit: 'month', step: 1, format: '%F %Y' },
+                { unit: 'day',   step: 1, format: '%d' },
+            ],
+        },
+        {
+            name: 'week',
+            scale_height: 50,
+            min_column_width: 50,
+            scales: [
+                { unit: 'month', step: 1, format: '%F %Y' },
+                { unit: 'week',  step: 1, format: 'Sem %W' },
+            ],
+        },
+        {
+            name: 'month',
+            scale_height: 50,
+            min_column_width: 120,
+            scales: [
+                { unit: 'year',  step: 1, format: '%Y' },
+                { unit: 'month', step: 1, format: '%F' },
+            ],
+        },
+        {
+            name: 'year',
+            scale_height: 50,
+            min_column_width: 100,
+            scales: [
+                { unit: 'year',    step: 1, format: '%Y' },
+                {unit: "quarter", 
+        step: 1, 
+        format: function (date) {
+            const quarter = Math.floor(date.getMonth() / 3) + 1;
+            return'Trimestre 0' + quarter;
+        }},
+            ],
+        },
+    ],
+    startIndex : 1,
+    trigger    : 'wheel',
+    useKey     : 'ctrlKey',
+    element    : function () { return gantt.$root.querySelector('.gantt_task'); },
+});
+
+gantt.ext.zoom.attachEvent('onLevelChange', function (level) {
+    _levelName = LEVEL_NAMES[level] || 'week';
+    syncButtons(_levelName);
+});
+
+/* ── Configuración general ───────────────────────────────────────────────── */
+gantt.i18n.setLocale('es');
+gantt.config.date_format         = '%Y-%m-%d';
+gantt.config.fit_tasks           = false;
+gantt.config.open_tree_initially = true;
+gantt.config.scroll_on_click     = true;
+gantt.config.drag_progress       = false;
+gantt.config.grid_resize         = true;
+gantt.config.grid_width          = 320;
+
+gantt.config.columns = [
+    { name: 'text',       label: '{{ __('projects.gantt.col_name') }}',     width: '*',  tree: true, resize: true },
+    { name: 'duration',   label: '{{ __('projects.gantt.col_duration') }}', width: 72,   align: 'center', resize: true },
+    { name: 'start_date', label: '{{ __('projects.gantt.col_start') }}',    width: 90,   align: 'center', resize: true },
+    { name: 'end_date',   label: '{{ __('projects.gantt.col_finish') }}',   width: 90,   align: 'center', resize: true },
+];
+
+/* ── Eventos ─────────────────────────────────────────────────────────────── */
+gantt.attachEvent('onAfterTaskDrag', function (id, mode) {
+    if (String(id).startsWith('act-')) return true;
+    var task = gantt.getTask(id);
+    var fmt  = function (d) {
+        var p = function (n) { return String(n).padStart(2, '0'); };
+        return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
+    };
+    $wire.updateTaskDates(String(id), fmt(task.start_date), fmt(task.end_date));
+    return true;
+});
+
+gantt.attachEvent('onRowDragEnd', function (id) {
+    var activityIds = [];
+    var taskOrders  = [];
+
+    gantt.eachTask(function (item) {
+        if (item.$level !== 0) return;
+        activityIds.push(String(item.id).slice(4));
+
+        var groupTaskIds = [];
+        gantt.eachTask(function (child) {
+            groupTaskIds.push(String(child.id));
+        }, item.id);
+
+        taskOrders.push({
+            activityId: String(item.id).slice(4),
+            taskIds: groupTaskIds,
+        });
+    });
+
+    $wire.persistOrder(activityIds, taskOrders);
+    return true;
+});
+
+gantt.attachEvent('onAfterLinkAdd', function (id, link) {
+    $wire.addLink(String(link.source), String(link.target), link.type)
+        .then(function (newId) {
+            if (String(newId) !== String(id)) gantt.changeLinkId(id, newId);
+        });
+    return true;
+});
+
+gantt.attachEvent('onAfterLinkDelete', function (id) {
+    $wire.deleteLink(String(id));
+    return true;
+});
+
+$wire.on('gantt:refresh', function (payload) {
+    var data = Array.isArray(payload) ? payload[0] : payload;
+    gantt.clearAll();
+    gantt.parse(data);
+});
+
+gantt.config.order_branch      = true;
+gantt.config.order_branch_free = false;
+
+/* ── Inicializar ─────────────────────────────────────────────────────────── */
+gantt.init('dhx-gantt');
+gantt.parse(_ganttData);
+
+syncButtons('week');
+</script>
+@endscript
 </x-filament-panels::page>

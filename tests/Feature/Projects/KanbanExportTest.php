@@ -91,7 +91,7 @@ it('generates a valid xlsx export with correct headings', function () {
         'estimated_hours' => 8.0,
     ]);
 
-    $export = new TasksExport($this->project->id);
+    $export = new TasksExport($this->project);
 
     $collection = $export->query()->get();
     expect($collection)->toHaveCount(1);
@@ -141,7 +141,7 @@ it('export only includes tasks from the given project', function () {
         'priority' => TaskPriority::Media,
     ]);
 
-    $export = new TasksExport($this->project->id);
+    $export = new TasksExport($this->project);
     $collection = $export->query()->get();
 
     expect($collection)->toHaveCount(1)

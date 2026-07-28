@@ -2,6 +2,12 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Widgets\MonthlyTaskCreationWidget;
+use App\Filament\Widgets\ProjectProgressWidget;
+use App\Filament\Widgets\ProjectStatsWidget;
+use App\Filament\Widgets\RecentProjectsWidget;
+use App\Filament\Widgets\TasksByStatusWidget;
+use App\Filament\Widgets\TeamContributionWidget;
 use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
@@ -13,7 +19,6 @@ use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
 use Filament\Support\Enums\Width;
 use Filament\Widgets\AccountWidget;
-use Filament\Widgets\FilamentInfoWidget;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 // use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
@@ -33,6 +38,7 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             ->viteTheme('resources/css/filament/admin/theme.css')
             ->login()
+            ->profile()
             ->favicon(asset('storage/images/favicon.ico'))
             ->brandLogo(asset('storage/images/logo_cse_blanco.png'))
             ->colors([
@@ -50,7 +56,12 @@ class AdminPanelProvider extends PanelProvider
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
             ->widgets([
                 AccountWidget::class,
-                FilamentInfoWidget::class,
+                ProjectStatsWidget::class,
+                RecentProjectsWidget::class,
+                TasksByStatusWidget::class,
+                MonthlyTaskCreationWidget::class,
+                ProjectProgressWidget::class,
+                TeamContributionWidget::class,
             ])
             ->plugins([
                 FilamentShieldPlugin::make(),

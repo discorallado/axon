@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\ActivityStatus;
+use App\Enums\TaskStatus;
 use App\Models\Concerns\HasAttachments;
 use App\Models\Concerns\HasOrganizationScope;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
@@ -23,7 +24,6 @@ class Activity extends Model
         'name',
         'description',
         'order',
-        'status',
         'start_date',
         'end_date',
     ];
@@ -31,10 +31,9 @@ class Activity extends Model
     protected function casts(): array
     {
         return [
-            'status' => ActivityStatus::class,
             'start_date' => 'date',
-            'end_date' => 'date',
-            'order' => 'integer',
+            'end_date'   => 'date',
+            'order'      => 'integer',
         ];
     }
 
@@ -45,18 +44,73 @@ class Activity extends Model
 
     public function tasks(): HasMany
     {
-        return $this->hasMany(Task::class)->orderBy('created_at');
+        return $this->hasMany(Task::class)->orderBy('order')->orderBy('created_at');
+    }
+
+    /**
+     * Estado calculado desde las tareas — nunca se persiste.
+     *
+     *   Todas completadas  → Completada
+     *   Alguna activa      → EnProgreso
+     *   Resto              → Pendiente
+     */
+    public function getStatusAttribute(): ActivityStatus
+    {
+        if ($this->relationLoaded('tasks')) {
+            $tasks = $this->tasks;
+        } else {
+            // Evita cargar la colección completa: solo los conteos necesarios.
+            $total = $this->tasks()->count();
+            if ($total === 0) {
+                return ActivityStatus::Pendiente;
+            }
+            $completed = $this->tasks()->where('tasks.status', TaskStatus::Completada->value)->count();
+            if ($completed === $total) {
+                return ActivityStatus::Completada;
+            }
+            $active = $this->tasks()->whereIn('tasks.status', [
+                TaskStatus::EnProgreso->value,
+                TaskStatus::EnRevision->value,
+                TaskStatus::Bloqueada->value,
+            ])->count();
+
+            return $active > 0 ? ActivityStatus::EnProgreso : ActivityStatus::Pendiente;
+        }
+
+        if ($tasks->isEmpty()) {
+            return ActivityStatus::Pendiente;
+        }
+
+        if ($tasks->every(fn ($t) => $t->status === TaskStatus::Completada)) {
+            return ActivityStatus::Completada;
+        }
+
+        $activeStates = [TaskStatus::EnProgreso, TaskStatus::EnRevision, TaskStatus::Bloqueada];
+        if ($tasks->contains(fn ($t) => in_array($t->status, $activeStates))) {
+            return ActivityStatus::EnProgreso;
+        }
+
+        return ActivityStatus::Pendiente;
     }
 
     public function completionPercentage(): float
     {
+        if ($this->relationLoaded('tasks')) {
+            $total = $this->tasks->count();
+
+            return $total === 0 ? 0 : round(
+                $this->tasks->filter(fn ($t) => $t->status === TaskStatus::Completada)->count() / $total * 100,
+                1
+            );
+        }
+
         $total = $this->tasks()->count();
         if ($total === 0) {
             return 0;
         }
 
-        $completed = $this->tasks()->where('status', 'completada')->count();
+        $completed = $this->tasks()->where('tasks.status', TaskStatus::Completada->value)->count();
 
-        return round(($completed / $total) * 100, 1);
+        return round($completed / $total * 100, 1);
     }
 }

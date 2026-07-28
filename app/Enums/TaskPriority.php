@@ -26,7 +26,7 @@ enum TaskPriority: string implements HasColor, HasIcon, HasLabel
     public function getColor(): string|array|null
     {
         return match ($this) {
-            self::Baja => 'gray',
+            self::Baja => 'success',
             self::Media => 'info',
             self::Alta => 'warning',
             self::Critica => 'danger',
