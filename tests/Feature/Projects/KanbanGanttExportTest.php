@@ -132,7 +132,7 @@ it('renders the gantt chart page for a project', function () {
         ->assertSuccessful();
 });
 
-it('gantt getGanttTasks only returns tasks with dates', function () {
+it('gantt getGanttData returns every row with start and end dates', function () {
     $this->actingAs($this->admin);
 
     Task::factory()->create([
@@ -146,10 +146,10 @@ it('gantt getGanttTasks only returns tasks with dates', function () {
     $component = livewire(GanttChart::class, ['record' => $this->project->getKey()])
         ->instance();
 
-    $tasks = $component->getGanttTasks();
+    $rows = $component->getGanttData()['data'];
 
-    expect($tasks)->not->toBeEmpty()
-        ->and(collect($tasks)->every(fn ($t) => isset($t['start'], $t['end'])))->toBeTrue();
+    expect($rows)->not->toBeEmpty()
+        ->and(collect($rows)->every(fn ($t) => isset($t['start_date'], $t['end_date'])))->toBeTrue();
 });
 
 // ─── Exportación ─────────────────────────────────────────────────────────────

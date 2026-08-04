@@ -32,8 +32,8 @@ class Activity extends Model
     {
         return [
             'start_date' => 'date',
-            'end_date'   => 'date',
-            'order'      => 'integer',
+            'end_date' => 'date',
+            'order' => 'integer',
         ];
     }
 
