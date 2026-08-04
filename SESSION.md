@@ -7,48 +7,44 @@
 ---
 
 ## Última actualización
-2026-07-03
+2026-08-04
 
 ## Módulo / feature en curso
-Ninguno — REQ-0002-E completamente cerrado y pusheado a rama `feat/req-0002-e`
+Ninguno — deuda de QA saldada. Rama `fix/tests-gantt-dhtmlx` lista para PR.
 
 ## Estado actual
 
 ### Completado ✅
-- REQ-0001 (Módulo de Solicitudes de Tableros) — cerrado, 23/23 tests en verde.
-- REQ-0002-A (PMIS Core) — cerrado, commit `a95aab8`, 33/33 tests en verde.
-- REQ-0002-B (Kanban + Gantt + Export) — cerrado, 42/42 tests en verde.
-- **UX ActivityAccordion v3** — cerrado, 54/54 tests en verde.
-- **REQ-0002-E (UX Gantt + Kanban + Widgets)** — ✅ CERRADO. Commit `19e933e` en rama `feat/req-0002-e`.
+- REQ-0001 (Módulo de Solicitudes de Tableros) — cerrado.
+- REQ-0002-A (PMIS Core) — cerrado, commit `a95aab8`.
+- REQ-0002-B (Kanban + Gantt + Export) — cerrado.
+- UX ActivityAccordion v3 — cerrado.
+- REQ-0002-E (UX Gantt DHTMLX + Kanban + Widgets) — cerrado, mergeado a `main` vía PR #6 (`d0c56c8`).
 
-#### Resumen REQ-0002-E (finalizado en esta sesión):
-**Diagrama Gantt con DHTMLX Community:**
-- Reemplaza frappe-gantt → DHTMLX Gantt (MS Project-style, nativo en Community)
-- Dark mode completo (25+ selectores `.dark .gantt_*`)
-- Zoom via `gantt.ext.zoom` (Ctrl+rueda + botones +/-) sin auto-fit al arrastrar/editar
-- Escalas: Día → Semana → Mes → Año (removido Trimestre)
-- Columnas redimensionables (`grid_resize: true`, `resize: true` en schema)
-- Modal edición tarea (título, descripción, inicio/término); estilo Filament light/dark; sin botón delete
-- Barra progreso visible y NO-editable (`drag_progress: false`; weighted by task days + Kanban status)
-- Fechas actividad auto-calculadas: `min(start_date de tareas)` / `max(due_date de tareas)`
-- Dependencias persistidas en `TaskLink` (nueva migración + modelo)
-- `ActivityStatus` convertido a accessor computado (se elimina columna de DB)
-- N+1 prevenido: `modifyQueryUsing(fn($q) => $q->with('tasks'))` en ActivitiesRelationManager
-- Tests Pest actualizados para ActivityStatus computado
+**Suite completa: 81/81 tests en verde · Pint limpio · Larastan nivel 1 sin errores.**
 
-**Archivos nuevos/modificados:**
-- `app/Filament/Resources/ProjectResource/Pages/GanttChart.php` — `updateTaskDetails()` + auto-calc fechas actividad
-- `resources/views/filament/.../gantt-chart.blade.php` — modal + zoom + escalas + CSS dark mode
-- `app/Models/TaskLink.php` — modelo de dependencias (new)
-- `database/migrations/2026_07_02_000001_create_task_links_table.php`
-- `database/migrations/2026_07_02_000002_drop_status_from_activities_table.php`
-- `app/Models/Activity.php` — accessor `getStatusAttribute()` + relación eager loading
-- `app/Filament/Resources/ProjectResource/RelationManagers/ActivitiesRelationManager.php` — N+1 fix
-- `database/factories/ActivityFactory.php` — removida columna status
-- `tests/Feature/Projects/ActivityAccordionTest.php` — 3 tests nuevos para status computado
-- `lang/es/projects.php` — claves: `scale_day`, `scale_year`, `modal_edit`, `modal_save`, `modal_cancel`
+#### Sesión 2026-08-04 — QA post-merge de REQ-0002-E
+Tras el merge del PR #6 la suite estaba en 68/81 (13 fallos). Ninguno era del
+código de producción: eran tests que quedaron contra la API de frappe-gantt.
 
-**Todo hecho, Pint limpio, branch pusheada. Usuario creará PR manualmente.**
+- `UxEnhancementsTest`: 12 llamadas a `actingAs()` como función global (no
+  existe; la convención del repo es `$this->actingAs()`).
+- `getGanttTasks()` ya no existe → `getGanttData()`, que devuelve
+  `['data' => [...], 'links' => [...]]`. Las filas usan `start_date`/`end_date`
+  (DHTMLX), no `start`/`end`; los ids de tarea van sin prefijo `task-` y no
+  hay `custom_class` (era de frappe).
+- `updateActivityDates` se eliminó a propósito en REQ-0002-E. El test se
+  reemplazó por uno que verifica que las fechas de actividad se derivan de
+  `min(start_date)` / `max(due_date)` de sus tareas.
+- **Larastan quedó configurado por primera vez** (`phpstan.neon`, nivel 1). El
+  paquete estaba instalado desde siempre pero sin config, así que el paso
+  "Larastan limpio" del CLAUDE.md nunca se había podido ejecutar.
+- Se eliminaron `FormTemplateFactory`, `FormSectionFactory` y
+  `FormQuestionFactory`: apuntaban a modelos y a un enum inexistentes y no
+  tenían ninguna referencia en el repo. Impedían pasar incluso el nivel 0.
+- `.ddev` dejó de trackearse (ya estaba en `.gitignore`).
+
+Commits en `fix/tests-gantt-dhtmlx`: `22d7a63`, `a57cdbe`, `0e79271`.
 
 ### Diseñados — pendientes de implementar (orden sugerido)
 1. **REQ-0003** — Finanzas básicas: Proveedores, OC, Facturas
@@ -58,7 +54,9 @@ Ninguno — REQ-0002-E completamente cerrado y pusheado a rama `feat/req-0002-e`
 5. **REQ-0004** — Control de Cambios
 
 ### Decisiones de diseño cerradas (vigentes)
-- **frappe-gantt** (MIT) reemplaza Alpine/CSS custom — flechas de dependencia nativas para el roadmap.
+- **DHTMLX Gantt (Community, GPL)** — reemplazó a frappe-gantt en REQ-0002-E.
+  Escalas Día / Semana / Mes / Año, dependencias persistidas en `TaskLink`,
+  fechas de actividad derivadas de sus tareas (no editables directamente).
 - **`user_settings` table** para preferencias por usuario (sin `organization_id`).
 - **`FileUpload` + `users.avatar_url`** para avatar; medialibrary diferido.
 - **`Filament::serving()`** en AppServiceProvider para aplicar color dinámico por usuario.
@@ -72,13 +70,20 @@ Ninguno — REQ-0002-E completamente cerrado y pusheado a rama `feat/req-0002-e`
 Ninguna.
 
 ## Próximo paso concreto
-Levantar el servidor local (`composer run dev`) y verificar en navegador:
-1. Dashboard con los 4 widgets nuevos.
-2. `/admin/settings` — paleta de colores y toggles de notificación.
-3. Gantt: zoom (Día / Semana / Mes / Trimestre) cambia sin re-render Livewire; toggle Solo lectura desactiva drag; barras frappe-gantt visibles sin errores de consola.
-4. Kanban con badge de prioridad y avatares múltiples.
+Abrir PR de `fix/tests-gantt-dhtmlx` → `main` y mergearlo. Después, arrancar
+REQ-0003 (Finanzas: Proveedores, OC, Facturas) en rol `/arquitecto` a partir de
+`docs/requerimientos/0003-finanzas.md`, presentando el diseño antes de escribir
+código.
 
-Luego elegir el siguiente REQ del backlog (REQ-0003 Finanzas es prerrequisito de REQ-0005).
+## Cómo correr la suite (importante)
+Los tests **no corren en el host**: el PHP de WSL no tiene `pdo_mysql` y el host
+`db` sólo existe dentro del contenedor. Siempre vía DDEV:
+
+```bash
+ddev exec ./vendor/bin/pest
+ddev exec ./vendor/bin/pint
+ddev exec ./vendor/bin/phpstan analyse --memory-limit=1G
+```
 
 ---
 
