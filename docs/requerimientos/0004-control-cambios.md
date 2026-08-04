@@ -3,6 +3,13 @@
 - **Estado:** Aprobado — implementar después de REQ-0002-A
 - **Depende de:** REQ-0002-A (proyectos)
 - **Origen:** Diseño arquitectónico aprobado 2026-06-23
+- **Origen adicional (2026-08-03):** la hoja `ControlCambios` de
+  `docs/base/Seguimiento_Integracion_Tableros_REPROGRAMADO.xlsx` es una instancia
+  real de este requerimiento (`CC-001`, tablero, descripción, motivo, impacto,
+  estados `Propuesto/Aprobado/Rechazado/Implementado`, solicitante, aprobado por,
+  fecha de aprobación). REQ-0006 **no** implementa control de cambios: solo
+  consume el contador de "cambios pendientes" (estado `Propuesto`) para el resumen
+  por tablero, y ese contador queda en 0 hasta que este REQ exista.
 
 ---
 

@@ -21,12 +21,12 @@
 
 ## 1. Núcleo de gestión de proyectos
 
-- ✓ **[MVP]** Jerarquía Cliente → Programa → Proyecto → Actividad → Tarea
+- ◐ **[MVP]** Jerarquía Cliente → Programa → Proyecto → Actividad → Tarea — `Programa` sigue diferido (`projects.program_id` existe sin FK); se activa en REQ-0006-A
 - ✓ **[MVP]** Proyectos con color, fechas, estado y fijado (pin)
 - ✓ **[MVP]** Identificadores legibles por proyecto (prefijo + correlativo, p. ej. `SCL03-AB12CD`)
-- ＋ **[MVP]** Fases / hitos (milestones) con fecha comprometida vs. real
+- ＋ **[MVP]** Fases / hitos (milestones) con fecha comprometida vs. real — REQ-0006 (plan vs. real por hito)
 - ＋ Portafolios / agrupación multi-programa para vista ejecutiva
-- ＋ Plantillas de proyecto (clonar estructura típica de obra o tablero)
+- ＋ Plantillas de proyecto (clonar estructura típica de obra o tablero) — REQ-0006 (`work_templates`)
 - ＋ Baseline de cronograma (línea base congelada para medir desviación)
 - ＋ WBS formal (estructura de desglose de trabajo) con codificación jerárquica
 
@@ -87,9 +87,9 @@
 
 ## 7. Calidad y commissioning
 
-- ＋ Checklists / protocolos FAT-SAT reutilizables (librería → plantilla → ejecución)
-- ＋ Punch list / listas de pendientes y no-conformidades (NC)
-- ＋ Inspecciones de campo con evidencia fotográfica
+- ＋ Checklists / protocolos FAT-SAT reutilizables (librería → plantilla → ejecución) — REQ-0006-E (opcional)
+- ＋ Punch list / listas de pendientes y no-conformidades (NC) — REQ-0006
+- ＋ Inspecciones de campo con evidencia fotográfica — REQ-0006 (actas de visita)
 - ＋ Protocolos de prueba (luminarias, enchufes, cableado) con trazabilidad por zona
 - ＋ Firmas digitales / integridad por hash (SHA-256) de registros
 - ＋ Flujo de aprobación calidad → cliente
