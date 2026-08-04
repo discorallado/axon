@@ -1,0 +1,20 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+
+parameters:
+    paths:
+        - app
+        - database
+        - routes
+
+    # Nivel 1: es el maximo que hoy pasa limpio. Subir a 2 implica resolver ~95
+    # hallazgos acumulados (tipos de retorno, PHPDoc y helpers de Shield).
+    # Se sube por escalon, en su propio PR, no mezclado con features.
+    level: 1
+
+    ignoreErrors:
+        # $this->form lo inyecta el trait InteractsWithForms de Filament en
+        # tiempo de ejecucion; PHPStan no lo puede ver de forma estatica.
+        -
+            identifier: property.notFound
+            message: '#Access to an undefined property .*::\$form\.#'
