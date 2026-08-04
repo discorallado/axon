@@ -8,14 +8,14 @@ services:
       context: './.dbimageBuild'
       args:
         BASE_IMAGE: $DDEV_DBIMAGE
-        username: 'sebas'
+        username: 'ubuntu'
         uid: '1000'
         gid: '1000'
     image: ${DDEV_DBIMAGE}-${DDEV_SITENAME}-built
     cap_add:
       - SYS_NICE
     stop_grace_period: 60s
-    working_dir: "/home/sebas"
+    working_dir: "/home/ubuntu"
     volumes:
       - type: "volume"
         source: "database"
@@ -68,8 +68,9 @@ services:
       - POSTGRES_PASSWORD=db
       - POSTGRES_USER=db
       - POSTGRES_DB=db
+      - HOME=/home/ubuntu
       - TZ=America/Santiago
-      - USER=sebas
+      - USER=ubuntu
     command: ${DDEV_DB_CONTAINER_COMMAND}
     healthcheck:
       test: "/healthcheck.sh"
@@ -86,7 +87,7 @@ services:
       context: './.webimageBuild'
       args:
         BASE_IMAGE: $DDEV_WEBIMAGE
-        username: 'sebas'
+        username: 'ubuntu'
         uid: '1000'
         gid: '1000'
         DDEV_PHP_VERSION: ${DDEV_PHP_VERSION}
@@ -177,6 +178,8 @@ services:
     - IS_DDEV_PROJECT=true
     - LINES
     - MYSQL_HISTFILE=/mnt/ddev-global-cache/mysqlhistory/${DDEV_SITENAME}-web/mysql_history
+    - N_PREFIX=/usr/local/n
+    - N_CACHE_PREFIX=/mnt/ddev-global-cache/n_prefix/${DDEV_SITENAME}-web
     - NODE_EXTRA_CA_CERTS=/mnt/ddev-global-cache/mkcert/rootCA.pem
     - npm_config_cache=/mnt/ddev-global-cache/npm
     - PGDATABASE=db
@@ -186,12 +189,8 @@ services:
     - PHP_IDE_CONFIG=serverName=axon.${DDEV_TLD}
     - SSH_AUTH_SOCK=/home/.ssh-agent/socket
     - TZ=America/Santiago
-    - USER=sebas
+    - USER=ubuntu
     - VIRTUAL_HOST=${DDEV_HOSTNAME}
-    # Web /start.sh timeout (default_container_timeout - 5s). Prevents startup scripts from
-    # hitting container timeout limit, which would cause "ddev start" to fail completely.
-    # For N uses: "div (sub .DefaultContainerTimeout 5) N". Currently: 1 use (n-install.sh)
-    - START_SCRIPT_TIMEOUT=115
     
 
     healthcheck:
@@ -203,7 +202,7 @@ services:
       timeout: "70s"
   
   xhgui:
-    image: ddev/ddev-xhgui:v1.25.2
+    image: ddev/ddev-xhgui:v1.25.3
     container_name: ddev-${DDEV_SITENAME}-xhgui
     profiles:
       - xhgui

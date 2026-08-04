@@ -2,26 +2,26 @@ name: ddev-axon
 services:
   db:
     build:
-      context: /home/sebas/axon/.ddev/.dbimageBuild
+      context: /home/ubuntu/axon/.ddev/.dbimageBuild
       dockerfile: Dockerfile
       args:
-        BASE_IMAGE: ddev/ddev-dbserver-mariadb-11.8:v1.25.2
+        BASE_IMAGE: ddev/ddev-dbserver-mariadb-11.8:v1.25.3
         gid: "1000"
         uid: "1000"
-        username: sebas
+        username: ubuntu
       labels:
         com.ddev.app-type: laravel
-        com.ddev.approot: /home/sebas/axon
+        com.ddev.approot: /home/ubuntu/axon
         com.ddev.platform: ddev
         com.ddev.site-name: axon
-        com.ddev.webtag: v1.25.2
+        com.ddev.webtag: v1.25.3
     cap_add:
       - SYS_NICE
     command: []
     container_name: ddev-axon-db
     environment:
       BITNAMI_VOLUME_DIR: ""
-      COLUMNS: "80"
+      COLUMNS: "120"
       DDEV_DATABASE: mariadb:11.8
       DDEV_DATABASE_FAMILY: mysql
       DDEV_GID: "1000"
@@ -40,12 +40,13 @@ services:
       DDEV_SITENAME: axon
       DDEV_TLD: ddev.site
       DDEV_UID: "1000"
-      DDEV_USER: sebas
-      DDEV_VERSION: v1.25.2
+      DDEV_USER: ubuntu
+      DDEV_VERSION: v1.25.3
       DOCKER_IP: 127.0.0.1
-      HOST_DOCKER_INTERNAL_IP: 172.31.240.1
+      HOME: /home/ubuntu
+      HOST_DOCKER_INTERNAL_IP: 172.17.144.1
       IS_DDEV_PROJECT: "true"
-      LINES: "24"
+      LINES: "28"
       MYSQL_HISTFILE: /mnt/ddev-global-cache/mysqlhistory/axon-db/mysql_history
       PGDATABASE: db
       PGHOST: 127.0.0.1
@@ -55,9 +56,9 @@ services:
       POSTGRES_PASSWORD: db
       POSTGRES_USER: db
       TZ: America/Santiago
-      USER: sebas
+      USER: ubuntu
     extra_hosts:
-      - host.docker.internal=172.31.240.1
+      - host.docker.internal=172.17.144.1
     hostname: axon-db
     healthcheck:
       test:
@@ -68,13 +69,13 @@ services:
       retries: 70
       start_period: 2m0s
       start_interval: 1s
-    image: ddev/ddev-dbserver-mariadb-11.8:v1.25.2-axon-built
+    image: ddev/ddev-dbserver-mariadb-11.8:v1.25.3-axon-built
     labels:
       com.ddev.app-type: laravel
-      com.ddev.approot: /home/sebas/axon
+      com.ddev.approot: /home/ubuntu/axon
       com.ddev.platform: ddev
       com.ddev.site-name: axon
-      com.ddev.webtag: v1.25.2
+      com.ddev.webtag: v1.25.3
     networks:
       ddev_default: null
       default: null
@@ -83,7 +84,7 @@ services:
         host_ip: 127.0.0.1
         target: 3306
         protocol: tcp
-    restart: "no"
+    restart: 'no'
     stop_grace_period: 1m0s
     user: 1000:1000
     volumes:
@@ -93,18 +94,18 @@ services:
         volume:
           nocopy: true
       - type: bind
-        source: /home/sebas/axon/.ddev
+        source: /home/ubuntu/axon/.ddev
         target: /mnt/ddev_config
         bind: {}
       - type: bind
-        source: /home/sebas/axon/.ddev/db_snapshots
+        source: /home/ubuntu/axon/.ddev/db_snapshots
         target: /mnt/snapshots
         bind: {}
       - type: volume
         source: ddev-global-cache
         target: /mnt/ddev-global-cache
         volume: {}
-    working_dir: /home/sebas
+    working_dir: /home/ubuntu
   phpmyadmin:
     container_name: ddev-axon-phpmyadmin
     depends_on:
@@ -112,7 +113,7 @@ services:
         condition: service_healthy
         required: true
     environment:
-      HOST_DOCKER_INTERNAL_IP: 172.31.240.1
+      HOST_DOCKER_INTERNAL_IP: 172.17.144.1
       HTTP_EXPOSE: 8036:80
       HTTPS_EXPOSE: 8037:80
       PMA_HOST: db
@@ -124,21 +125,21 @@ services:
     expose:
       - "80"
     extra_hosts:
-      - host.docker.internal=172.31.240.1
+      - host.docker.internal=172.17.144.1
     image: phpmyadmin:5
     labels:
       com.ddev.app-type: laravel
-      com.ddev.approot: /home/sebas/axon
+      com.ddev.approot: /home/ubuntu/axon
       com.ddev.platform: ddev
       com.ddev.site-name: axon
-      com.ddev.webtag: v1.25.2
+      com.ddev.webtag: v1.25.3
     networks:
       ddev_default: null
       default: null
-    restart: "no"
+    restart: 'no'
     volumes:
       - type: bind
-        source: /home/sebas/axon/.ddev
+        source: /home/ubuntu/axon/.ddev
         target: /mnt/ddev_config
         bind: {}
       - type: volume
@@ -148,28 +149,28 @@ services:
     working_dir: /root
   web:
     build:
-      context: /home/sebas/axon/.ddev/.webimageBuild
+      context: /home/ubuntu/axon/.ddev/.webimageBuild
       dockerfile: Dockerfile
       args:
-        BASE_IMAGE: ddev/ddev-webserver:v1.25.2
+        BASE_IMAGE: ddev/ddev-webserver:v1.25.3
         DDEV_DATABASE: mariadb:11.8
         DDEV_PHP_VERSION: "8.3"
         gid: "1000"
         uid: "1000"
-        username: sebas
+        username: ubuntu
       labels:
         com.ddev.app-type: laravel
-        com.ddev.approot: /home/sebas/axon
+        com.ddev.approot: /home/ubuntu/axon
         com.ddev.platform: ddev
         com.ddev.site-name: axon
-        com.ddev.webtag: v1.25.2
+        com.ddev.webtag: v1.25.3
     cap_add:
       - SYS_PTRACE
     command:
       - /pre-start.sh
     container_name: ddev-axon-web
     environment:
-      COLUMNS: "80"
+      COLUMNS: "120"
       COREPACK_ENABLE_DOWNLOAD_PROMPT: "0"
       COREPACK_HOME: /mnt/ddev-global-cache/corepack
       DDEV_APPROOT: /var/www/html
@@ -196,8 +197,8 @@ services:
       DDEV_SITENAME: axon
       DDEV_TLD: ddev.site
       DDEV_UID: "1000"
-      DDEV_USER: sebas
-      DDEV_VERSION: v1.25.2
+      DDEV_USER: ubuntu
+      DDEV_VERSION: v1.25.3
       DDEV_WEB_ENTRYPOINT: /mnt/ddev_config/web-entrypoint.d
       DDEV_WEBSERVER_TYPE: nginx-fpm
       DDEV_XDEBUG_ENABLED: "false"
@@ -206,12 +207,14 @@ services:
       DOCKER_IP: 127.0.0.1
       DOCROOT: public
       DRUSH_OPTIONS_URI: https://axon.ddev.site
-      HOST_DOCKER_INTERNAL_IP: 172.31.240.1
+      HOST_DOCKER_INTERNAL_IP: 172.17.144.1
       HTTP_EXPOSE: 80:80,8025:8025,5174:5173
       HTTPS_EXPOSE: 443:80,8026:8025,5173:5173
       IS_DDEV_PROJECT: "true"
-      LINES: "24"
+      LINES: "28"
       MYSQL_HISTFILE: /mnt/ddev-global-cache/mysqlhistory/axon-web/mysql_history
+      N_CACHE_PREFIX: /mnt/ddev-global-cache/n_prefix/axon-web
+      N_PREFIX: /usr/local/n
       NODE_EXTRA_CA_CERTS: /mnt/ddev-global-cache/mkcert/rootCA.pem
       PGDATABASE: db
       PGHOST: db
@@ -219,15 +222,14 @@ services:
       PGUSER: db
       PHP_IDE_CONFIG: serverName=axon.ddev.site
       SSH_AUTH_SOCK: /home/.ssh-agent/socket
-      START_SCRIPT_TIMEOUT: "115"
       TZ: America/Santiago
-      USER: sebas
+      USER: ubuntu
       VIRTUAL_HOST: axon.ddev.site
       npm_config_cache: /mnt/ddev-global-cache/npm
     expose:
       - "5173"
     extra_hosts:
-      - host.docker.internal=172.31.240.1
+      - host.docker.internal=172.17.144.1
     hostname: axon-web
     healthcheck:
       test:
@@ -238,13 +240,13 @@ services:
       retries: 70
       start_period: 2m0s
       start_interval: 1s
-    image: ddev/ddev-webserver:v1.25.2-axon-built
+    image: ddev/ddev-webserver:v1.25.3-axon-built
     labels:
       com.ddev.app-type: laravel
-      com.ddev.approot: /home/sebas/axon
+      com.ddev.approot: /home/ubuntu/axon
       com.ddev.platform: ddev
       com.ddev.site-name: axon
-      com.ddev.webtag: v1.25.2
+      com.ddev.webtag: v1.25.3
     networks:
       ddev_default: null
       default: null
@@ -265,15 +267,15 @@ services:
         host_ip: 127.0.0.1
         target: 8025
         protocol: tcp
-    restart: "no"
+    restart: 'no'
     user: 1000:1000
     volumes:
       - type: bind
-        source: /home/sebas/axon
+        source: /home/ubuntu/axon
         target: /var/www/html
         consistency: cached
       - type: bind
-        source: /home/sebas/axon/.ddev
+        source: /home/ubuntu/axon/.ddev
         target: /mnt/ddev_config
         read_only: true
         bind: {}
@@ -296,7 +298,7 @@ services:
         required: true
     environment:
       DDEV_DATABASE_FAMILY: mysql
-      HOST_DOCKER_INTERNAL_IP: 172.31.240.1
+      HOST_DOCKER_INTERNAL_IP: 172.17.144.1
       HTTP_EXPOSE: 8143:80
       HTTPS_EXPOSE: 8142:80
       TZ: America/Santiago
@@ -305,7 +307,7 @@ services:
       XHGUI_PDO_USER: db
       XHGUI_SAVE_HANDLER: pdo
     extra_hosts:
-      - host.docker.internal=172.31.240.1
+      - host.docker.internal=172.17.144.1
     healthcheck:
       test:
         - CMD-SHELL
@@ -315,17 +317,17 @@ services:
       retries: 70
       start_period: 2m0s
       start_interval: 1s
-    image: ddev/ddev-xhgui:v1.25.2
+    image: ddev/ddev-xhgui:v1.25.3
     labels:
       com.ddev.app-type: laravel
-      com.ddev.approot: /home/sebas/axon
+      com.ddev.approot: /home/ubuntu/axon
       com.ddev.platform: ddev
       com.ddev.site-name: axon
-      com.ddev.webtag: v1.25.2
+      com.ddev.webtag: v1.25.3
     networks:
       ddev_default: null
       default: null
-    restart: "no"
+    restart: 'no'
     x-ddev:
       describe-url-port: 'Launch: ddev xhgui'
 networks:
@@ -336,10 +338,10 @@ networks:
     name: ddev-axon_default
     labels:
       com.ddev.app-type: laravel
-      com.ddev.approot: /home/sebas/axon
+      com.ddev.approot: /home/ubuntu/axon
       com.ddev.platform: ddev
       com.ddev.site-name: axon
-      com.ddev.webtag: v1.25.2
+      com.ddev.webtag: v1.25.3
 volumes:
   database:
     name: axon-mariadb
