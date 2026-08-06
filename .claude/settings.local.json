@@ -21,7 +21,8 @@
       "Bash(git *)",
       "Read(//home/sebas/.claude/**)",
       "Bash(chmod +x /home/sebas/.claude/statusline-command.sh)",
-      "Bash(bash /home/sebas/.claude/statusline-command.sh)"
+      "Bash(bash /home/sebas/.claude/statusline-command.sh)",
+      "Bash(ddev describe *)"
     ]
   }
 }

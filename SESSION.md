@@ -10,9 +10,82 @@
 2026-08-06
 
 ## Módulo / feature en curso
-Ninguno — deuda de QA saldada y mergeada a `main`. Próximo: arrancar REQ-0003.
+REQ-0003 — Finanzas (Proveedores, OC, Facturas). Diseño propuesto en rol
+`/arquitecto`, **pendiente de aprobación** (preguntas Q1–Q6 abajo). Sin código
+escrito todavía.
 
 ## Estado actual
+
+### REQ-0003 — Diseño propuesto (pendiente de aprobación)
+
+Basado en `docs/requerimientos/0003-finanzas.md` (aprobado 2026-06-23, alcance
+y criterios de aceptación) + patrones existentes del repo (`HasOrganizationScope`,
+`HasAttachments`, `HasFilamentComments`, generación de código vía Observer como
+en `Project`/`Task`, máquina de estados con `ALLOWED_TRANSITIONS` + tabla de
+historial como `SubmissionStateMachine`).
+
+**Modelo de datos:**
+- `suppliers` — igual patrón que `Client` (ulid, organization_id, datos de
+  contacto + bancarios, notes, soft deletes, attachments, comments).
+- `purchase_orders` — ulid; `supplier_id` (restrict), `project_id` nullable
+  (null on delete); `code` autogenerado `OC-{año}-{seq}` único por org;
+  `number` (folio real, libre); `date`; `currency` (enum CLP/USD/EUR);
+  `amount_net`/`tax_amount`/`amount_total` `decimal(15,2) unsigned`; `status`
+  (enum PHP `PurchaseOrderStatus`); `approved_by`/`approved_at`; soft deletes.
+- `purchase_order_status_histories` — mismo patrón que
+  `submission_status_histories`.
+- `invoices` — ulid; `type` (enum `incoming`/`outgoing`); `client_id` y
+  `supplier_id` nullable (uno u otro según `type`); `project_id` y
+  `purchase_order_id` nullable; `code` autogenerado `FC-{año}-{seq}`; `number`
+  (folio real); `date`/`due_date`; mismos campos de moneda que OC; `status`
+  (enum PHP `InvoiceStatus`); `payment_date`; soft deletes.
+- `invoice_status_histories` — mismo patrón.
+- Ambas entidades usan `HasOrganizationScope, HasAttachments,
+  HasFilamentComments, HasUlids, SoftDeletes`.
+
+**Máquinas de estado:**
+- `PurchaseOrderStatus`: `borrador → emitida → recibida`, o `→ anulada` desde
+  `borrador`/`emitida`. `recibida` y `anulada` terminales. Aprobar
+  (`borrador→emitida`) sella `approved_by`/`approved_at`; roles: aprobar y
+  anular = `super_admin, ingeniero`; marcar recibida = + `supervisor`.
+- `InvoiceStatus`: `pendiente → pagada` (sella `payment_date`), `pendiente →
+  vencida` (automático, ver Q2), `pendiente/vencida → anulada`. `pagada` y
+  `anulada` terminales. Marcar pagada/anular: `super_admin, ingeniero`.
+
+**Recursos Filament:** nuevo grupo de navegación "Finanzas" — `SupplierResource`
+(List/Create/Edit, como `ClientResource`), `PurchaseOrderResource` y
+`InvoiceResource` (List/Create/Edit/View, con línea de tiempo de estado como
+`ViewSubmissionRequest`, filtros por proyecto/estado/proveedor-cliente).
+
+**Matriz de permisos:** view = `super_admin, ingeniero, supervisor`;
+create/update/aprobar/pagar/anular = `super_admin, ingeniero`; marcar recibida
+= + `supervisor`; delete/restore/forceDelete = solo `super_admin`. `tecnico` y
+`calidad` sin acceso (más restrictivo que `ProjectPolicy`, dato financiero).
+
+**Preguntas abiertas — Q1 a Q6 (bloquean pasar a `/ingeniero`):**
+1. **Q1 — Código interno vs. folio:** ¿agregar `code` autogenerado (como
+   Project/Task) además del `number` (folio real a mano)? Es un campo nuevo no
+   contemplado en el doc original aprobado. *(Recomendado: sí, agregarlo.)*
+2. **Q2 — Cómo se llega a `vencida`:** (A) comando programado diario que
+   persiste el cambio en BD *(recomendado)*, o (B) calculado al vuelo con un
+   accessor sin tocar `status`.
+3. **Q3 — Enum PHP vs. tabla configurable para los estados de OC/factura.**
+   *(Recomendado: enum PHP, como `TaskStatus` — flujo fijo con lógica de
+   negocio, no taxonomía libre por organización.)*
+4. **Q4 — Historial de estados dedicado** (`purchase_order_status_histories`,
+   `invoice_status_histories`) para ambas entidades. *(Recomendado: sí.)*
+5. **Q5 — Alcance de RBAC:** confirmar que `tecnico`/`calidad` no ven finanzas
+   y que `supervisor` es solo lectura (sin crear/aprobar).
+6. **Q6 — Integridad `type`/`client_id`/`supplier_id` en `invoices`:** (A)
+   solo validación en FormRequest/Filament *(recomendado)*, o (B) además un
+   `CHECK` constraint a nivel de BD.
+
+**Riesgos/supuestos identificados:** multimoneda sin tipo de cambio histórico
+(fuera de alcance MVP, afecta reportes agregados futuros); sin líneas de ítem
+(monto total + descripción libre, confirmado); sin integración con
+facturación electrónica SII; `purchase_order_id` opcional en `invoices`
+(compras menores sin OC); `program_id` no referenciado (diferido, igual que en
+`Project`).
 
 ### Completado ✅
 - REQ-0001 (Módulo de Solicitudes de Tableros) — cerrado.
@@ -26,7 +99,8 @@ Ninguno — deuda de QA saldada y mergeada a `main`. Próximo: arrancar REQ-0003
 **Suite completa: 81/81 tests en verde · Pint limpio · Larastan nivel 1 sin errores.**
 
 ### Diseñados — pendientes de implementar (orden sugerido)
-1. **REQ-0003** — Finanzas básicas: Proveedores, OC, Facturas
+1. **REQ-0003** — Finanzas básicas: Proveedores, OC, Facturas (diseño propuesto,
+   ver sección de arriba — pendiente de aprobación Q1–Q6)
 2. **REQ-0005** — Estados de Pago / EPs (requiere REQ-0003)
 3. **REQ-0002-C** — KPI Dashboard (widgets en ViewProject)
 4. **REQ-0002-D** — Portal externo (token + Livewire + Reverb)
@@ -46,12 +120,19 @@ Ninguno — deuda de QA saldada y mergeada a `main`. Próximo: arrancar REQ-0003
 - **Códigos legibles:** formato `TAB-001-T042`.
 
 ## Decisiones pendientes
-Ninguna.
+Preguntas Q1–Q6 del diseño de REQ-0003 (ver sección "REQ-0003 — Diseño
+propuesto" arriba). El usuario debe responderlas antes de aprobar el diseño.
 
 ## Próximo paso concreto
-Arrancar REQ-0003 (Finanzas: Proveedores, OC, Facturas) en rol `/arquitecto` a
-partir de `docs/requerimientos/0003-finanzas.md`, presentando el diseño
-(modelo de datos, relaciones, pantallas Filament) antes de escribir código.
+Esperar respuesta del usuario a Q1–Q6 sobre el diseño de REQ-0003. Con las
+respuestas: ajustar el diseño si corresponde, obtener aprobación explícita, y
+recién ahí pasar a rol `/ingeniero` para implementar (migraciones de
+`suppliers`, `purchase_orders`, `purchase_order_status_histories`, `invoices`,
+`invoice_status_histories`; modelos; enums `PurchaseOrderStatus`,
+`InvoiceStatus`, `InvoiceType`, `Currency`; `PurchaseOrderStateMachine`,
+`InvoiceStateMachine`; recursos Filament `SupplierResource`,
+`PurchaseOrderResource`, `InvoiceResource`; policies; factories; tests Pest) y
+registrar un ADR en `docs/adr/` con las decisiones tomadas.
 
 ## Cómo correr la suite (importante)
 Los tests **no corren en el host**: el PHP de WSL no tiene `pdo_mysql` y el host
