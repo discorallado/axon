@@ -90,13 +90,13 @@ it('no mezcla configuraciones entre usuarios', function () {
 // ── SettingsPage ───────────────────────────────────────────────────────────────
 
 it('renderiza la SettingsPage', function () {
-    actingAs($this->admin);
+    $this->actingAs($this->admin);
 
     livewire(SettingsPage::class)->assertSuccessful();
 });
 
 it('guarda configuración desde SettingsPage', function () {
-    actingAs($this->admin);
+    $this->actingAs($this->admin);
 
     livewire(SettingsPage::class)
         ->set('theme_color', 'teal')
@@ -108,29 +108,34 @@ it('guarda configuración desde SettingsPage', function () {
     expect(UserSetting::get($this->admin->id, 'notify_email'))->toBe('0');
 });
 
-// ── Gantt frappe ───────────────────────────────────────────────────────────────
+// ── Gantt DHTMLX ───────────────────────────────────────────────────────────────
 
-it('getGanttTasks devuelve lista plana con actividades y tareas', function () {
-    actingAs($this->admin);
+it('getGanttData devuelve actividades y tareas con sus enlaces', function () {
+    $this->actingAs($this->admin);
 
     $component = livewire(GanttChart::class, ['record' => $this->project->getRouteKey()])
         ->assertSuccessful();
 
-    $ganttTasks = $component->instance()->getGanttTasks();
+    $gantt = $component->instance()->getGanttData();
 
-    expect($ganttTasks)->not->toBeEmpty();
+    expect($gantt)->toHaveKeys(['data', 'links'])
+        ->and($gantt['data'])->not->toBeEmpty();
 
-    $actRow = collect($ganttTasks)->firstWhere('id', 'act-'.$this->activity->id);
-    expect($actRow)->not->toBeNull();
-    expect($actRow['custom_class'])->toContain('bar-activity');
+    // La actividad es una fila de tipo "project", de solo lectura.
+    $actRow = collect($gantt['data'])->firstWhere('id', 'act-'.$this->activity->id);
+    expect($actRow)->not->toBeNull()
+        ->and($actRow['type'])->toBe('project')
+        ->and($actRow['readonly'])->toBeTrue();
 
-    $taskRow = collect($ganttTasks)->firstWhere('id', 'task-'.$this->task->id);
-    expect($taskRow)->not->toBeNull();
-    expect($taskRow['custom_class'])->toContain('bar-task');
+    // La tarea cuelga de la actividad y sí es editable.
+    $taskRow = collect($gantt['data'])->firstWhere('id', $this->task->id);
+    expect($taskRow)->not->toBeNull()
+        ->and($taskRow['parent'])->toBe('act-'.$this->activity->id)
+        ->and($taskRow['readonly'])->toBeFalse();
 });
 
 it('updateTaskDates persiste las fechas', function () {
-    actingAs($this->admin);
+    $this->actingAs($this->admin);
 
     $newStart = now()->addDay()->format('Y-m-d');
     $newEnd = now()->addDays(10)->format('Y-m-d');
@@ -143,24 +148,31 @@ it('updateTaskDates persiste las fechas', function () {
     expect($this->task->due_date->format('Y-m-d'))->toBe($newEnd);
 });
 
-it('updateActivityDates persiste las fechas', function () {
-    actingAs($this->admin);
+it('las fechas de la actividad se derivan de sus tareas', function () {
+    $this->actingAs($this->admin);
 
-    $newStart = now()->subDays(2)->format('Y-m-d');
-    $newEnd = now()->addDays(15)->format('Y-m-d');
+    // Tarea que extiende el rango por ambos extremos respecto de $this->task.
+    Task::factory()->create([
+        'organization_id' => $this->org->id,
+        'activity_id' => $this->activity->id,
+        'start_date' => now()->subDays(12),
+        'due_date' => now()->addDays(20),
+    ]);
 
-    livewire(GanttChart::class, ['record' => $this->project->getRouteKey()])
-        ->call('updateActivityDates', $this->activity->id, $newStart, $newEnd);
+    $component = livewire(GanttChart::class, ['record' => $this->project->getRouteKey()]);
 
-    $this->activity->refresh();
-    expect($this->activity->start_date->format('Y-m-d'))->toBe($newStart);
-    expect($this->activity->end_date->format('Y-m-d'))->toBe($newEnd);
+    $actRow = collect($component->instance()->getGanttData()['data'])
+        ->firstWhere('id', 'act-'.$this->activity->id);
+
+    // Ignora las fechas propias de la actividad (-5 / +10) y usa min/max de las tareas.
+    expect($actRow['start_date'])->toBe(now()->subDays(12)->format('Y-m-d'))
+        ->and($actRow['end_date'])->toBe(now()->addDays(20)->format('Y-m-d'));
 });
 
 // ── Kanban ─────────────────────────────────────────────────────────────────────
 
 it('renderiza el KanbanBoard mostrando la tarea', function () {
-    actingAs($this->admin);
+    $this->actingAs($this->admin);
 
     livewire(KanbanBoard::class, ['record' => $this->project->getRouteKey()])
         ->assertSuccessful()
@@ -168,7 +180,7 @@ it('renderiza el KanbanBoard mostrando la tarea', function () {
 });
 
 it('muestra múltiples avatares de asignados en el kanban', function () {
-    actingAs($this->admin);
+    $this->actingAs($this->admin);
 
     $user2 = User::factory()->create(['organization_id' => $this->org->id, 'name' => 'Ana González']);
     $this->task->assignees()->attach([$this->admin->id, $user2->id]);
@@ -181,27 +193,27 @@ it('muestra múltiples avatares de asignados en el kanban', function () {
 // ── Widgets ────────────────────────────────────────────────────────────────────
 
 it('TasksByStatusWidget renderiza sin errores', function () {
-    actingAs($this->admin);
+    $this->actingAs($this->admin);
     livewire(TasksByStatusWidget::class)->assertSuccessful();
 });
 
 it('MonthlyTaskCreationWidget renderiza sin errores', function () {
-    actingAs($this->admin);
+    $this->actingAs($this->admin);
     livewire(MonthlyTaskCreationWidget::class)->assertSuccessful();
 });
 
 it('ProjectProgressWidget renderiza sin errores', function () {
-    actingAs($this->admin);
+    $this->actingAs($this->admin);
     livewire(ProjectProgressWidget::class)->assertSuccessful();
 });
 
 it('TeamContributionWidget renderiza sin errores', function () {
-    actingAs($this->admin);
+    $this->actingAs($this->admin);
     livewire(TeamContributionWidget::class)->assertSuccessful();
 });
 
 it('ProjectStatsWidget muestra stat de tareas vencidas', function () {
-    actingAs($this->admin);
+    $this->actingAs($this->admin);
 
     Task::factory()->create([
         'organization_id' => $this->org->id,

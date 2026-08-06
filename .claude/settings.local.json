@@ -5,7 +5,23 @@
       "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); [print\\(k,v\\) for k,v in d.get\\('require',{}\\).items\\(\\)]\")",
       "Bash(systemctl status *)",
       "Bash(service mysql *)",
-      "Bash(service mariadb *)"
+      "Bash(service mariadb *)",
+      "Skill(update-config)",
+      "Bash(python3 *)",
+      "Bash(awk *)",
+      "Bash(php -v)",
+      "Bash(gh api *)",
+      "Bash(timeout 180 ./vendor/bin/phpstan analyse --memory-limit=1G)",
+      "Bash(timeout 180 ./vendor/bin/phpstan analyse --level=2 --memory-limit=1G)",
+      "Bash(gh pr *)",
+      "Bash(git ls-tree *)",
+      "Bash(timeout 90 ./vendor/bin/phpstan analyse --no-progress)",
+      "Bash(timeout 180 ./vendor/bin/pest tests/Feature/Projects/UxEnhancementsTest.php tests/Feature/Projects/KanbanGanttExportTest.php)",
+      "Bash(grep -n 'protected $table\\\\|class SubmissionRequest\\\\|class SubmissionItem' app/Models/SubmissionRequest.php app/Models/SubmissionItem.php)",
+      "Bash(git *)",
+      "Read(//home/sebas/.claude/**)",
+      "Bash(chmod +x /home/sebas/.claude/statusline-command.sh)",
+      "Bash(bash /home/sebas/.claude/statusline-command.sh)"
     ]
   }
 }

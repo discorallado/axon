@@ -37,7 +37,7 @@ class GanttChart extends Page
             TaskStatus::Completada => 1.0,
             TaskStatus::EnRevision => 0.75,
             TaskStatus::EnProgreso => 0.5,
-            default                => 0.0,
+            default => 0.0,
         };
     }
 
@@ -71,7 +71,7 @@ class GanttChart extends Page
             $tasks = $activity->tasks;
 
             // Promedio ponderado por duración de cada tarea
-            $totalDays   = $tasks->sum(fn ($t) => $this->taskDays($t));
+            $totalDays = $tasks->sum(fn ($t) => $this->taskDays($t));
             $actProgress = $totalDays > 0
                 ? round($tasks->sum(fn ($t) => $this->taskDays($t) * $this->taskProgress($t)) / $totalDays, 2)
                 : 0;
@@ -86,29 +86,29 @@ class GanttChart extends Page
                 ->first()?->due_date ?? ($activity->end_date ?? now()->addDays(7));
 
             $rows[] = [
-                'id'         => 'act-'.$activity->id,
-                'text'       => $activity->name,
+                'id' => 'act-'.$activity->id,
+                'text' => $activity->name,
                 'start_date' => $actStart->format('Y-m-d'),
-                'end_date'   => $actEnd->format('Y-m-d'),
-                'progress'   => $actProgress,
-                'open'       => true,
-                'type'       => 'project',
-                'readonly'   => true,
+                'end_date' => $actEnd->format('Y-m-d'),
+                'progress' => $actProgress,
+                'open' => true,
+                'type' => 'project',
+                'readonly' => true,
             ];
 
             foreach ($tasks as $task) {
                 $start = $task->start_date ?? now();
-                $end   = $task->due_date   ?? now()->addDays(3);
+                $end = $task->due_date ?? now()->addDays(3);
 
                 $rows[] = [
-                    'id'          => $task->id,
-                    'text'        => $task->name,
+                    'id' => $task->id,
+                    'text' => $task->name,
                     'description' => $task->description ?? '',
-                    'start_date'  => $start->format('Y-m-d'),
-                    'end_date'    => $end->format('Y-m-d'),
-                    'progress'    => $this->taskProgress($task),
-                    'parent'      => 'act-'.$activity->id,
-                    'readonly'    => false,
+                    'start_date' => $start->format('Y-m-d'),
+                    'end_date' => $end->format('Y-m-d'),
+                    'progress' => $this->taskProgress($task),
+                    'parent' => 'act-'.$activity->id,
+                    'readonly' => false,
                 ];
             }
         }
@@ -116,10 +116,10 @@ class GanttChart extends Page
         $links = TaskLink::where('project_id', $this->record->id)
             ->get()
             ->map(fn ($l) => [
-                'id'     => $l->id,
+                'id' => $l->id,
                 'source' => $l->source_id,
                 'target' => $l->target_id,
-                'type'   => $l->type,
+                'type' => $l->type,
             ])
             ->values()
             ->all();
@@ -175,10 +175,10 @@ class GanttChart extends Page
 
         $link = TaskLink::create([
             'organization_id' => $this->record->organization_id,
-            'project_id'      => $this->record->id,
-            'source_id'       => $source,
-            'target_id'       => $target,
-            'type'            => $type,
+            'project_id' => $this->record->id,
+            'source_id' => $source,
+            'target_id' => $target,
+            'type' => $type,
         ]);
 
         return $link->id;
@@ -206,10 +206,10 @@ class GanttChart extends Page
         $this->authorize('update', $task);
 
         $task->update([
-            'name'        => $title,
+            'name' => $title,
             'description' => $description ?: null,
-            'start_date'  => $startDate ?: null,
-            'due_date'    => $endDate   ?: null,
+            'start_date' => $startDate ?: null,
+            'due_date' => $endDate ?: null,
         ]);
     }
 
