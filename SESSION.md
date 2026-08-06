@@ -7,10 +7,10 @@
 ---
 
 ## Última actualización
-2026-08-04
+2026-08-06
 
 ## Módulo / feature en curso
-Ninguno — deuda de QA saldada. Rama `fix/tests-gantt-dhtmlx` lista para PR.
+Ninguno — deuda de QA saldada y mergeada a `main`. Próximo: arrancar REQ-0003.
 
 ## Estado actual
 
@@ -20,31 +20,10 @@ Ninguno — deuda de QA saldada. Rama `fix/tests-gantt-dhtmlx` lista para PR.
 - REQ-0002-B (Kanban + Gantt + Export) — cerrado.
 - UX ActivityAccordion v3 — cerrado.
 - REQ-0002-E (UX Gantt DHTMLX + Kanban + Widgets) — cerrado, mergeado a `main` vía PR #6 (`d0c56c8`).
+- QA post-merge REQ-0002-E (fix tests Gantt DHTMLX + Larastan + limpieza `.ddev`) —
+  cerrado, mergeado a `main` vía PR #7 (`a1c9e16`).
 
 **Suite completa: 81/81 tests en verde · Pint limpio · Larastan nivel 1 sin errores.**
-
-#### Sesión 2026-08-04 — QA post-merge de REQ-0002-E
-Tras el merge del PR #6 la suite estaba en 68/81 (13 fallos). Ninguno era del
-código de producción: eran tests que quedaron contra la API de frappe-gantt.
-
-- `UxEnhancementsTest`: 12 llamadas a `actingAs()` como función global (no
-  existe; la convención del repo es `$this->actingAs()`).
-- `getGanttTasks()` ya no existe → `getGanttData()`, que devuelve
-  `['data' => [...], 'links' => [...]]`. Las filas usan `start_date`/`end_date`
-  (DHTMLX), no `start`/`end`; los ids de tarea van sin prefijo `task-` y no
-  hay `custom_class` (era de frappe).
-- `updateActivityDates` se eliminó a propósito en REQ-0002-E. El test se
-  reemplazó por uno que verifica que las fechas de actividad se derivan de
-  `min(start_date)` / `max(due_date)` de sus tareas.
-- **Larastan quedó configurado por primera vez** (`phpstan.neon`, nivel 1). El
-  paquete estaba instalado desde siempre pero sin config, así que el paso
-  "Larastan limpio" del CLAUDE.md nunca se había podido ejecutar.
-- Se eliminaron `FormTemplateFactory`, `FormSectionFactory` y
-  `FormQuestionFactory`: apuntaban a modelos y a un enum inexistentes y no
-  tenían ninguna referencia en el repo. Impedían pasar incluso el nivel 0.
-- `.ddev` dejó de trackearse (ya estaba en `.gitignore`).
-
-Commits en `fix/tests-gantt-dhtmlx`: `22d7a63`, `a57cdbe`, `0e79271`.
 
 ### Diseñados — pendientes de implementar (orden sugerido)
 1. **REQ-0003** — Finanzas básicas: Proveedores, OC, Facturas
@@ -70,10 +49,9 @@ Commits en `fix/tests-gantt-dhtmlx`: `22d7a63`, `a57cdbe`, `0e79271`.
 Ninguna.
 
 ## Próximo paso concreto
-Abrir PR de `fix/tests-gantt-dhtmlx` → `main` y mergearlo. Después, arrancar
-REQ-0003 (Finanzas: Proveedores, OC, Facturas) en rol `/arquitecto` a partir de
-`docs/requerimientos/0003-finanzas.md`, presentando el diseño antes de escribir
-código.
+Arrancar REQ-0003 (Finanzas: Proveedores, OC, Facturas) en rol `/arquitecto` a
+partir de `docs/requerimientos/0003-finanzas.md`, presentando el diseño
+(modelo de datos, relaciones, pantallas Filament) antes de escribir código.
 
 ## Cómo correr la suite (importante)
 Los tests **no corren en el host**: el PHP de WSL no tiene `pdo_mysql` y el host
@@ -88,6 +66,46 @@ ddev exec ./vendor/bin/phpstan analyse --memory-limit=1G
 ---
 
 ## Historial de sesiones anteriores
+
+<details>
+<summary>2026-08-04/06 — QA post-merge de REQ-0002-E: fix tests Gantt DHTMLX, Larastan, limpieza .ddev</summary>
+
+Tras el merge del PR #6 la suite estaba en 68/81 (13 fallos). Ninguno era del
+código de producción: eran tests que quedaron contra la API de frappe-gantt.
+
+- `UxEnhancementsTest`: 12 llamadas a `actingAs()` como función global (no
+  existe; la convención del repo es `$this->actingAs()`).
+- `getGanttTasks()` ya no existe → `getGanttData()`, que devuelve
+  `['data' => [...], 'links' => [...]]`. Las filas usan `start_date`/`end_date`
+  (DHTMLX), no `start`/`end`; los ids de tarea van sin prefijo `task-` y no
+  hay `custom_class` (era de frappe).
+- `updateActivityDates` se eliminó a propósito en REQ-0002-E. El test se
+  reemplazó por uno que verifica que las fechas de actividad se derivan de
+  `min(start_date)` / `max(due_date)` de sus tareas.
+- **Larastan quedó configurado por primera vez** (`phpstan.neon`, nivel 1). El
+  paquete estaba instalado desde siempre pero sin config, así que el paso
+  "Larastan limpio" del CLAUDE.md nunca se había podido ejecutar.
+- Se eliminaron `FormTemplateFactory`, `FormSectionFactory` y
+  `FormQuestionFactory`: apuntaban a modelos y a un enum inexistentes y no
+  tenían ninguna referencia en el repo. Impedían pasar incluso el nivel 0.
+- Un commit intermedio (`cbfb361`, "update") volvió a trackear por error
+  varios archivos de `.ddev/` (addon phpMyAdmin, `config.yaml`,
+  `.bash_aliases`): el `.gitignore` previo solo ignoraba un archivo suelto
+  (`.ddev/.ddev-docker-compose-full.yaml`), no la carpeta completa. Corregido
+  en `26eca83`: `.gitignore` ahora ignora `.ddev/` completo (cada entorno de
+  trabajo tiene su propia config local de DDEV y no debe versionarse nunca;
+  `.claude/` sí se sincroniza).
+
+PR #7 abierto y mergeado a `main` (merge commit `a1c9e16`, mismo método —
+merge commit normal— usado en PR #6). Suite verificada en verde (81/81) antes
+del merge. Commits en `fix/tests-gantt-dhtmlx`: `22d7a63`, `a57cdbe`,
+`0e79271`, `9927389`, `26eca83`.
+
+De paso (fuera del repo): se configuró la statusline del usuario
+(`~/.claude/statusline.sh`) para mostrar contexto/cuota 5h/cuota semanal con
+barras de bloques y color.
+
+</details>
 
 <details>
 <summary>2026-06-28 — UX ActivityAccordion v3: drag-drop + refresh + notificaciones</summary>
