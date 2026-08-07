@@ -116,7 +116,8 @@ class InvoiceResource extends Resource
                         DatePicker::make('due_date')
                             ->label(__('invoices.fields.due_date'))
                             ->displayFormat('d/m/Y')
-                            ->required(),
+                            ->required()
+                            ->afterOrEqual('date'),
                     ]),
                 ]),
 
