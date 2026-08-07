@@ -10,18 +10,20 @@
 2026-08-06
 
 ## Módulo / feature en curso
-REQ-0003 — Finanzas (Proveedores, OC, Facturas). Diseño cerrado (ver ADR-0011).
-Sin código escrito todavía — listo para pasar a rol `/ingeniero`.
+REQ-0003 — Finanzas (Proveedores, OC, Facturas). **Implementado** en rama
+`feat/req-0003-finanzas`, PR #8 abierto hacia `main`, pendiente de `/revisor`
+y merge.
 
 ## Estado actual
 
-### REQ-0003 — Diseño cerrado, pendiente de implementación
+### REQ-0003 — Implementado, PR #8 abierto (pendiente de revisión y merge)
 
 Basado en `docs/requerimientos/0003-finanzas.md` (aprobado 2026-06-23, alcance
 y criterios de aceptación) + patrones existentes del repo (`HasOrganizationScope`,
 `HasAttachments`, `HasFilamentComments`, generación de código vía Observer como
 en `Project`/`Task`, máquina de estados con `ALLOWED_TRANSITIONS` + tabla de
-historial como `SubmissionStateMachine`).
+historial como `SubmissionStateMachine`). Diseño cerrado en ADR-0011,
+implementado íntegro en un commit (`a779ed7` en la rama `feat/req-0003-finanzas`).
 
 **Modelo de datos:**
 - `suppliers` — igual patrón que `Client` (ulid, organization_id, datos de
@@ -79,6 +81,29 @@ facturación electrónica SII; `purchase_order_id` opcional en `invoices`
 (compras menores sin OC); `program_id` no referenciado (diferido, igual que en
 `Project`).
 
+**Implementación (rol `/ingeniero`, commit `a779ed7`):** 53 archivos — 5
+migraciones, 4 enums, 5 modelos + 2 observers, 2 state machines, comando
+programado `invoices:mark-overdue` (`routes/console.php`, `dailyAt('01:00')`),
+3 policies, 3 recursos Filament (grupo "Finanzas": `SupplierResource`,
+`PurchaseOrderResource`, `InvoiceResource`) con adjuntos polimórficos
+(subir/eliminar PDF) y timeline de estado en las vistas, 3 factories, 4
+archivos de lang, 27 tests Pest nuevos (código autogenerado, aislamiento
+`organization_id`, transiciones de estado y roles, comando de vencidas, RBAC,
+smoke test de render de las páginas Filament). Suite completa: **108/108
+verde**, Pint limpio, Larastan nivel 1 sin errores.
+
+**Nota de proceso:** el primer commit se hizo por error directo sobre `main`;
+se corrigió moviéndolo a la rama `feat/req-0003-finanzas` (`git reset --hard
+origin/main` en local, ya que no se había pusheado) antes de abrir el PR.
+
+**Efecto colateral fuera de REQ-0003:** al hacer `git checkout main` + `merge
+--ff-only` más temprano en la sesión, el fast-forward borró del working tree
+los archivos de `.ddev/` que habían quedado como untracked-pero-coincidentes
+(`config.yaml`, addon phpMyAdmin, `.bash_aliases`) — no afectó a los
+contenedores Docker (siguieron corriendo), pero rompió el CLI local de `ddev`
+hasta que se restauraron desde el historial de git (`git show cbfb361:<path>`).
+Quedaron restaurados como archivos locales no trackeados, tal como corresponde.
+
 ### Completado ✅
 - REQ-0001 (Módulo de Solicitudes de Tableros) — cerrado.
 - REQ-0002-A (PMIS Core) — cerrado, commit `a95aab8`.
@@ -91,12 +116,11 @@ facturación electrónica SII; `purchase_order_id` opcional en `invoices`
 **Suite completa: 81/81 tests en verde · Pint limpio · Larastan nivel 1 sin errores.**
 
 ### Diseñados — pendientes de implementar (orden sugerido)
-1. **REQ-0003** — Finanzas básicas: Proveedores, OC, Facturas (diseño propuesto,
-   ver sección de arriba — pendiente de aprobación Q1–Q6)
-2. **REQ-0005** — Estados de Pago / EPs (requiere REQ-0003)
-3. **REQ-0002-C** — KPI Dashboard (widgets en ViewProject)
-4. **REQ-0002-D** — Portal externo (token + Livewire + Reverb)
-5. **REQ-0004** — Control de Cambios
+1. **REQ-0005** — Estados de Pago / EPs (requiere REQ-0003 — ya implementado,
+   ver arriba, falta mergear PR #8)
+2. **REQ-0002-C** — KPI Dashboard (widgets en ViewProject)
+3. **REQ-0002-D** — Portal externo (token + Livewire + Reverb)
+4. **REQ-0004** — Control de Cambios
 
 ### Decisiones de diseño cerradas (vigentes)
 - **DHTMLX Gantt (Community, GPL)** — reemplazó a frappe-gantt en REQ-0002-E.
@@ -117,15 +141,14 @@ escribir código de REQ-0003 (el CLAUDE.md exige visto bueno antes de
 implementar, aunque el diseño ya esté cerrado con las opciones recomendadas).
 
 ## Próximo paso concreto
-Confirmar con el usuario que puede arrancar `/ingeniero` para REQ-0003. Con luz
-verde, implementar en este orden: migraciones (`suppliers`, `purchase_orders`,
-`purchase_order_status_histories`, `invoices`, `invoice_status_histories`) →
-enums (`PurchaseOrderStatus`, `InvoiceStatus`, `InvoiceType`, `Currency`) →
-modelos + Observers de `code` → `PurchaseOrderStateMachine` /
-`InvoiceStateMachine` + comando programado para `vencida` → policies →
-recursos Filament (`SupplierResource`, `PurchaseOrderResource`,
-`InvoiceResource` bajo grupo "Finanzas") → factories → tests Pest. Diseño
-completo y decisiones en `docs/adr/0011-finanzas-proveedores-oc-facturas.md`.
+Correr rol `/revisor` sobre el PR #8
+(https://github.com/discorallado/axon/pull/8, rama `feat/req-0003-finanzas`)
+antes de mergear: revisar seguridad, N+1 en los recursos Filament (relaciones
+`supplier`/`project`/`client`/`purchaseOrder` en tablas y listados), fugas de
+`organization_id`, permisos faltantes y cobertura de tests. Con el visto
+bueno, mergear a `main` (mismo método usado en PR #6/#7: merge commit normal)
+y luego decidir si se sigue con REQ-0005 (Estados de Pago, ahora desbloqueado)
+u otro requerimiento.
 
 ## Cómo correr la suite (importante)
 Los tests **no corren en el host**: el PHP de WSL no tiene `pdo_mysql` y el host
