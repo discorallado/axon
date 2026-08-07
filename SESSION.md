@@ -10,13 +10,12 @@
 2026-08-06
 
 ## Módulo / feature en curso
-REQ-0003 — Finanzas (Proveedores, OC, Facturas). Diseño propuesto en rol
-`/arquitecto`, **pendiente de aprobación** (preguntas Q1–Q6 abajo). Sin código
-escrito todavía.
+REQ-0003 — Finanzas (Proveedores, OC, Facturas). Diseño cerrado (ver ADR-0011).
+Sin código escrito todavía — listo para pasar a rol `/ingeniero`.
 
 ## Estado actual
 
-### REQ-0003 — Diseño propuesto (pendiente de aprobación)
+### REQ-0003 — Diseño cerrado, pendiente de implementación
 
 Basado en `docs/requerimientos/0003-finanzas.md` (aprobado 2026-06-23, alcance
 y criterios de aceptación) + patrones existentes del repo (`HasOrganizationScope`,
@@ -62,23 +61,16 @@ create/update/aprobar/pagar/anular = `super_admin, ingeniero`; marcar recibida
 = + `supervisor`; delete/restore/forceDelete = solo `super_admin`. `tecnico` y
 `calidad` sin acceso (más restrictivo que `ProjectPolicy`, dato financiero).
 
-**Preguntas abiertas — Q1 a Q6 (bloquean pasar a `/ingeniero`):**
-1. **Q1 — Código interno vs. folio:** ¿agregar `code` autogenerado (como
-   Project/Task) además del `number` (folio real a mano)? Es un campo nuevo no
-   contemplado en el doc original aprobado. *(Recomendado: sí, agregarlo.)*
-2. **Q2 — Cómo se llega a `vencida`:** (A) comando programado diario que
-   persiste el cambio en BD *(recomendado)*, o (B) calculado al vuelo con un
-   accessor sin tocar `status`.
-3. **Q3 — Enum PHP vs. tabla configurable para los estados de OC/factura.**
-   *(Recomendado: enum PHP, como `TaskStatus` — flujo fijo con lógica de
-   negocio, no taxonomía libre por organización.)*
-4. **Q4 — Historial de estados dedicado** (`purchase_order_status_histories`,
-   `invoice_status_histories`) para ambas entidades. *(Recomendado: sí.)*
-5. **Q5 — Alcance de RBAC:** confirmar que `tecnico`/`calidad` no ven finanzas
-   y que `supervisor` es solo lectura (sin crear/aprobar).
-6. **Q6 — Integridad `type`/`client_id`/`supplier_id` en `invoices`:** (A)
-   solo validación en FormRequest/Filament *(recomendado)*, o (B) además un
-   `CHECK` constraint a nivel de BD.
+**Preguntas Q1–Q6 resueltas** adoptando las opciones recomendadas (el usuario
+no dio respuestas puntuales, se avanzó con el diseño). Decisiones y su porqué
+documentadas en `docs/adr/0011-finanzas-proveedores-oc-facturas.md`:
+1. **Q1:** sí, se agrega `code` autogenerado además de `number` (folio real).
+2. **Q2:** comando programado diario que persiste `vencida` en BD.
+3. **Q3:** enum PHP para `PurchaseOrderStatus`/`InvoiceStatus`.
+4. **Q4:** sí, historial dedicado para ambas entidades.
+5. **Q5:** `tecnico`/`calidad` sin acceso; `supervisor` solo lectura (+
+   marcar recibida).
+6. **Q6:** validación en FormRequest/Filament, sin `CHECK` de BD por ahora.
 
 **Riesgos/supuestos identificados:** multimoneda sin tipo de cambio histórico
 (fuera de alcance MVP, afecta reportes agregados futuros); sin líneas de ítem
@@ -120,19 +112,20 @@ facturación electrónica SII; `purchase_order_id` opcional en `invoices`
 - **Códigos legibles:** formato `TAB-001-T042`.
 
 ## Decisiones pendientes
-Preguntas Q1–Q6 del diseño de REQ-0003 (ver sección "REQ-0003 — Diseño
-propuesto" arriba). El usuario debe responderlas antes de aprobar el diseño.
+Ninguna de diseño. Falta el "vamos" explícito del usuario para empezar a
+escribir código de REQ-0003 (el CLAUDE.md exige visto bueno antes de
+implementar, aunque el diseño ya esté cerrado con las opciones recomendadas).
 
 ## Próximo paso concreto
-Esperar respuesta del usuario a Q1–Q6 sobre el diseño de REQ-0003. Con las
-respuestas: ajustar el diseño si corresponde, obtener aprobación explícita, y
-recién ahí pasar a rol `/ingeniero` para implementar (migraciones de
-`suppliers`, `purchase_orders`, `purchase_order_status_histories`, `invoices`,
-`invoice_status_histories`; modelos; enums `PurchaseOrderStatus`,
-`InvoiceStatus`, `InvoiceType`, `Currency`; `PurchaseOrderStateMachine`,
-`InvoiceStateMachine`; recursos Filament `SupplierResource`,
-`PurchaseOrderResource`, `InvoiceResource`; policies; factories; tests Pest) y
-registrar un ADR en `docs/adr/` con las decisiones tomadas.
+Confirmar con el usuario que puede arrancar `/ingeniero` para REQ-0003. Con luz
+verde, implementar en este orden: migraciones (`suppliers`, `purchase_orders`,
+`purchase_order_status_histories`, `invoices`, `invoice_status_histories`) →
+enums (`PurchaseOrderStatus`, `InvoiceStatus`, `InvoiceType`, `Currency`) →
+modelos + Observers de `code` → `PurchaseOrderStateMachine` /
+`InvoiceStateMachine` + comando programado para `vencida` → policies →
+recursos Filament (`SupplierResource`, `PurchaseOrderResource`,
+`InvoiceResource` bajo grupo "Finanzas") → factories → tests Pest. Diseño
+completo y decisiones en `docs/adr/0011-finanzas-proveedores-oc-facturas.md`.
 
 ## Cómo correr la suite (importante)
 Los tests **no corren en el host**: el PHP de WSL no tiene `pdo_mysql` y el host
