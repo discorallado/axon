@@ -7,16 +7,17 @@
 ---
 
 ## Última actualización
-2026-08-06
+2026-08-07
 
 ## Módulo / feature en curso
-REQ-0003 — Finanzas (Proveedores, OC, Facturas). **Implementado** en rama
-`feat/req-0003-finanzas`, PR #8 abierto hacia `main`, pendiente de `/revisor`
-y merge.
+REQ-0003 — Finanzas (Proveedores, OC, Facturas). Implementado, pasó por
+`/revisor` y `/qa` (encontró y corrigió un bug crítico). PR #8 abierto hacia
+`main`, listo para merge salvo decisión pendiente sobre un hallazgo no
+arreglado (ver más abajo).
 
 ## Estado actual
 
-### REQ-0003 — Implementado, PR #8 abierto (pendiente de revisión y merge)
+### REQ-0003 — Implementado + revisado + QA, PR #8 listo para merge
 
 Basado en `docs/requerimientos/0003-finanzas.md` (aprobado 2026-06-23, alcance
 y criterios de aceptación) + patrones existentes del repo (`HasOrganizationScope`,
@@ -104,6 +105,46 @@ contenedores Docker (siguieron corriendo), pero rompió el CLI local de `ddev`
 hasta que se restauraron desde el historial de git (`git show cbfb361:<path>`).
 Quedaron restaurados como archivos locales no trackeados, tal como corresponde.
 
+**Revisión (`/revisor`, commit `f225f3f`):** 9 hallazgos reportados por
+severidad (crítico→bajo): fugas de tenant potenciales en los Select de FK,
+`amount_total` sin validar contra net+tax, condición de carrera en la
+generación de `code`, adjuntos huérfanos si falla el registro tras subir el
+archivo, UX confusa en "Cambiar estado" para `supervisor`, cobertura de tests
+parcial en policies/Actions, nota de portabilidad Postgres. Un fix mecánico
+aplicado (`due_date >= date` en facturas). El resto quedó documentado para
+decidir, no arreglado unilateralmente.
+
+**QA (`/qa`, commit `d30482a`) — encontró y corrigió un bug crítico real:**
+Al testear con interacción Livewire real (no solo smoke de render), se
+confirmó que `Select::make('type')->options(InvoiceType::class)` hace que
+Filament guarde el estado como **instancia del enum**, no como string. Las
+comparaciones `$get('type') === InvoiceType::Outgoing->value` (objeto vs
+string) eran siempre falsas → **los campos Cliente/Proveedor nunca se
+mostraban en el formulario de facturas, sin importar el tipo elegido — el
+módulo era inutilizable vía UI**. Ni `/revisor` (lectura de código) ni el
+smoke test original (solo verificaba que la página renderizara) lo habían
+detectado. Corregido comparando contra el case del enum directamente.
+De paso: `amount_total` ahora se recalcula siempre server-side
+(`recalculateAmountTotal`) en vez de confiar en lo que el usuario haya podido
+sobreescribir a mano, y se agregó una validación server-side explícita
+(`missingRequiredTypeField` + notificación + `halt()`) como red de seguridad,
+ya que Filament excluye de la validación un campo que estuvo oculto en algún
+punto del ciclo de vida del form. También se **corrigieron dos hallazgos
+erróneos** de la revisión anterior: los Select de `supplier_id`/`project_id`
+SÍ validan correctamente contra sus opciones (confirmado con tests Livewire
+reales, no solo lectura de código) — la "fuga de tenant" reportada por
+`/revisor` no era exploitable como se pensaba.
+**Health score tras QA: ~90/100** (era ~60/100 antes, por el bug crítico de
+UI). 16 tests nuevos, 124/124 en verde, Pint limpio, Larastan sin errores.
+
+**Hallazgo pendiente de decisión (no arreglado):** `status` es mass-assignable
+en `PurchaseOrder`/`Invoice`, así que cualquier código que llame a
+`->update(['status' => ...])` directo salta la máquina de estados por
+completo (confirmado con test). Arreglarlo requiere una decisión de diseño
+(las propias state machines usan `update()` internamente, así que sacar
+`status` de `$fillable` rompería el flujo legítimo) — no se resolvió
+unilateralmente.
+
 ### Completado ✅
 - REQ-0001 (Módulo de Solicitudes de Tableros) — cerrado.
 - REQ-0002-A (PMIS Core) — cerrado, commit `a95aab8`.
@@ -136,19 +177,19 @@ Quedaron restaurados como archivos locales no trackeados, tal como corresponde.
 - **Códigos legibles:** formato `TAB-001-T042`.
 
 ## Decisiones pendientes
-Ninguna de diseño. Falta el "vamos" explícito del usuario para empezar a
-escribir código de REQ-0003 (el CLAUDE.md exige visto bueno antes de
-implementar, aunque el diseño ya esté cerrado con las opciones recomendadas).
+¿Se arregla el bypass de la máquina de estados (status mass-assignable en
+`PurchaseOrder`/`Invoice`) antes de mergear el PR #8, o se documenta como
+deuda técnica y se mergea igual? Requiere decidir el mecanismo (las state
+machines usan `update()` internamente, así que no es tan simple como sacar
+`status` de `$fillable`).
 
 ## Próximo paso concreto
-Correr rol `/revisor` sobre el PR #8
-(https://github.com/discorallado/axon/pull/8, rama `feat/req-0003-finanzas`)
-antes de mergear: revisar seguridad, N+1 en los recursos Filament (relaciones
-`supplier`/`project`/`client`/`purchaseOrder` en tablas y listados), fugas de
-`organization_id`, permisos faltantes y cobertura de tests. Con el visto
-bueno, mergear a `main` (mismo método usado en PR #6/#7: merge commit normal)
-y luego decidir si se sigue con REQ-0005 (Estados de Pago, ahora desbloqueado)
-u otro requerimiento.
+El usuario debe decidir sobre el hallazgo pendiente (bypass de la máquina de
+estados vía `update()` directo — ver arriba) y dar luz verde para mergear el
+PR #8 (https://github.com/discorallado/axon/pull/8, rama
+`feat/req-0003-finanzas`, mismo método que PR #6/#7: merge commit normal).
+Después de mergear, decidir si se sigue con REQ-0005 (Estados de Pago, ahora
+desbloqueado) u otro requerimiento.
 
 ## Cómo correr la suite (importante)
 Los tests **no corren en el host**: el PHP de WSL no tiene `pdo_mysql` y el host
