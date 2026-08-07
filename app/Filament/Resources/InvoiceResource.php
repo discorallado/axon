@@ -78,16 +78,16 @@ class InvoiceResource extends Resource
                             ->options(fn () => Client::pluck('name', 'id'))
                             ->searchable()
                             ->preload()
-                            ->visible(fn ($get) => $get('type') === InvoiceType::Outgoing->value)
-                            ->required(fn ($get) => $get('type') === InvoiceType::Outgoing->value),
+                            ->visible(fn ($get) => $get('type') === InvoiceType::Outgoing)
+                            ->required(fn ($get) => $get('type') === InvoiceType::Outgoing),
 
                         Select::make('supplier_id')
                             ->label(__('invoices.fields.supplier'))
                             ->options(fn () => Supplier::pluck('name', 'id'))
                             ->searchable()
                             ->preload()
-                            ->visible(fn ($get) => $get('type') === InvoiceType::Incoming->value)
-                            ->required(fn ($get) => $get('type') === InvoiceType::Incoming->value),
+                            ->visible(fn ($get) => $get('type') === InvoiceType::Incoming)
+                            ->required(fn ($get) => $get('type') === InvoiceType::Incoming),
                     ]),
 
                     Grid::make(2)->schema([
@@ -371,11 +371,63 @@ class InvoiceResource extends Resource
      */
     public static function normalizeTypeFields(array $data): array
     {
-        if (($data['type'] ?? null) === InvoiceType::Outgoing->value) {
+        $type = static::resolveType($data['type'] ?? null);
+
+        if ($type === InvoiceType::Outgoing) {
             $data['supplier_id'] = null;
-        } elseif (($data['type'] ?? null) === InvoiceType::Incoming->value) {
+        } elseif ($type === InvoiceType::Incoming) {
             $data['client_id'] = null;
         }
+
+        return $data;
+    }
+
+    /**
+     * Cuando `Select::make('type')->options(InvoiceType::class)` ya tiene
+     * estado, Filament lo entrega como instancia del enum; antes de que el
+     * usuario elija algo puede llegar como string o null. Se normaliza acá
+     * para no depender de comparar contra ->value (bug real: ver PR #8 QA).
+     */
+    private static function resolveType(InvoiceType|string|null $type): ?InvoiceType
+    {
+        if ($type instanceof InvoiceType || $type === null) {
+            return $type;
+        }
+
+        return InvoiceType::tryFrom($type);
+    }
+
+    /**
+     * Filament excluye de la validación un campo que estuvo oculto en algún
+     * momento del ciclo de vida del form (`isNeitherDehydratedNorValidated`),
+     * así que `client_id`/`supplier_id` no se pueden dejar solo con
+     * `->required(Closure)` condicional al `type` — se re-valida acá de
+     * forma explícita antes de persistir. Retorna el nombre del campo
+     * faltante, o null si está OK.
+     */
+    public static function missingRequiredTypeField(array $data): ?string
+    {
+        $type = static::resolveType($data['type'] ?? null);
+
+        if ($type === InvoiceType::Outgoing && blank($data['client_id'] ?? null)) {
+            return 'client';
+        }
+
+        if ($type === InvoiceType::Incoming && blank($data['supplier_id'] ?? null)) {
+            return 'supplier';
+        }
+
+        return null;
+    }
+
+    /**
+     * amount_total es editable en el form, pero no debe poder guardarse
+     * desincronizado de amount_net + tax_amount — se recalcula acá como
+     * defensa server-side (ver QA del PR #8).
+     */
+    public static function recalculateAmountTotal(array $data): array
+    {
+        $data['amount_total'] = round((float) ($data['amount_net'] ?? 0) + (float) ($data['tax_amount'] ?? 0), 2);
 
         return $data;
     }

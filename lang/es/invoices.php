@@ -36,4 +36,8 @@ return [
         'upload_attachment' => 'Adjuntar archivo',
         'delete_attachments' => 'Eliminar adjuntos',
     ],
+
+    'errors' => [
+        'missing_required_field' => 'Falta un campo obligatorio según el tipo de factura',
+    ],
 ];

@@ -87,3 +87,51 @@ it('nulls out client_id when type is incoming', function () {
     expect($data['supplier_id'])->toBe('supplier-1')
         ->and($data['client_id'])->toBeNull();
 });
+
+it('normalizeTypeFields also works when type arrives as an enum instance', function () {
+    $data = InvoiceResource::normalizeTypeFields([
+        'type' => InvoiceType::Outgoing,
+        'client_id' => 'client-1',
+        'supplier_id' => 'supplier-1',
+    ]);
+
+    expect($data['client_id'])->toBe('client-1')
+        ->and($data['supplier_id'])->toBeNull();
+});
+
+it('missingRequiredTypeField flags a blank client_id on an outgoing invoice', function () {
+    $missing = InvoiceResource::missingRequiredTypeField([
+        'type' => InvoiceType::Outgoing,
+        'client_id' => null,
+    ]);
+
+    expect($missing)->toBe('client');
+});
+
+it('missingRequiredTypeField flags a blank supplier_id on an incoming invoice', function () {
+    $missing = InvoiceResource::missingRequiredTypeField([
+        'type' => InvoiceType::Incoming->value,
+        'supplier_id' => '',
+    ]);
+
+    expect($missing)->toBe('supplier');
+});
+
+it('missingRequiredTypeField returns null when the right field is present', function () {
+    $missing = InvoiceResource::missingRequiredTypeField([
+        'type' => InvoiceType::Outgoing,
+        'client_id' => 'client-1',
+    ]);
+
+    expect($missing)->toBeNull();
+});
+
+it('recalculateAmountTotal ignores a mismatched submitted total', function () {
+    $data = InvoiceResource::recalculateAmountTotal([
+        'amount_net' => 100000,
+        'tax_amount' => 19000,
+        'amount_total' => 1,
+    ]);
+
+    expect($data['amount_total'])->toBe(119000.0);
+});

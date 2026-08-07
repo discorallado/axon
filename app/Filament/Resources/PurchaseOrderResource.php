@@ -321,6 +321,20 @@ class PurchaseOrderResource extends Resource
         ]);
     }
 
+    /**
+     * amount_total es editable en el form (para casos de redondeo/ajuste),
+     * pero no debe poder guardarse desincronizado de amount_net + tax_amount
+     * sin que el usuario lo haya tocado a propósito — se recalcula acá como
+     * defensa server-side (ver QA del PR #8: el afterStateUpdated del form
+     * solo sugiere el valor, no lo garantiza).
+     */
+    public static function recalculateAmountTotal(array $data): array
+    {
+        $data['amount_total'] = round((float) ($data['amount_net'] ?? 0) + (float) ($data['tax_amount'] ?? 0), 2);
+
+        return $data;
+    }
+
     public static function getPages(): array
     {
         return [

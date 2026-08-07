@@ -4,6 +4,7 @@ namespace App\Filament\Resources\InvoiceResource\Pages;
 
 use App\Filament\Resources\InvoiceResource;
 use Filament\Actions\DeleteAction;
+use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
 
 class EditInvoice extends EditRecord
@@ -12,7 +13,19 @@ class EditInvoice extends EditRecord
 
     protected function mutateFormDataBeforeSave(array $data): array
     {
-        return InvoiceResource::normalizeTypeFields($data);
+        if ($missing = InvoiceResource::missingRequiredTypeField($data)) {
+            Notification::make()
+                ->danger()
+                ->title(__('invoices.errors.missing_required_field'))
+                ->body(__("invoices.fields.{$missing}"))
+                ->send();
+
+            $this->halt();
+        }
+
+        $data = InvoiceResource::normalizeTypeFields($data);
+
+        return InvoiceResource::recalculateAmountTotal($data);
     }
 
     protected function getHeaderActions(): array

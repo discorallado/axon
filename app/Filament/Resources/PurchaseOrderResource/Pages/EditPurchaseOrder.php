@@ -10,6 +10,11 @@ class EditPurchaseOrder extends EditRecord
 {
     protected static string $resource = PurchaseOrderResource::class;
 
+    protected function mutateFormDataBeforeSave(array $data): array
+    {
+        return PurchaseOrderResource::recalculateAmountTotal($data);
+    }
+
     protected function getHeaderActions(): array
     {
         return [

@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\PurchaseOrderStatus;
+use App\Filament\Resources\PurchaseOrderResource;
 use App\Models\Organization;
 use App\Models\PurchaseOrder;
 use App\Models\Supplier;
@@ -60,4 +61,22 @@ it('isolates purchase orders by organization', function () {
     $this->actingAs($userA);
 
     expect(PurchaseOrder::all())->toHaveCount(1);
+});
+
+it('recalculateAmountTotal ignores a mismatched submitted total', function () {
+    $data = PurchaseOrderResource::recalculateAmountTotal([
+        'amount_net' => 100000,
+        'tax_amount' => 19000,
+        'amount_total' => 1,
+    ]);
+
+    expect($data['amount_total'])->toBe(119000.0);
+});
+
+it('recalculateAmountTotal defaults missing net/tax to zero', function () {
+    $data = PurchaseOrderResource::recalculateAmountTotal([
+        'amount_total' => 500,
+    ]);
+
+    expect($data['amount_total'])->toBe(0.0);
 });

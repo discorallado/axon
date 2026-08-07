@@ -22,7 +22,8 @@
       "Read(//home/sebas/.claude/**)",
       "Bash(chmod +x /home/sebas/.claude/statusline-command.sh)",
       "Bash(bash /home/sebas/.claude/statusline-command.sh)",
-      "Bash(ddev describe *)"
+      "Bash(ddev describe *)",
+      "Bash(./vendor/bin/pest tests/Feature/Finance --compact)"
     ]
   }
 }
