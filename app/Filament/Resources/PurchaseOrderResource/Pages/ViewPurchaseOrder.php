@@ -37,6 +37,7 @@ class ViewPurchaseOrder extends ViewRecord
                         ->disk('local')
                         ->directory('attachments/purchase-orders/'.$this->record->id)
                         ->acceptedFileTypes(['application/pdf', 'image/jpeg', 'image/png'])
+                        ->maxSize(20480)
                         ->required(),
                 ])
                 ->action(function (array $data): void {

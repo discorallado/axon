@@ -37,6 +37,7 @@ class ViewInvoice extends ViewRecord
                         ->disk('local')
                         ->directory('attachments/invoices/'.$this->record->id)
                         ->acceptedFileTypes(['application/pdf', 'image/jpeg', 'image/png'])
+                        ->maxSize(20480)
                         ->required(),
                 ])
                 ->action(function (array $data): void {
