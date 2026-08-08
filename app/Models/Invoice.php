@@ -19,6 +19,13 @@ class Invoice extends Model
 {
     use HasAttachments, HasFactory, HasFilamentComments, HasOrganizationScope, HasUlids, SoftDeletes;
 
+    /**
+     * `status` queda fuera a propósito: solo debe cambiar vía
+     * InvoiceStateMachine::transition()/markOverdue(), que lo asignan por
+     * propiedad directa (no pasa por mass assignment). Así un
+     * `update(['status' => ...])` arbitrario no puede saltarse las
+     * transiciones/roles permitidos.
+     */
     protected $fillable = [
         'organization_id',
         'type',
@@ -34,7 +41,6 @@ class Invoice extends Model
         'amount_net',
         'tax_amount',
         'amount_total',
-        'status',
         'payment_date',
         'notes',
     ];

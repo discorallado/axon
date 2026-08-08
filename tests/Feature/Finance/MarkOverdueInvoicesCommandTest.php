@@ -13,7 +13,9 @@ it('marks overdue pending invoices as vencida and leaves the rest untouched', fu
     $org = Organization::factory()->create();
     $supplier = Supplier::factory()->for($org, 'organization')->create();
 
-    $overdue = Invoice::create([
+    // status no es mass-assignable a propósito (ver Invoice::$fillable); se
+    // usa unguarded() para poder sembrar un estado inicial arbitrario en el test.
+    $overdue = Invoice::unguarded(fn () => Invoice::create([
         'organization_id' => $org->id,
         'type' => InvoiceType::Incoming,
         'supplier_id' => $supplier->id,
@@ -24,9 +26,9 @@ it('marks overdue pending invoices as vencida and leaves the rest untouched', fu
         'tax_amount' => 19000,
         'amount_total' => 119000,
         'status' => InvoiceStatus::Pendiente,
-    ]);
+    ]));
 
-    $notYetDue = Invoice::create([
+    $notYetDue = Invoice::unguarded(fn () => Invoice::create([
         'organization_id' => $org->id,
         'type' => InvoiceType::Incoming,
         'supplier_id' => $supplier->id,
@@ -37,9 +39,9 @@ it('marks overdue pending invoices as vencida and leaves the rest untouched', fu
         'tax_amount' => 9500,
         'amount_total' => 59500,
         'status' => InvoiceStatus::Pendiente,
-    ]);
+    ]));
 
-    $alreadyPaid = Invoice::create([
+    $alreadyPaid = Invoice::unguarded(fn () => Invoice::create([
         'organization_id' => $org->id,
         'type' => InvoiceType::Incoming,
         'supplier_id' => $supplier->id,
@@ -51,7 +53,7 @@ it('marks overdue pending invoices as vencida and leaves the rest untouched', fu
         'amount_total' => 95200,
         'status' => InvoiceStatus::Pagada,
         'payment_date' => now()->subDays(10),
-    ]);
+    ]));
 
     $this->artisan('invoices:mark-overdue')->assertSuccessful();
 

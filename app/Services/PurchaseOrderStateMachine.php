@@ -59,13 +59,13 @@ class PurchaseOrderStateMachine
         DB::transaction(function () use ($user, $purchaseOrder, $toStatus, $comment) {
             $fromStatus = $purchaseOrder->status;
 
-            $data = ['status' => $toStatus];
+            $purchaseOrder->status = $toStatus;
             if ($toStatus === PurchaseOrderStatus::Emitida) {
-                $data['approved_by'] = $user->id;
-                $data['approved_at'] = now();
+                $purchaseOrder->approved_by = $user->id;
+                $purchaseOrder->approved_at = now();
             }
 
-            $purchaseOrder->update($data);
+            $purchaseOrder->save();
 
             PurchaseOrderStatusHistory::create([
                 'organization_id' => $purchaseOrder->organization_id,

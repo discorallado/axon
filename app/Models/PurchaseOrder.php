@@ -18,6 +18,12 @@ class PurchaseOrder extends Model
 {
     use HasAttachments, HasFactory, HasFilamentComments, HasOrganizationScope, HasUlids, SoftDeletes;
 
+    /**
+     * `status` queda fuera a propósito: solo debe cambiar vía
+     * PurchaseOrderStateMachine::transition(), que lo asigna por propiedad
+     * directa (no pasa por mass assignment). Así un `update(['status' => ...])`
+     * arbitrario no puede saltarse las transiciones/roles permitidos.
+     */
     protected $fillable = [
         'organization_id',
         'supplier_id',
@@ -29,7 +35,6 @@ class PurchaseOrder extends Model
         'amount_net',
         'tax_amount',
         'amount_total',
-        'status',
         'description',
         'notes',
         'approved_by',

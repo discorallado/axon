@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\InvoiceStatus;
 use App\Enums\InvoiceType;
 use App\Enums\PurchaseOrderStatus;
 use App\Filament\Resources\InvoiceResource\Pages\CreateInvoice;
@@ -137,7 +138,7 @@ it('allows the same code across two different organizations', function () {
     $supplierA = Supplier::factory()->for($this->orgA, 'organization')->create();
     $supplierB = Supplier::factory()->for($this->orgB, 'organization')->create();
 
-    $poA = PurchaseOrder::create([
+    $poA = PurchaseOrder::unguarded(fn () => PurchaseOrder::create([
         'organization_id' => $this->orgA->id,
         'supplier_id' => $supplierA->id,
         'code' => 'OC-2026-001',
@@ -147,9 +148,9 @@ it('allows the same code across two different organizations', function () {
         'tax_amount' => 19000,
         'amount_total' => 119000,
         'status' => PurchaseOrderStatus::Borrador,
-    ]);
+    ]));
 
-    $poB = PurchaseOrder::create([
+    $poB = PurchaseOrder::unguarded(fn () => PurchaseOrder::create([
         'organization_id' => $this->orgB->id,
         'supplier_id' => $supplierB->id,
         'code' => 'OC-2026-001',
@@ -159,7 +160,7 @@ it('allows the same code across two different organizations', function () {
         'tax_amount' => 9500,
         'amount_total' => 59500,
         'status' => PurchaseOrderStatus::Borrador,
-    ]);
+    ]));
 
     expect($poA->code)->toBe($poB->code);
 });
@@ -187,7 +188,7 @@ it('a supervisor cannot see purchase orders from another organization in the lis
     $supplierA = Supplier::factory()->for($this->orgA, 'organization')->create();
     $supplierB = Supplier::factory()->for($this->orgB, 'organization')->create();
 
-    PurchaseOrder::create([
+    PurchaseOrder::unguarded(fn () => PurchaseOrder::create([
         'organization_id' => $this->orgA->id,
         'supplier_id' => $supplierA->id,
         'date' => now(),
@@ -196,9 +197,9 @@ it('a supervisor cannot see purchase orders from another organization in the lis
         'tax_amount' => 19000,
         'amount_total' => 119000,
         'status' => PurchaseOrderStatus::Borrador,
-    ]);
+    ]));
 
-    PurchaseOrder::create([
+    PurchaseOrder::unguarded(fn () => PurchaseOrder::create([
         'organization_id' => $this->orgB->id,
         'supplier_id' => $supplierB->id,
         'date' => now(),
@@ -207,11 +208,51 @@ it('a supervisor cannot see purchase orders from another organization in the lis
         'tax_amount' => 9500,
         'amount_total' => 59500,
         'status' => PurchaseOrderStatus::Borrador,
-    ]);
+    ]));
 
     $this->actingAs($supervisorA);
 
     livewire(ListPurchaseOrders::class)
         ->assertCanSeeTableRecords(PurchaseOrder::all())
         ->assertCountTableRecords(1);
+});
+
+it('does not let a direct mass-assignment update() bypass the invoice state machine', function () {
+    $supplier = Supplier::factory()->for($this->orgA, 'organization')->create();
+
+    $invoice = Invoice::unguarded(fn () => Invoice::create([
+        'organization_id' => $this->orgA->id,
+        'type' => InvoiceType::Incoming,
+        'supplier_id' => $supplier->id,
+        'date' => now(),
+        'due_date' => now()->addDays(30),
+        'currency' => 'CLP',
+        'amount_net' => 100000,
+        'tax_amount' => 19000,
+        'amount_total' => 119000,
+        'status' => InvoiceStatus::Pendiente,
+    ]));
+
+    $invoice->update(['status' => InvoiceStatus::Pagada]);
+
+    expect($invoice->fresh()->status)->toBe(InvoiceStatus::Pendiente);
+});
+
+it('does not let a direct mass-assignment update() bypass the purchase order state machine', function () {
+    $supplier = Supplier::factory()->for($this->orgA, 'organization')->create();
+
+    $po = PurchaseOrder::unguarded(fn () => PurchaseOrder::create([
+        'organization_id' => $this->orgA->id,
+        'supplier_id' => $supplier->id,
+        'date' => now(),
+        'currency' => 'CLP',
+        'amount_net' => 100000,
+        'tax_amount' => 19000,
+        'amount_total' => 119000,
+        'status' => PurchaseOrderStatus::Borrador,
+    ]));
+
+    $po->update(['status' => PurchaseOrderStatus::Recibida]);
+
+    expect($po->fresh()->status)->toBe(PurchaseOrderStatus::Borrador);
 });

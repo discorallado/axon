@@ -48,12 +48,12 @@ class InvoiceStateMachine
         DB::transaction(function () use ($user, $invoice, $toStatus, $comment) {
             $fromStatus = $invoice->status;
 
-            $data = ['status' => $toStatus];
+            $invoice->status = $toStatus;
             if ($toStatus === InvoiceStatus::Pagada) {
-                $data['payment_date'] = now()->toDateString();
+                $invoice->payment_date = now()->toDateString();
             }
 
-            $invoice->update($data);
+            $invoice->save();
 
             InvoiceStatusHistory::create([
                 'organization_id' => $invoice->organization_id,
@@ -78,7 +78,8 @@ class InvoiceStateMachine
         }
 
         DB::transaction(function () use ($invoice) {
-            $invoice->update(['status' => InvoiceStatus::Vencida]);
+            $invoice->status = InvoiceStatus::Vencida;
+            $invoice->save();
 
             InvoiceStatusHistory::create([
                 'organization_id' => $invoice->organization_id,

@@ -39,7 +39,7 @@ it('renders the suppliers list page', function () {
 });
 
 it('renders the purchase orders list and view pages', function () {
-    $po = PurchaseOrder::create([
+    $po = PurchaseOrder::unguarded(fn () => PurchaseOrder::create([
         'organization_id' => $this->org->id,
         'supplier_id' => $this->supplier->id,
         'date' => now(),
@@ -48,14 +48,14 @@ it('renders the purchase orders list and view pages', function () {
         'tax_amount' => 19000,
         'amount_total' => 119000,
         'status' => PurchaseOrderStatus::Borrador,
-    ]);
+    ]));
 
     livewire(ListPurchaseOrders::class)->assertSuccessful();
     livewire(ViewPurchaseOrder::class, ['record' => $po->getRouteKey()])->assertSuccessful();
 });
 
 it('renders the invoices list and view pages', function () {
-    $invoice = Invoice::create([
+    $invoice = Invoice::unguarded(fn () => Invoice::create([
         'organization_id' => $this->org->id,
         'type' => InvoiceType::Incoming,
         'supplier_id' => $this->supplier->id,
@@ -66,7 +66,7 @@ it('renders the invoices list and view pages', function () {
         'tax_amount' => 19000,
         'amount_total' => 119000,
         'status' => InvoiceStatus::Pendiente,
-    ]);
+    ]));
 
     livewire(ListInvoices::class)->assertSuccessful();
     livewire(ViewInvoice::class, ['record' => $invoice->getRouteKey()])->assertSuccessful();

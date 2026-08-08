@@ -16,7 +16,9 @@ function makePoForStateMachine(Organization $org): PurchaseOrder
 {
     $supplier = Supplier::factory()->for($org, 'organization')->create();
 
-    return PurchaseOrder::create([
+    // status no es mass-assignable a propósito (ver PurchaseOrder::$fillable);
+    // se usa unguarded() para poder sembrar un estado inicial arbitrario en el test.
+    return PurchaseOrder::unguarded(fn () => PurchaseOrder::create([
         'organization_id' => $org->id,
         'supplier_id' => $supplier->id,
         'date' => now(),
@@ -25,7 +27,7 @@ function makePoForStateMachine(Organization $org): PurchaseOrder
         'tax_amount' => 19000,
         'amount_total' => 119000,
         'status' => PurchaseOrderStatus::Borrador,
-    ]);
+    ]));
 }
 
 it('allows ingeniero to approve a purchase order and stamps approver', function () {
@@ -72,7 +74,7 @@ it('allows supervisor to mark a purchase order as received', function () {
     $user->assignRole('supervisor');
 
     $po = makePoForStateMachine($org);
-    $po->update(['status' => PurchaseOrderStatus::Emitida]);
+    PurchaseOrder::unguarded(fn () => $po->update(['status' => PurchaseOrderStatus::Emitida]));
 
     $machine = app(PurchaseOrderStateMachine::class);
     $machine->transition($user, $po, PurchaseOrderStatus::Recibida);
@@ -87,7 +89,7 @@ it('blocks any transition from a terminal status', function () {
     $user->assignRole('super_admin');
 
     $po = makePoForStateMachine($org);
-    $po->update(['status' => PurchaseOrderStatus::Recibida]);
+    PurchaseOrder::unguarded(fn () => $po->update(['status' => PurchaseOrderStatus::Recibida]));
 
     $machine = app(PurchaseOrderStateMachine::class);
 

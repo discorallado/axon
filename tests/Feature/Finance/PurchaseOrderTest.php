@@ -13,7 +13,9 @@ uses(RefreshDatabase::class);
 
 function makePurchaseOrder(Organization $org, Supplier $supplier, array $overrides = []): PurchaseOrder
 {
-    return PurchaseOrder::create(array_merge([
+    // status no es mass-assignable a propósito (ver PurchaseOrder::$fillable);
+    // se usa unguarded() para poder sembrar un estado inicial arbitrario en el test.
+    return PurchaseOrder::unguarded(fn () => PurchaseOrder::create(array_merge([
         'organization_id' => $org->id,
         'supplier_id' => $supplier->id,
         'date' => now(),
@@ -22,7 +24,7 @@ function makePurchaseOrder(Organization $org, Supplier $supplier, array $overrid
         'tax_amount' => 19000,
         'amount_total' => 119000,
         'status' => PurchaseOrderStatus::Borrador,
-    ], $overrides));
+    ], $overrides)));
 }
 
 it('generates a sequential code per organization and year', function () {
