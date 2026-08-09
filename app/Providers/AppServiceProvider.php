@@ -5,13 +5,18 @@ namespace App\Providers;
 use App\Livewire\CommentsWithMentions;
 use App\Models\Activity;
 use App\Models\Client;
+use App\Models\Invoice;
+use App\Models\Observers\InvoiceObserver;
 use App\Models\Observers\ProjectObserver;
+use App\Models\Observers\PurchaseOrderObserver;
 use App\Models\Observers\SubmissionItemObserver;
 use App\Models\Observers\SubmissionRequestObserver;
 use App\Models\Observers\TaskObserver;
 use App\Models\Project;
+use App\Models\PurchaseOrder;
 use App\Models\SubmissionItem;
 use App\Models\SubmissionRequest;
+use App\Models\Supplier;
 use App\Models\Task;
 use App\Models\User;
 use App\Models\UserSetting;
@@ -61,12 +66,17 @@ class AppServiceProvider extends ServiceProvider
             'project' => Project::class,
             'activity' => Activity::class,
             'task' => Task::class,
+            'supplier' => Supplier::class,
+            'purchase_order' => PurchaseOrder::class,
+            'invoice' => Invoice::class,
         ]);
 
         SubmissionRequest::observe(SubmissionRequestObserver::class);
         SubmissionItem::observe(SubmissionItemObserver::class);
         Project::observe(ProjectObserver::class);
         Task::observe(TaskObserver::class);
+        PurchaseOrder::observe(PurchaseOrderObserver::class);
+        Invoice::observe(InvoiceObserver::class);
 
         Livewire::component('filament-comments', CommentsWithMentions::class);
 
